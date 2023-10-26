@@ -22,7 +22,6 @@
     ],
     "@typescript-eslint/no-inferrable-types": "error",
     "@typescript-eslint/no-explicit-any": "warn",
-    "lodash-import-method/submodule": "error",
     "no-multiple-empty-lines": [
       "error",
       {
