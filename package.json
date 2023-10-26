@@ -1,0 +1,35 @@
+{
+  "name": "safe-x-editor",
+  "version": "1.0.0",
+  "description": "react parcel socket io web editor",
+  "main": "index.js",
+  "scripts": {
+    "start": "parcel src/editor.html -p 8080"
+  },
+  "keywords": ["react parcel socket io web editor"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "parcelCleanPaths": [
+    "dist"
+  ],
+  "staticFiles": {
+    "staticPath": "public",
+    "watcherGlob": "**"
+  },
+  "devDependencies": {
+    "@parcel/config-default": "^2.9.3",
+    "@typescript-eslint/eslint-plugin": "^6.6.0",
+    "@typescript-eslint/parser": "^6.6.0",
+    "eslint": "^8.34.0",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-plugin-prettier": "^5.0.0",
+    "parcel": "^2.9.3",
+    "parcel-plugin-clean-easy": "^1.0.2",
+    "parcel-reporter-static-files-copy": "^1.5.2",
+    "typescript": "^5.2.2"
+  }
+}
