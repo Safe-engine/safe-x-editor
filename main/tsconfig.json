@@ -1,0 +1,30 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "isolatedModules": false,
+    "baseUrl": ".",
+    "paths": {
+      "@@/*": [
+        "./*"
+      ],
+      "@shared/*": [
+        "../src/shared/*"
+      ]
+    },
+    "lib": [
+      "dom",
+      "dom.iterable"
+    ],
+    "strict": false,
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "noEmit": false
+  },
+  "include": [
+    "../src/shared",
+    "."
+  ],
+  "exclude": [
+    "../src"
+  ]
+}
