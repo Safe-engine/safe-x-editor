@@ -8,6 +8,8 @@ import NodeTree from '../container/NodeTree'
 import PropertiesPanel from '../container/PropertiesPanel'
 import SceneView from '../container/SceneView'
 import './globals.css'
+import '../../node_modules/devextreme/dist/css/dx.light.css';
+import '../../node_modules/allotment/dist/style.css';
 
 export function App() {
   useEffect(() => {
@@ -15,26 +17,22 @@ export function App() {
   }, [])
 
   return (
-    <main className="bg-gray-900 h-screen">
+    <main className="bg-gray-200 h-screen">
       <Allotment>
-        <Allotment.Pane minSize={200} maxSize={300}>
-          <Allotment vertical={true}>
-            <Allotment.Pane minSize={200}>
-              <NodeTree />
-            </Allotment.Pane>
-            <Allotment.Pane minSize={200}>
-              <AssetsPanel />
-            </Allotment.Pane>
-          </Allotment>
+        <Allotment.Pane minSize={270} maxSize={270}>
+          <AssetsPanel />
+        </Allotment.Pane>
+        <Allotment.Pane minSize={270} maxSize={300}>
+          <NodeTree />
         </Allotment.Pane>
         <Allotment.Pane>
           <Allotment vertical={true}>
             <Allotment.Pane minSize={480}>
               <SceneView />
             </Allotment.Pane>
-            <Allotment.Pane minSize={200}>
-              <ConsolePanel />
-            </Allotment.Pane>
+            {/* <Allotment.Pane minSize={200}>
+              <AssetsPanel />
+            </Allotment.Pane> */}
           </Allotment>
         </Allotment.Pane>
         <Allotment.Pane snap minSize={200} maxSize={300}>

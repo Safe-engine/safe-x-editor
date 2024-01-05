@@ -47,14 +47,22 @@ export default class MenuBuilder {
       label: 'Electron',
       submenu: [
         {
-          label: 'About DevToolsCollection',
-          selector: 'orderFrontStandardAboutPanel:',
+          label: '&Open',
+          accelerator: 'Ctrl+O',
+          click: () => {
+            const [root] = dialog.showOpenDialogSync(this.mainWindow, {
+              title: 'Select project folder.',
+              properties: ['openDirectory']
+            });
+            const files = getFilesInFolder({ src: root })
+            // console.log(files)
+            this.mainWindow.webContents.send('GET_FOLDER_FILES', files);
+            // ipcMain.emit('GET_FOLDER_FILES', files)
+          }
         },
         { type: 'separator' },
-        { label: 'Services', submenu: [] },
-        { type: 'separator' },
         {
-          label: 'Hide DevToolsCollection',
+          label: 'Hide Safex Editor',
           accelerator: 'Command+H',
           selector: 'hide:',
         },

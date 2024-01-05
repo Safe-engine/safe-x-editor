@@ -2,7 +2,7 @@
 
 import { useContext, useEffect, useRef, useState } from 'react'
 
-import { ScrollAblePanel } from '../../component/common'
+import { AssetTypeBlock, ScrollAblePanel } from '../../components/common'
 import { ipcRenderer } from 'electron'
 import { GET_FOLDER_FILES } from 'shared/constant.message'
 import TabPanel from 'devextreme-react/tab-panel';
@@ -173,6 +173,11 @@ export default function AssetsPanel() {
   // Necessary because we will have to use Greet as a component later.
   return (
     <div className=''>
+      <div className='flex flex-wrap w-[280px]'>
+        <AssetTypeBlock>Scene</AssetTypeBlock>
+        <AssetTypeBlock>Components</AssetTypeBlock>
+        <AssetTypeBlock>Resources</AssetTypeBlock>
+      </div>
       <div className='flex h-screen'>
         <Sortable
           id='hierarchyFiles'
@@ -180,7 +185,7 @@ export default function AssetsPanel() {
           height={'100%'}
           filter='.dx-treeview-item'
           group='shared'
-          // data={data.title}
+          data={treeData.res}
           allowDropInsideItem={false}
           allowReordering={true}
           // onDragChange={onDragChange}
@@ -192,8 +197,8 @@ export default function AssetsPanel() {
             dataStructure='tree'
             ref={ctx => treeViewProjectRef.current = ctx}
             onItemContextMenu={treeViewItemContextMenu}
-            items={treeData.res}
-            width={280}
+            items={treeData.src}
+            width={270}
             // height={'100%'}
             scrollDirection='vertical'
             // height={380}
@@ -208,12 +213,12 @@ export default function AssetsPanel() {
           width={200}
           target='#hierarchyFiles .dx-treeview-item'
           onItemClick={contextMenuItemClick} />
-        <div className='ml-4 w-1/2 border border-orange-200 bg-gray-100'>
+        {/* <div className='ml-4 w-1/2 border border-orange-200 bg-gray-100'>
           <div className='py-2 text-orange-800 text-lg font-bold text-center border-cool-gray-300 border-b'>Prop types</div>
-          {/* {Object.entries(componentPropTypes)
+          {Object.entries(componentPropTypes)
             .map(([name, value]) => {
               return <PropDisplay name={name} data={value} onChangePropData={onChangePropData} key={name} />;
-            })} */}
+            })}
           <div className='fixed bottom-0 flex justify-around px-4'>
             <CheckBox text='Auto save'
               value={isAutoSave}
@@ -228,7 +233,7 @@ export default function AssetsPanel() {
               />
             }
           </div>
-        </div>
+        </div> */}
       </div>
 
       {/* <CreateActionModal
