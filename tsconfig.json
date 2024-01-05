@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
-    "jsx": "preserve",
+    "baseUrl": "./src",
+    "jsx": "react-jsx",
     "target": "es5",
     "esModuleInterop": true,
     "experimentalDecorators": true,

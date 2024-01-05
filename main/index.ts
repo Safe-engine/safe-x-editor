@@ -5,6 +5,7 @@ import Router from '@@/router/Router';
 import { installExtensions } from './installExtensions';
 import { initialize, enable } from '@electron/remote/main';
 import url from 'url';
+import MenuBuilder from './menu';
 
 // const isDev = false;
 const basePath = isDev ? __dirname : app.getAppPath();
@@ -53,6 +54,8 @@ function createWindow() {
   mainWindow.on('closed', () => {
     mainWindow = null;
   });
+  const menuBuilder = new MenuBuilder(mainWindow);
+  menuBuilder.buildMenu();
 }
 
 app.on('ready', createWindow);

@@ -1,4 +1,4 @@
-import produce from 'immer';
+import { produce } from 'immer';
 import { AppAction } from './app.action';
 import {
   ADD_NODE, DELETE_NODE,

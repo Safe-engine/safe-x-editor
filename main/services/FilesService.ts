@@ -36,21 +36,19 @@ export const defaultExclude = [
 export const getFilesInFolder = ({ src, excludes = [] }) => {
   const packageJson = path.join(src, 'package.json');
   if (!fs.existsSync(packageJson)) {
-    return sendError('No package.json.');
+    throw Error('No package.json.');
   }
-  const tsConfigFile = path.join(src, 'tsconfig.json');
-  global.isTSproject = fs.existsSync(tsConfigFile);
-  const content = fs.readFileSync(packageJson);
-  if (!content.includes(`"react"`)) {
-    return sendError('Not React project.');
+  const content = fs.readFileSync(packageJson, 'utf-8');
+  if (!content.includes("safe-x")) {
+    throw Error('Not Safex project.');
   }
-  const components = DirectoryTree(src, {
+  const components = DirectoryTree(path.join(src, 'src'), {
     extensions: /\.(j|t)sx?$/,
     exclude: [...defaultExclude, ...excludes, /\/public/],
     attributes: ['type', 'extension'],
   });
   const images: any = DirectoryTree(
-    src,
+    path.join(src, 'res'),
     {
       extensions: /\.(gif|jpe?g|tiff?|png|webp|bmp)$/i,
       exclude: [...defaultExclude, ...excludes, /\/src/],
@@ -60,13 +58,13 @@ export const getFilesInFolder = ({ src, excludes = [] }) => {
       const { width, height } = sizeOf(path);
       item.width = width;
       item.height = height;
-    }
+    },
   );
   // console.log('imagesData', JSON.stringify(images, null, 2));
   // console.log('treeNodeUtils', treeNodeUtils.filterNodes([tree], filterTreeFunction));
   return {
-    components: getTreeData(filterTree([components])),
-    images: getTreeData(filterImages([images])),
+    src: getTreeData(filterTree([components])),
+    res: getTreeData(filterImages([images])),
   };
 };
 

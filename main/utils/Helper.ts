@@ -42,7 +42,7 @@ function filterTreeFunction(currentNode: DirectoryTree) {
   }
   // !FIXME: check is react component?
   const content = fs.readFileSync(path);
-  if (content.indexOf('React') !== -1 && content.indexOf('export default') !== -1) {
+  if (content.indexOf('ComponentX') !== -1 && content.indexOf('export default') !== -1) {
     return true;
   }
   return false;

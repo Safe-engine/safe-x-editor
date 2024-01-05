@@ -1,7 +1,7 @@
 import { Allotment } from 'allotment'
 import { useEffect } from 'react'
 
-import 'allotment/dist/style.css'
+// import 'allotment/dist/style.css'
 import AssetsPanel from '../container/AssetsPanel'
 import ConsolePanel from '../container/ConsolePanel'
 import NodeTree from '../container/NodeTree'

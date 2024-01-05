@@ -1,4 +1,5 @@
-import { app, Menu, shell } from 'electron';
+import { app, Menu, shell, dialog, ipcMain } from 'electron';
+import { getFilesInFolder } from './services/FilesService';
 
 export default class MenuBuilder {
   mainWindow;
@@ -223,6 +224,16 @@ export default class MenuBuilder {
           {
             label: '&Open',
             accelerator: 'Ctrl+O',
+            click: () => {
+              const [root] = dialog.showOpenDialogSync(this.mainWindow, {
+                title: 'Select project folder.',
+                properties: ['openDirectory']
+              });
+              const files = getFilesInFolder({ src: root })
+              // console.log(files)
+              this.mainWindow.webContents.send('GET_FOLDER_FILES', files);
+              // ipcMain.emit('GET_FOLDER_FILES', files)
+            }
           },
           {
             label: '&Close',

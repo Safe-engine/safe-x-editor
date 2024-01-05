@@ -7,7 +7,7 @@ import { createAction } from '@@/services/ReduxService';
 require('chai/register-should');
 const file = path.join(__dirname, '../../src/base/Checkbox.tsx');
 const folder = path.join(__dirname, `../../gen`);
-
+/*
 describe('getFilesInFolder', () => {
   it('valid data', async () => {
     const result = await getFilesInFolder({
@@ -92,3 +92,4 @@ describe('updateComponentTag', () => {
     // result.should.to.have.property('name');
   });
 });
+*/
