@@ -20,8 +20,8 @@ describe('getFilesInFolder', () => {
 */
 async function start() {
   const result = await loadComponent({ path: file });
-  console.log(result);
-  updateComponentPropTypes({ propsData: result.propTypes, filePath: file })
+  console.log(result.treeData.items[0]);
+  // updateComponentPropTypes({ propsData: result.propTypes, filePath: file })
 }
 start()
 /*

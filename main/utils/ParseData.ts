@@ -51,20 +51,19 @@ function getNodeName(className) {
   return element;
 }
 
-const getTreeData = (root, svgList, fileOrigin = '', depth = 0, index = 0) => {
+const parseTreeData = (root, fileOrigin = '', depth = 0, index = 0) => {
   const {
     openingElement, children = [],
     type, value, range = []
   } = root;
   const [start, end] = range;
-  // console.log('getTreeData', root);
+  // console.log('parseTreeData', root);
   const key = `${depth}-${index}-${Math.random()}`;
   if (type === 'JSXText') { return { name: value.trim(), key }; }
   if (type === 'JSXExpressionContainer') {
     return { name: fileOrigin.substring(start, end), key };
   }
   const tag = get(openingElement, 'name.name');
-  const svgData = svgList[tag];
   const props: any = getAttributeProps(openingElement, fileOrigin);
   const { className = '' } = props;
   const name = getNodeName(className);
@@ -76,8 +75,7 @@ const getTreeData = (root, svgList, fileOrigin = '', depth = 0, index = 0) => {
     tag,
     props,
     name,
-    svgData,
-    items: filteredChildren.map((child, index) => getTreeData(child, svgList, fileOrigin, depth + 1, index)),
+    items: filteredChildren.map((child, index) => parseTreeData(child, fileOrigin, depth + 1, index)),
   };
 };
 
@@ -163,35 +161,13 @@ function getPropType(parsed, exportedName) {
 }
 
 export const convertComponentData = async (parsed, filePath, fileOrigin) => {
-  const blocks = reverse(parsed.body);
-  const svgBlocks = blocks.filter(block => get(block, 'source.value', '').endsWith('.svg'));
-  const svgList = {};
-  const sourceFolder = path.dirname(filePath);
   const exportedName = path.basename(filePath).split('.')[0];
-  svgBlocks.forEach(svgBlock => {
-    const name = get(svgBlock, 'specifiers[0].local.name');
-    const importPath = get(svgBlock, 'source.value', '');
-    const location = path.resolve(sourceFolder, resolveAlias(importPath));
-    const data = loadSvgFromFile(location).body[0].expression;
-    svgList[name] = data;
-  });
-  const scssBlocks = blocks.filter(block => get(block, 'source.value', '').endsWith('.scss'));
-  const scss = await Promise.all(scssBlocks.map(async block => {
-    const location = path.resolve(sourceFolder, get(block, 'source.value', ''));
-    const data = await loadScssFromFile(location); // .css.toString();
-    return data;
-  }));
-  const css = scss.join('\n');
   // console.log('exportedName', exportedName);
   const jsxBlock = getJSXBlock(parsed);
-  const treeData = getTreeData(jsxBlock, svgList, fileOrigin);
-  const propTypes = getPropType(parsed, exportedName);
-
+  const treeData = parseTreeData(jsxBlock, fileOrigin);
   return {
-    css,
     name: exportedName,
     treeData,
-    propTypes,
   };
 };
 

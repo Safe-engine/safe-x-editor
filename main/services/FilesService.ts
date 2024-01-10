@@ -10,6 +10,7 @@ import dir from 'node-dir';
 import path from 'path';
 import rimraf from 'rimraf';
 import sizeOf from 'image-size';
+import { getClassesMetaData } from '@@/parser/metadata';
 
 // const logFolder = app.getPath('logs');
 // const genFolder = pathUtil.join(logFolder, 'gen');
@@ -42,6 +43,7 @@ export const getFilesInFolder = ({ src, excludes = [] }) => {
   if (!content.includes("safe-x")) {
     throw Error('Not Safex project.');
   }
+  getClassesMetaData(src)
   const components = DirectoryTree(path.join(src, 'src'), {
     extensions: /\.(j|t)sx?$/,
     exclude: [...defaultExclude, ...excludes, /\/public/],
