@@ -3,8 +3,8 @@ import { Dispatch } from 'react';
 import { CREATE_ACTION, CREATE_NEW_ACTION, GEN_CLASS_NAME_REQUEST, GEN_PROP_TYPES_REQUEST, GET_FOLDER_FILES, LOAD_COMPONENT_REQUEST, NEW_COMPONENT, NEW_PAGE, RE_NAME_COMPONENT } from 'shared/constant.message';
 import { AppAction } from './app.action';
 import { EXECUTE_COMMAND, GEN_CLASS_NAME, GEN_PROP_TYPES, GET_FILES, GET_FILES_SUCCESS, LOAD_COMPONENT, LOAD_COMPONENT_SUCCESS } from './app.constant';
-import { sendRequest } from '../containers/App/app.ipc';
 import { toast } from 'react-hot-toast';
+import { sendRequest } from 'app/app.ipc';
 
 export type MiddlewareKey = AppAction['type'];
 

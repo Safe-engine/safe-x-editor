@@ -8,8 +8,6 @@ import NodeTree from '../container/NodeTree'
 import PropertiesPanel from '../container/PropertiesPanel'
 import SceneView from '../container/SceneView'
 import './globals.css'
-import '../../node_modules/devextreme/dist/css/dx.light.css';
-import '../../node_modules/allotment/dist/style.css';
 
 export function App() {
   useEffect(() => {
