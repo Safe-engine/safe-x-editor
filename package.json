@@ -12,7 +12,7 @@
     "package": "electron-builder build --mac --publish never",
     "dev": "npx webpack --config ./webpack.config.dev.js --watch",
     "build-main": "npx webpack --config ./webpack.config.prod.js",
-    "test": "ts-mocha --paths -p ./main/tsconfig.json ./main/test/**/*.spec.ts",
+    "test": "tsx --tsconfig ./main/tsconfig.json ./main/test/file.spec.ts",
     "start": "parcel -p 8585"
   },
   "keywords": [
@@ -84,6 +84,7 @@
     "tailwindcss": "^3.3.5",
     "ts-loader": "^9.5.1",
     "tsconfig-paths-webpack-plugin": "^4.1.0",
+    "tsx": "^4.7.0",
     "typescript": "^5.2.2",
     "webpack": "^5.89.0",
     "webpack-cli": "^5.1.4",

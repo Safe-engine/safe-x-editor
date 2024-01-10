@@ -4,8 +4,8 @@ import { defaultExclude, getFilesInFolder } from '@@/services/FilesService';
 import { loadComponent, updateComponentPropTypes, updateComponentTag } from '@@/services/ComponentService';
 import { createAction } from '@@/services/ReduxService';
 
-require('chai/register-should');
-const file = path.join(__dirname, '../../src/base/Checkbox.tsx');
+// require('chai/register-should');
+const file = path.join(__dirname, '../../../../axmol/googselement/src/components/UpgradeDialog.tsx');
 const folder = path.join(__dirname, `../../gen`);
 /*
 describe('getFilesInFolder', () => {
@@ -17,15 +17,14 @@ describe('getFilesInFolder', () => {
     console.log(result);
   });
 });
-
-describe('loadComponent', () => {
-  it('valid data', async () => {
-    const result = await loadComponent({ path: file });
-    console.log(result);
-    updateComponentPropTypes({ propsData: result.propTypes, filePath: file })
-  });
-});
-
+*/
+async function start() {
+  const result = await loadComponent({ path: file });
+  console.log(result);
+  updateComponentPropTypes({ propsData: result.propTypes, filePath: file })
+}
+start()
+/*
 const deleteFile = (name: string) => {
   const file = path.join(folder, `${name}.ts`);
   if (fs.existsSync(file)) {
