@@ -10,6 +10,7 @@ import { loadSvgFromFile, loadScssFromFile } from './FileParser';
 import { traverse } from 'estraverse';
 import { getPropsType } from './Helper';
 import findIndex from 'lodash/findIndex';
+import { parseValue } from '@@/parser/ast';
 
 export function fallback(node) {
   // console.log(node.type, 'fallback')
@@ -35,7 +36,16 @@ const getAttributeProps = (openingElement, fileOrigin) => {
   openingElement.attributes.forEach(att => {
     const [start, end] = att.range;
     const [key, value] = fileOrigin.substring(start, end).split('=');
-    props[key] = getPropValue(value);
+    if (key === 'node') {
+      console.log(att);
+      const { properties } = att.value.expression
+      props[key] = {}
+      properties.forEach(p => {
+        props[key][p.key.name] = parseValue(p.value);
+      })
+    } else {
+      props[key] = getPropValue(value);
+    }
     // console.log(props[key])
   });
   return props;
@@ -65,16 +75,14 @@ const parseTreeData = (root, fileOrigin = '', depth = 0, index = 0) => {
   }
   const tag = get(openingElement, 'name.name');
   const props: any = getAttributeProps(openingElement, fileOrigin);
-  const { className = '' } = props;
-  const name = getNodeName(className);
-  delete props.className;
+  const { node } = props;
   const filteredChildren = children.filter(child => (typeof child.value !== 'string') || !!child.value.trim());
   return {
     key,
     expanded: true,
     tag,
     props,
-    name,
+    node,
     items: filteredChildren.map((child, index) => parseTreeData(child, fileOrigin, depth + 1, index)),
   };
 };

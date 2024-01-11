@@ -21,11 +21,12 @@ describe('getFilesInFolder', () => {
 */
 async function start() {
   const result = await loadComponent({ path: file });
+  console.log(result.treeData);
   console.log(result.treeData.items[0]);
   // updateComponentPropTypes({ propsData: result.propTypes, filePath: file })
 }
-// start()
-getClassesMetaData(componentDir)
+start()
+// getClassesMetaData(componentDir)
 /*
 const deleteFile = (name: string) => {
   const file = path.join(folder, `${name}.ts`);

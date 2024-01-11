@@ -1,3 +1,5 @@
+import { renderMustacheFile } from "@@/helper/string.util";
+import { parseValue } from "./ast";
 import { renderComMapCpp, typesMap } from "./constants";
 import { GlobalData } from "./global";
 
@@ -78,4 +80,16 @@ function getObjectType(obj, isPointer = false) {
 export function getTypeAnnotation(typeObj, isPointer = false) {
   if (!typeObj) { return 'auto'; }
   return getObjectType(typeObj.typeAnnotation, isPointer);
+}
+
+export function propertiesToParams(componentName, properties) {
+  const template = GlobalData.templatesMap[componentName]
+  if (!template) { return '' }
+  const props = GlobalData.componentsMap[componentName]
+  properties.map(({ key, value }) => {
+    const attName = key.name
+    if (attName === 'node') return
+    props[attName] = parseValue(value)
+  })
+  return renderMustacheFile(template, props)
 }
