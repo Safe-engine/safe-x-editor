@@ -56,10 +56,11 @@ export default function AssetsPanel() {
     }
   }
   useEffect(() => {
-    ipcRenderer.on(GET_FOLDER_FILES, (event, data) => {
+    function getFilesCB(event, data) {
       console.log('GET_FOLDER_FILES', data)
       setTreeData(data);
-    });
+    }
+    ipcRenderer.on(GET_FOLDER_FILES, getFilesCB);
     // event.event is the event name (useful if you want to use a single callback fn for multiple event types)
     // event.payload is the payload object
     // const selectedProject = await selectFolder()
@@ -74,6 +75,9 @@ export default function AssetsPanel() {
     //   setTreeData(entries)
     // }
     // }
+    return () => {
+      ipcRenderer.removeListener(GET_FOLDER_FILES, getFilesCB)
+    }
   }, [])
 
   function onItemClick(event) {

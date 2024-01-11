@@ -22,7 +22,7 @@ describe('getFilesInFolder', () => {
 async function start() {
   const result = await loadComponent({ path: file });
   console.log(result.treeData);
-  console.log(result.treeData.items[0]);
+  console.log(result.treeData.items[6]);
   // updateComponentPropTypes({ propsData: result.propTypes, filePath: file })
 }
 start()

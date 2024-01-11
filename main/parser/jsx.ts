@@ -3,14 +3,9 @@ import { renderMustacheFile } from "../helper/string.util";
 import { createSetter } from "../helper/utils";
 import { GlobalData } from "./global";
 import { parseValue } from "./ast";
+import { collidersCompList, noRenderList } from "@@/utils/constants";
 
-const collidersCompList = ['BoxCollider', 'CircleCollider', 'PolygonCollider']
-const noRenderList = [
-  ...collidersCompList,
-  'BlockInputEventsComp',
-  'ButtonComp', 'RigidBody', 'Collider',
-  'ExtraDataComp', 'TouchEventRegister', 'EventRegister',
-];
+
 
 function isNoRender(name) {
   return [...GlobalData.customNoRenderComponents, ...noRenderList].includes(name);
@@ -36,7 +31,7 @@ function parseAttribute(value, componentVar, prop) {
 function attributesToParams(componentName, attributes) {
   const template = GlobalData.templatesMap[componentName]
   if (!template) { return '' }
-  const props = { ...GlobalData.defaultPropsMap[componentName] }
+  const props = { ...GlobalData.componentsMap[componentName] }
   // console.log(GlobalData.defaultPropsMap)
   attributes.map(({ name, value }) => {
     const attName = name.name
@@ -121,9 +116,6 @@ export function praseJSXElement(jsx) {
     })
   }
   parseJSX(rootTag, children, attributes)
-  if (GlobalData.hasStartMap[GlobalData.currentClassName]) {
-    refs += `\n${classVar}->start();`
-  }
   ret += `${refs}\nreturn ${classVar};`
   // console.log(GlobalData.currentClassName, ret.length)
   return ret.replace('\n', '')

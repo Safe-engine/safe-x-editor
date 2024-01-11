@@ -11,6 +11,7 @@ import { traverse } from 'estraverse';
 import { getPropsType } from './Helper';
 import findIndex from 'lodash/findIndex';
 import { parseValue } from '@@/parser/ast';
+import { noRenderList } from './constants';
 
 export function fallback(node) {
   // console.log(node.type, 'fallback')
@@ -75,13 +76,22 @@ const parseTreeData = (root, fileOrigin = '', depth = 0, index = 0) => {
   }
   const tag = get(openingElement, 'name.name');
   const props: any = getAttributeProps(openingElement, fileOrigin);
-  const { node } = props;
-  const filteredChildren = children.filter(child => (typeof child.value !== 'string') || !!child.value.trim());
+  const { node, ...rest } = props;
+  const components = {}
+  const filteredChildren = children.filter(child => {
+    const childTag = get(child.openingElement, 'name.name');
+    if (noRenderList.includes(childTag)) {
+      components[childTag] = getAttributeProps(child.openingElement, fileOrigin)
+      return false
+    }
+    return (typeof child.value !== 'string') || !!child.value.trim()
+  });
   return {
     key,
     expanded: true,
     tag,
-    props,
+    props: rest,
+    components,
     node,
     items: filteredChildren.map((child, index) => parseTreeData(child, fileOrigin, depth + 1, index)),
   };
