@@ -1,4 +1,4 @@
-export declare interface DevExtremeTree {
+interface DevExtremeTree {
   id?: string;
   key: string;
   name: string;

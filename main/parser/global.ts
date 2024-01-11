@@ -28,7 +28,7 @@ export class GlobalData {
     ScrollViewComp: '{{viewSize}}, {{contentSize}}, {{bounceEnabled}}',
     ParticleComp: '{{plistFile}}',
   };
-  static defaultPropsMap: { [key: string]: any } = {
+  static componentsMap: { [key: string]: any } = {
     SpineSkeleton: { loop: true, atlas: '""' },
     Collider: { offset: 'Vec2(0, 0)', group: 0 },
     BoxCollider: { height: 0, width: 0 },
@@ -36,20 +36,4 @@ export class GlobalData {
     ProgressTimerComp: { fillType: 'FillType::HORIZONTAL', fillRange: 1, fillCenter: 'Vec2(0, 0)', isReverse: false },
     ScrollViewComp: { bounceEnabled: true },
   };
-  static hasStartMap: { [key: string]: boolean } = {};
-}
-
-let assetsList = {};
-export const customCompList = {};
-
-export function getAssets() {
-  return Object.values(assetsList);
-}
-
-export function pushAssets(uuid, item) {
-  return assetsList[uuid] = item;
-}
-
-export function resetAssets() {
-  return assetsList = {};
 }

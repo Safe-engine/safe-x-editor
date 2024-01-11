@@ -2,11 +2,12 @@ import path from 'path';
 import fs from 'fs';
 import { defaultExclude, getFilesInFolder } from '@@/services/FilesService';
 import { loadComponent, updateComponentPropTypes, updateComponentTag } from '@@/services/ComponentService';
-import { createAction } from '@@/services/ReduxService';
+import { getClassesMetaData } from '@@/parser/metadata';
 
 // require('chai/register-should');
 const file = path.join(__dirname, '../../../../axmol/googselement/src/components/UpgradeDialog.tsx');
 const folder = path.join(__dirname, `../../gen`);
+const componentDir = path.join(__dirname, '../../../../axmol/googselement/src/components');
 /*
 describe('getFilesInFolder', () => {
   it('valid data', async () => {
@@ -23,7 +24,8 @@ async function start() {
   console.log(result.treeData.items[0]);
   // updateComponentPropTypes({ propsData: result.propTypes, filePath: file })
 }
-start()
+// start()
+getClassesMetaData(componentDir)
 /*
 const deleteFile = (name: string) => {
   const file = path.join(folder, `${name}.ts`);

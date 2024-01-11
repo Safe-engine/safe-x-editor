@@ -4,6 +4,8 @@ import { join } from "path";
 import { parseFile } from "../transform/index";
 import { GlobalData } from "./global";
 import { getTypeAnnotation } from "./helper";
+import { writeFileSync } from "fs";
+import { genFolder } from "@@/services/ComponentService";
 
 function parseValue(className) {
   console.log('parseValue className', className);
@@ -33,21 +35,16 @@ export async function getClassesMetaData(srcDir: string, idDebug = false) {
               const { key, value } = d
               const { name } = key as any
               const { params } = value as any
+              GlobalData.componentsMap[className] = { properties: {}, method: {} }
               if (name === 'create' && params.length) {
                 params.forEach(p => {
                   const { properties } = p
-                  GlobalData.defaultPropsMap[className] = {}
-                  GlobalData.templatesMap[className] = properties.map(p => {
+                  GlobalData.componentsMap[className] = properties.map(p => {
                     const { key, value } = p
-                    if (value.name !== key.name) {
-                      GlobalData.defaultPropsMap[className][key.name] = parseValue(value)
-                    }
-                    return `{{${key.name}}}`
-                  }).join(', ')
+                    return { name: key.name, value: parseValue(value) }
+                  })
                 })
                 // log(GlobalData.defaultPropsMap)
-              } else if ('start' === name) {
-                GlobalData.hasStartMap[className] = true
               }
             }
           })
@@ -64,4 +61,6 @@ export async function getClassesMetaData(srcDir: string, idDebug = false) {
       fallback: 'iteration'
     });
   }
+  const logOutput = join(genFolder, 'components.global.json');
+  writeFileSync(logOutput, JSON.stringify(GlobalData.componentsMap, null, 2));
 }

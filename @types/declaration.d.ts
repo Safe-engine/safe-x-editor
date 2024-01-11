@@ -1,1 +1,10 @@
 declare module '@typescript-eslint/typescript-estree';
+interface DevExtremeTree {
+  id?: string;
+  key: string;
+  name: string;
+  icon?: string;
+  isDirectory: boolean;
+  expanded: boolean;
+  items?: DevExtremeTree[];
+}

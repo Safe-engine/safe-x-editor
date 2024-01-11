@@ -15,6 +15,10 @@
       "dom",
       "dom.iterable"
     ],
+    "typeRoots": [
+      "@types",
+      "node_modules/@types"
+    ],
     "strict": false,
     "module": "NodeNext",
     "moduleResolution": "NodeNext",

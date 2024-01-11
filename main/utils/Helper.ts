@@ -2,7 +2,6 @@ import Tree, { TreeNode } from '@colin-luo/tree';
 import fs from 'fs';
 import pathUtil from 'path';
 import { DirectoryTree } from 'directory-tree';
-import { DevExtremeTree } from '@@/types';
 
 export const getTreeData = (treeData: any[]) => {
   const tree = new Tree(treeData, 'path', 'children');
