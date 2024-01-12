@@ -1,3 +1,4 @@
+import { GreenButton } from 'base/Button';
 import FileChooser from 'base/FileChooser';
 import AddNewStateDialog from 'components/AddNewStateDialog';
 import ConfirmDeleteDialog from 'components/ConfirmDeleteDialog';
@@ -198,23 +199,22 @@ export default function PropertiesPanel() {
           target='#hierarchyFiles .dx-treeview-item'
           onItemClick={contextMenuItemClick} /> */}
         <div className='w-full border border-orange-200 bg-gray-100'>
-          <div className='py-2 text-orange-800 text-lg font-bold text-center border-cool-gray-300 border-b'>Prop types</div>
+          <div className='py-2 text-orange-800 text-lg font-bold text-center border-cool-gray-300 border-b'>Components</div>
           {Object.entries(componentPropTypes)
             .map(([name, value]) => {
               return <PropDisplay name={name} data={value} onChangePropData={onChangePropData} key={name} />;
             })}
-          <div className='fixed bottom-0 flex justify-around px-4'>
+          <div className='fixed bottom-0 flex justify-around px-4 w-[300px]'>
             <CheckBox text='Auto save'
               value={isAutoSave}
               onValueChange={onChangeAutoSave}></CheckBox>
             {!isAutoSave &&
-              <Button
-                className='ml-36 mr-auto'
-                text={`Save ${isChangeState ? '*' : ''}`}
-                stylingMode='contained'
-                type='success'
+              <GreenButton
+                className=''
                 onClick={onClickGenPropTypes}
-              />
+              >
+                {`Save ${isChangeState ? '*' : ''}`}
+              </GreenButton>
             }
           </div>
         </div>

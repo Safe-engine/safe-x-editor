@@ -44,9 +44,9 @@ const reducer = (state: AppState = initialState, action: AppAction) => produce(s
 
     case LOAD_COMPONENT_SUCCESS:
       // eslint-disable-next-line react/forbid-foreign-prop-types
-      const { treeData, propTypes } = action.data;
+      const { treeData, props } = action.data;
       draft.componentTree = [treeData];
-      draft.componentPropTypes = propTypes;
+      draft.componentPropTypes = treeData.props;
       draft.editingClassNamePath = treeData.key;
       break;
 
@@ -112,7 +112,7 @@ const reducer = (state: AppState = initialState, action: AppAction) => produce(s
 
     case UPDATE_TEXT_TAG: {
       const { text } = action;
-      let tree = new Tree(draft.componentTree, 'key', 'items');
+      const tree = new Tree(draft.componentTree, 'key', 'items');
       const node = tree.getNode(draft.editingPath);
       node.name = text;
       break;
@@ -121,12 +121,16 @@ const reducer = (state: AppState = initialState, action: AppAction) => produce(s
     case SELECT_EDITING_TAG_CLASS: {
       const { path } = action;
       draft.editingClassNamePath = path;
+      const tree = new Tree(draft.componentTree, 'key', 'items');
+      const node = tree.getNode(draft.editingClassNamePath);
+      if (node && node.props)
+        draft.componentPropTypes = node.props;
       break;
     }
 
     case UPDATE_EDITING_TAG_CLASS: {
       const { updatedClassName } = action;
-      let tree = new Tree(draft.componentTree, 'key', 'items');
+      const tree = new Tree(draft.componentTree, 'key', 'items');
       const node = tree.getNode(draft.editingClassNamePath);
       node.name = updatedClassName;
       break;

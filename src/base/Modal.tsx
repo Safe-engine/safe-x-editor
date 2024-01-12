@@ -1,8 +1,7 @@
 import PropTypes from 'prop-types';
 import { Dialog, Transition } from '@headlessui/react';
 import { Fragment, useEffect } from 'react';
-import React from 'react';
-import { X } from '@heroicons/react/24/solid';
+import { XCircleIcon } from '@heroicons/react/24/solid';
 
 function Modal({ children, onClose, isOpen, title }) {
 
@@ -62,7 +61,7 @@ function Modal({ children, onClose, isOpen, title }) {
               {title}
             </Dialog.Title>
             <div className='absolute right-1 top-1 z-50 cursor-pointer' onClick={onClose}>
-              <X className='w-8 h-8 text-gray-600' />
+              <XCircleIcon className='w-8 h-8 text-gray-600' />
             </div>
             {children}
           </div>

@@ -32,12 +32,12 @@ function PropDisplay({
         selected={type}
         setSelected={onSelectType} />
     </div>
-    <div className='my-auto flex'>
+    {/* <div className='my-auto flex'>
       <Checkbox checked={isRequired}
         name='isRequired'
         onChange={onChangeRequired} />
       <div className='ml-1 text-red-500'>isRequired</div>
-    </div>
+    </div> */}
   </div>;
 }
 
