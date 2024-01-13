@@ -111,3 +111,8 @@ export const selectEditingClassName = createSelector(
     return node ? classNameToObject(node.name) : {};
   }
 );
+
+export const selectSelectedNode = createSelector(
+  selectApp,
+  (appState) => appState.selectedNode
+);

@@ -10,9 +10,9 @@ function FormControlLabel({
   control,
   label,
 }: Props) {
-  return <Label className="mx-1 my-auto cursor-pointer">
+  return <Label className="my-auto cursor-pointer flex">
+    <span className="ml-1 my-auto">{label}</span>
     {control}
-    <span className="ml-2 my-auto">{label}</span>
   </Label>
 }
 

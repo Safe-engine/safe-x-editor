@@ -25,6 +25,7 @@ import { addNode, genPropTypes, updatePropType } from 'states/app.action';
 import { GET_FILES, LOAD_COMPONENT, TOGGLE_FOLDER } from 'states/app.constant';
 import { AppContext } from 'states/app.context';
 import { selectPropTypes, selectRightData, selectRootFolder, selectSelectedFilePath } from 'states/app.selectors';
+import NodeProps from './NodeProps';
 
 export default function PropertiesPanel() {
   const { appDispatch: dispatch, useSelector } = useContext(AppContext);
@@ -204,6 +205,7 @@ export default function PropertiesPanel() {
             .map(([name, value]) => {
               return <PropDisplay name={name} data={value} onChangePropData={onChangePropData} key={name} />;
             })}
+          <NodeProps />
           <div className='fixed bottom-0 flex justify-around px-4 w-[300px]'>
             <CheckBox text='Auto save'
               value={isAutoSave}

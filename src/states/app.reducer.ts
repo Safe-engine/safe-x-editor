@@ -22,6 +22,7 @@ export const initialState = {
   images: [],
   settings: {},
   componentPropTypes: {},
+  selectedNode: {}
 };
 
 export type AppState = typeof initialState;
@@ -123,8 +124,10 @@ const reducer = (state: AppState = initialState, action: AppAction) => produce(s
       draft.editingClassNamePath = path;
       const tree = new Tree(draft.componentTree, 'key', 'items');
       const node = tree.getNode(draft.editingClassNamePath);
-      if (node && node.props)
+      if (node && node.props) {
         draft.componentPropTypes = node.props;
+        draft.selectedNode = node
+      }
       break;
     }
 
