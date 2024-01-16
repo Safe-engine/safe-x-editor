@@ -1,0 +1,21 @@
+import { SpriteSourceAssets } from '../src/assets'
+import { loadAssets } from '../src/binding/loader'
+import { ComponentX, ProgressTimerComp, SceneComponent, SpriteRender } from '../src/lib/safex'
+
+export class EditingScene extends ComponentX {
+  start() {
+    loadAssets(this.onProgress.bind(this))
+  }
+
+  onProgress(p: number) {
+  }
+
+  static create(): EditingScene {
+{{initParams}}
+    return (
+      <SceneComponent>
+        {{sceneGraph}}
+      </SceneComponent>
+    )
+  }
+}
