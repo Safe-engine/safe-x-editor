@@ -47,6 +47,9 @@ module.exports = {
   resolve: {
     extensions: ['.ts', '.js'],
     plugins: [PathsPlugin],
+    alias: {
+      'handlebars': 'handlebars/dist/handlebars.js'
+    },
   },
   mode: 'development',
 }
