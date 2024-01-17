@@ -23,8 +23,8 @@ import {
   UPDATE_PROP_TYPE,
   UPDATE_TEXT_TAG,
   SELECT_EDITING_TEXT,
-  SELECT_EDITING_TAG_CLASS,
-  UPDATE_EDITING_TAG_CLASS,
+  SELECT_EDITING_TAG_NODE,
+  UPDATE_EDITING_COMPONENT,
 } from './app.constant';
 
 /**
@@ -130,21 +130,22 @@ export function selectEditingText(path: string): {
   };
 }
 
-export function selectEditingTagClass(path: string): {
-  type: typeof SELECT_EDITING_TAG_CLASS, path: string
+export function selectEditingTagNode(path: string): {
+  type: typeof SELECT_EDITING_TAG_NODE, path: string
 } {
   return {
-    type: SELECT_EDITING_TAG_CLASS,
+    type: SELECT_EDITING_TAG_NODE,
     path,
   };
 }
 
-export function updateEditingTagClass(updatedClassName: string): {
-  type: typeof UPDATE_EDITING_TAG_CLASS, updatedClassName: string
+export function updateEditingComponent(component: string, updated: any): {
+  type: typeof UPDATE_EDITING_COMPONENT, component: string, updated: any
 } {
   return {
-    type: UPDATE_EDITING_TAG_CLASS,
-    updatedClassName,
+    type: UPDATE_EDITING_COMPONENT,
+    component,
+    updated,
   };
 }
 
@@ -296,5 +297,5 @@ export type AppAction = ReturnType<typeof changeComponentName>
   | ReturnType<typeof toggleFolder>
   | ReturnType<typeof updateTextTag>
   | ReturnType<typeof selectEditingText>
-  | ReturnType<typeof selectEditingTagClass>
-  | ReturnType<typeof updateEditingTagClass>;
+  | ReturnType<typeof selectEditingTagNode>
+  | ReturnType<typeof updateEditingComponent>;

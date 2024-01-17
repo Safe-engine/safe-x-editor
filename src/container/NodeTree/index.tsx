@@ -9,7 +9,7 @@ import { contextMenuItems } from '../../data/dataContextMenu';
 import CheckBox from 'devextreme-react/check-box';
 import {
   addNode, deleteNode,
-  duplicateNode, genComponent, selectEditingTagClass, selectEditingText
+  duplicateNode, genComponent, selectEditingTagNode, selectEditingText
 } from 'states/app.action';
 import {
   ADD_DIV, ADD_TEXT_NODE,
@@ -69,7 +69,7 @@ export default function NodeTree() {
     if (!event.itemData.tag) {
       dispatch(selectEditingText(event.node.key));
     } else {
-      dispatch(selectEditingTagClass(event.node.key));
+      dispatch(selectEditingTagNode(event.node.key));
     }
   }
 
@@ -171,13 +171,13 @@ export default function NodeTree() {
         width={200}
         target='#hierarchyComponent .dx-treeview-item'
         onItemClick={contextMenuItemClick} />
-      <div className='fixed bottom-0 flex justify-around px-4 w-[300px]'>
+      <div className='fixed bottom-0 flex justify-around w-[300px]'>
         <CheckBox text='Auto save'
           value={isAutoSave}
           onValueChange={onChangeAutoSave}></CheckBox>
         {!isAutoSave &&
           <Button
-            className='ml-36 mr-auto'
+            className=''
             text={`Save ${isChangeState ? '*' : ''}`}
             stylingMode='contained'
             type='danger'

@@ -3,7 +3,7 @@ import { AppAction } from './app.action';
 import {
   ADD_NODE, DELETE_NODE,
   DUPLICATE_NODE, GET_FILES, GET_FILES_SUCCESS,
-  LOAD_COMPONENT, LOAD_COMPONENT_SUCCESS, SELECT_EDITING_TAG_CLASS, SELECT_EDITING_TEXT, TOGGLE_FOLDER, UPDATE_EDITING_TAG_CLASS, UPDATE_PROP_TYPE, UPDATE_TEXT_TAG
+  LOAD_COMPONENT, LOAD_COMPONENT_SUCCESS, SELECT_EDITING_TAG_NODE, SELECT_EDITING_TEXT, TOGGLE_FOLDER, UPDATE_EDITING_COMPONENT, UPDATE_PROP_TYPE, UPDATE_TEXT_TAG
 } from './app.constant';
 import Tree from '@colin-luo/tree';
 import { fixKeys } from 'helper/utils';
@@ -119,7 +119,7 @@ const reducer = (state: AppState = initialState, action: AppAction) => produce(s
       break;
     }
 
-    case SELECT_EDITING_TAG_CLASS: {
+    case SELECT_EDITING_TAG_NODE: {
       const { path } = action;
       draft.editingClassNamePath = path;
       const tree = new Tree(draft.componentTree, 'key', 'items');
@@ -131,11 +131,11 @@ const reducer = (state: AppState = initialState, action: AppAction) => produce(s
       break;
     }
 
-    case UPDATE_EDITING_TAG_CLASS: {
-      const { updatedClassName } = action;
+    case UPDATE_EDITING_COMPONENT: {
+      const { component, updated } = action;
       const tree = new Tree(draft.componentTree, 'key', 'items');
       const node = tree.getNode(draft.editingClassNamePath);
-      node.name = updatedClassName;
+      node[component] = updated;
       break;
     }
   }

@@ -105,7 +105,7 @@ export default function PropertiesPanel() {
               return <PropDisplay name={name} data={value} onChangePropData={onChangePropData} key={name} />;
             })}
           <NodeProps />
-          <div className='fixed bottom-0 flex justify-around px-4 w-[300px]'>
+          {/* <div className='fixed bottom-0 flex justify-around px-4 w-[300px]'>
             <CheckBox text='Auto save'
               value={isAutoSave}
               onValueChange={onChangeAutoSave}></CheckBox>
@@ -117,7 +117,7 @@ export default function PropertiesPanel() {
                 {`Save ${isChangeState ? '*' : ''}`}
               </GreenButton>
             }
-          </div>
+          </div> */}
         </div>
       </div>
 

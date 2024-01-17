@@ -101,14 +101,14 @@ export const selectSelectedEditingClassNamePath = createSelector(
   (appState) => appState.editingClassNamePath
 );
 
-export const selectEditingClassName = createSelector(
+export const selectEditingComponent = createSelector(
   selectComponentTree,
   selectSelectedEditingClassNamePath,
   (componentTree, editingClassNamePath) => {
     let tree = new Tree(componentTree, 'key', 'items');
     const node = tree.getNode(editingClassNamePath);
     // console.log('name', editingClassNamePath, node?.name);
-    return node ? classNameToObject(node.name) : {};
+    return node;
   }
 );
 

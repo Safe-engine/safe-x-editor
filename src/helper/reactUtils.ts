@@ -83,3 +83,11 @@ export function classNameToObject(name = '') {
 export function objectToClassName(obj) {
   return Object.values(obj).join(' ');
 }
+
+export const handleChange = (setter) => (evt) => {
+  setter(evt.target.value);
+};
+
+export const handleCheck = (setter) => (evt) => {
+  setter(evt.target.checked);
+};

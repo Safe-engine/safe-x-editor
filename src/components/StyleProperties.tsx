@@ -1,7 +1,7 @@
 import React, { useContext, useState } from 'react';
 import { AppContext } from 'states/app.context';
-import { selectComponentTree, selectEditingClassName, selectSelectedFilePath } from 'states/app.selectors';
-import { genComponent, updateEditingTagClass } from 'states/app.action';
+import { selectComponentTree, selectEditingComponent, selectSelectedFilePath } from 'states/app.selectors';
+import { genComponent, updateEditingComponent } from 'states/app.action';
 import { objectToClassName } from 'helper/reactUtils';
 import ColorPicker from './ColorPicker';
 import SelectBox from 'base/SelectBox';
@@ -19,7 +19,7 @@ const TitleBlock = tw.div`border-t border-zinc-800 my-1 py-1 font-bold`;
 
 function StyleProperties() {
   const { appDispatch: dispatch, useSelector } = useContext(AppContext);
-  const selectedEditingClassName = useSelector(selectEditingClassName);
+  const selectedEditingComponent = useSelector(selectEditingComponent);
   const filePath = useSelector(selectSelectedFilePath);
   const treeData = useSelector(selectComponentTree);
   const {
@@ -30,20 +30,20 @@ function StyleProperties() {
     display, position,
     b, bx, by, bt, br, bb, bl,
     bc, bxc, byc, btc, brc, bbc, blc,
-  } = selectedEditingClassName;
+  } = selectedEditingComponent;
   const [bgType, setBgType] = useState(gradientType || bgTypes[0]);
 
   function onChangeProp(type, value) {
     console.log('onChangeProp', type, value);
-    dispatch(updateEditingTagClass(objectToClassName({ ...selectedEditingClassName, [type]: value })));
+    dispatch(updateEditingComponent(objectToClassName({ ...selectedEditingComponent, [type]: value })));
     if (getIsAutoSaveGenComp()) {
       dispatch(genComponent(treeData[0], filePath, 'tailwind'));
     }
   }
 
   function onDeleteProp(type) {
-    delete selectedEditingClassName[type];
-    dispatch(updateEditingTagClass(objectToClassName({ ...selectedEditingClassName })));
+    delete selectedEditingComponent[type];
+    dispatch(updateEditingComponent(objectToClassName({ ...selectedEditingComponent })));
     if (getIsAutoSaveGenComp()) {
       dispatch(genComponent(treeData[0], filePath, 'tailwind'));
     }
