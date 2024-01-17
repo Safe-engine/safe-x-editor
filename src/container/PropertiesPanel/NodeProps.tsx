@@ -1,34 +1,29 @@
 import FormControlLabel from 'base/FormControlLabel';
 import Input from 'base/Input';
 import Label from 'base/Label';
-import React, { memo, useContext } from 'react';
-import { updateEditingComponent, updateTextTag } from 'states/app.action';
+import { memo, useContext } from 'react';
+import { updateEditingComponent } from 'states/app.action';
 import { AppContext } from 'states/app.context';
-import { selectComponentTree, selectEditingComponent, selectEditingText, selectSelectedFilePath } from 'states/app.selectors';
+import { selectEditingComponent } from 'states/app.selectors';
 
 function NodeProps() {
   const { appDispatch: dispatch, useSelector } = useContext(AppContext);
-  const text = useSelector(selectEditingText);
   const selectedEditingComponent = useSelector(selectEditingComponent);
-  const filePath = useSelector(selectSelectedFilePath);
-  const treeData = useSelector(selectComponentTree);
-
-  function onChangeText(event) {
-    dispatch(updateTextTag(event.target.value));
-  }
 
   function onChangeProp(type) {
     return function (event) {
       const { value } = event.target
       console.log('onChangeProp', type, value);
-      dispatch(updateEditingComponent('node', {
-        ...node, [type]: value
+      dispatch(updateEditingComponent('props', {
+        node: {
+          ...node, [type]: value
+        }
       }));
     }
   }
 
-  if (!selectedEditingComponent || !selectedEditingComponent.node) return
-  const { node } = selectedEditingComponent
+  if (!selectedEditingComponent || !selectedEditingComponent.props.node) return
+  const { node } = selectedEditingComponent.props
 
   return (<div className='p-1'>
     <div className='text-orange-600'>[Node]</div>
@@ -47,7 +42,6 @@ function NodeProps() {
         label='Y: '
       />
     </div>
-
   </div>);
 }
 

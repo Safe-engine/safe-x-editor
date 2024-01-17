@@ -135,7 +135,7 @@ const reducer = (state: AppState = initialState, action: AppAction) => produce(s
       const { component, updated } = action;
       const tree = new Tree(draft.componentTree, 'key', 'items');
       const node = tree.getNode(draft.editingClassNamePath);
-      node[component] = updated;
+      node[component] = { ...node[component], ...updated };
       break;
     }
   }

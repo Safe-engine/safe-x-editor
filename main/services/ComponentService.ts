@@ -7,27 +7,26 @@ import {
   createUseStateLine,
   pageTemplate,
 } from '@@/template/component';
+import { createDefaultTsx, createPropTypeTS } from '@@/template/tsx';
 import { getComponentNameByPath, getContainer, isTsx } from '@@/utils/Helper';
 import {
   convertComponentData,
   genReactComponentString,
-  genReactStylesString,
-  getJSXBlock,
+  getJSXBlock
 } from '@@/utils/ParseData';
+import { parse } from '@typescript-eslint/typescript-estree';
 import { pascalCase } from 'change-case';
+import { traverse } from 'estraverse';
 import fs from 'fs';
 import isDirectory from 'is-directory';
+import { kebabCase } from 'lodash';
 import escapeRegExp from 'lodash/escapeRegExp';
 import get from 'lodash/get';
 import pathUtil from 'path';
 import rimraf from 'rimraf';
-import { dirPathPromise } from './FilesService';
-import { parse } from '@typescript-eslint/typescript-estree';
-import { createDefaultTsx, createPropTypeTS } from '@@/template/tsx';
-import { spliceString } from '../utils/StringHelper';
-import { traverse } from 'estraverse';
 import { fallback } from '../utils/ParseData';
-import { kebabCase } from 'lodash';
+import { spliceString } from '../utils/StringHelper';
+import { dirPathPromise } from './FilesService';
 
 const { app } = require('electron');
 
@@ -227,36 +226,17 @@ export async function duplicateComponent(componentPath) {
   return true;
 }
 
-export const updateComponentTag = ({ nodesData, filePath, styleType }) => {
+export const updateComponentTag = ({ nodesData, filePath }) => {
   console.log('updateComponentTag', nodesData, filePath);
-  const { component, imports } = genReactComponentString(nodesData, styleType);
+  const { component } = genReactComponentString(nodesData);
   const input = fs.readFileSync(filePath, { encoding: 'utf8' });
   const parsed = parse(input, { jsx: true, range: true });
   const [start, end] = getJSXBlock(parsed).range;
-  // console.log('imports', imports);
   // const logOutput = writeFileSync(pathUtil.join(genFolder,'component.html.parsed.)
   fs.writeFileSync(
     filePath,
     spliceString(input, start, end - start, component)
   );
-  const content = fs.readFileSync(filePath, { encoding: 'utf-8' });
-  imports.forEach((imp) => {
-    if (!content.includes(imp)) {
-      fs.writeFileSync(filePath, `${imp}\n${content}`);
-    }
-  });
-  if (styleType === 'tailwind') {
-    return true;
-  }
-  const styles = genReactStylesString(nodesData, styleType);
-  // const logOutput = writeFileSync(pathUtil.join(genFolder,'styles.scss', )
-  const moduleDir = pathUtil.dirname(filePath);
-  const moduleName = pathUtil.basename(moduleDir);
-  const isCss = styleType === 'css';
-  const styleFileName = isCss ? `${moduleName}.module.css` : 'styles.scss';
-  const styleFile = pathUtil.join(moduleDir, styleFileName);
-  fs.writeFileSync(styleFile, styles);
-  // appendAtLast(styleFile, styles);
   return true;
 };
 

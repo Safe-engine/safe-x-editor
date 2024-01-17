@@ -76,12 +76,14 @@ const parseTreeData = (root, fileOrigin = '', depth = 0, index = 0) => {
   }
   const tag = get(openingElement, 'name.name');
   const props: any = getAttributeProps(openingElement, fileOrigin);
-  const { node, ...rest } = props;
-  const components = {}
+  const components = []
   const filteredChildren = children.filter(child => {
     const childTag = get(child.openingElement, 'name.name');
     if (noRenderList.includes(childTag)) {
-      components[childTag] = getAttributeProps(child.openingElement, fileOrigin)
+      components.push({
+        tag: childTag,
+        props: getAttributeProps(child.openingElement, fileOrigin)
+      })
       return false
     }
     return (typeof child.value !== 'string') || !!child.value.trim()
@@ -90,9 +92,8 @@ const parseTreeData = (root, fileOrigin = '', depth = 0, index = 0) => {
     key,
     expanded: true,
     tag,
-    props: rest,
+    props,
     components,
-    node,
     items: filteredChildren.map((child, index) => parseTreeData(child, fileOrigin, depth + 1, index)),
   };
 };
@@ -189,19 +190,14 @@ export const convertComponentData = async (parsed, filePath, fileOrigin) => {
   };
 };
 
-const getClassName = (componentName, name, modifier, tag, isTailWind, depth) => {
-  if (isTailWind) { return name || ''; }
-  if (depth === 0) { return componentName; }
-  if (!name) { return `${componentName}--${tag}`; }
-  if (!modifier) { return `${componentName}--${name}`; }
-  return `${componentName}--${name}__${modifier}`;
-};
-
 const genPropsLine = (props: { [key: string]: string }) => {
   const lines = Object.entries(props)
     .map(([key, val]) => {
       if (val === undefined) { return key; }
       if (!val) { return ''; }
+      if (key === 'node') {
+        return `node={{${Object.entries(val).map(([key, val]) => `${key}: ${val}`).join(', ')}}}`
+      }
       if (swapperWith(val, '{', '}') || /^{.*}$/.test(val)) {
         return `${key}=${val}`;
       }
@@ -210,101 +206,27 @@ const genPropsLine = (props: { [key: string]: string }) => {
   return lines.join(' ');
 };
 
-const createTag = (root, componentName, isTailWind, depth = 0, imports = []) => {
-  const spacing = repeat('  ', depth + 2);
-  // if (!root.tag) return `${spacing}${root.name}`;
+const createTag = (root) => {
+  // if (!root.tag) return `${root.name}`;
   const {
-    tag, name, modifier, props = {}, items = [], title, imported, isSubModule,
+    tag, name, props = {}, items = [], title, components = [],
   } = root;
   if (!tag) {
-    return `${spacing}${title || name}`;
+    return `${title || name}`;
   }
-  if (tag === 'Image') {
-    imports.push(`import Image from 'next/image';\n`);
-  }
-  if (imported) {
-    if (isSubModule) {
-      const existedIndex = findIndex(imports, (ip: string) => ip.includes(`from '${imported}';\n`));
-      if (existedIndex === -1) {
-        imports.push(`import { ${tag} } from '${imported}';\n`);
-      } else {
-        imports[existedIndex] = imports[existedIndex].replace(/{ ([^}]+) }:/g, `$1, ${tag}`);
-      }
-    } else {
-      imports.push(imported);
-    }
-  }
-  props.className = getClassName(componentName, name, modifier, tag, isTailWind, depth);
   const propsLine = genPropsLine(props);
-  if (!items.length) {
-    return `${spacing}<${tag} ${propsLine}/>`;
+  if (!items.length && isEmpty(components)) {
+    return `<${tag} ${propsLine}/>`;
   }
-  const renderChildren = items.map(child => createTag(child, componentName, isTailWind, depth + 1, imports)).join('\n');
-  if (depth === 0) {
-    return `<${tag} ${propsLine}>\n${renderChildren}\n${spacing}</${tag}>`;
-  }
-  return `${spacing}<${tag} ${propsLine}>\n${renderChildren}\n${spacing}</${tag}>`;
+  const renderChildren = items.map(child => createTag(child)).join('\n');
+  const renderComponents = components.map(child => createTag(child)).join('\n');
+  return `<${tag} ${propsLine}>
+    ${renderChildren}
+    ${renderComponents}
+  </${tag}>`;
 };
 
-export function genReactComponentString(treeData, styleType) {
-  const isTailWind = styleType === 'tailwind';
-  const imports = [];
-  const component = createTag(treeData, treeData.name || treeData.props?.className, isTailWind, 0, imports);
-  return { imports, component };
+export function genReactComponentString(treeData) {
+  const component = createTag(treeData);
+  return { component };
 }
-
-const getAllStyles = (root) => {
-  const result = [];
-  const getStyles = (rootNode) => {
-    const {
-      name, modifier, styles = '', children = [],
-    } = rootNode;
-    if (name && name !== root.name) {
-      result.push({ name, modifier, styles });
-    }
-    children.map(getStyles);
-  };
-  getStyles(root);
-  const grouped = groupBy(result, ({ name }) => name);
-  return Object.entries(grouped).map(([key, val]) => {
-    const modifiers = {};
-    val.forEach(({ modifier, styles }) => {
-      if (modifier) { modifiers[modifier] = styles; }
-    });
-    return { name: key, modifiers };
-  });
-};
-
-const getModifiers = modifiers => Object.entries(modifiers)
-  .map(([eff, styles]) => `&__${eff} {
-      ${styles}
-    }`).join('\n');
-
-const getElements = (ele, isCss, moduleName) => {
-  const { name = '', modifiers = {}, styles = '' } = ele;
-  if (isCss) {
-    if (isEmpty(modifiers)) {
-      return `\t.${moduleName}--${name} {\n\t${styles}\n\t}\n`;
-    }
-  }
-  if (isEmpty(modifiers)) {
-    return `  &--${name} {
-    ${styles}
-  }`;
-  }
-  return `  &--${name} {
-    ${styles}
-    ${getModifiers(modifiers)}
-  }`;
-};
-
-export const genReactStylesString = (root, styleType) => {
-  const isCss = styleType === 'css';
-  const { name, styles = '' } = root;
-  // console.log('name', name, getAllStyles(root));
-  const elements = getAllStyles(root).map(ele => getElements(ele, isCss, name)).join('\n');
-  if (isCss) {
-    return `@layer components {\n\t.${name} {\n${styles}\n\t}\n${elements}}\n`;
-  }
-  return `.${name} {\n${styles}\n${elements}\n}\n`;
-};
