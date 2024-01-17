@@ -229,7 +229,7 @@ export async function duplicateComponent(componentPath) {
 
 export const updateComponentTag = ({ nodesData, filePath }) => {
   console.log('updateComponentTag', nodesData, filePath);
-  const { component } = genReactComponentString(nodesData);
+  const { component, imports } = genReactComponentString(nodesData);
   const input = fs.readFileSync(filePath, { encoding: 'utf8' });
   const parsed = parse(input, { jsx: true, range: true });
   const [start, end] = getJSXBlock(parsed).range;
@@ -239,6 +239,10 @@ export const updateComponentTag = ({ nodesData, filePath }) => {
     spliceString(input, start, end - start, component)
   );
   lintFile(filePath)
+  const content = fs.readFileSync(filePath, { encoding: 'utf-8' });
+  if (!imports.length) return true;
+  const filtered = imports.filter((imp) => !content.includes(imp));
+  fs.writeFileSync(filePath, `${filtered.join('\n')}\n${content}`);
   return true;
 };
 

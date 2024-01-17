@@ -206,20 +206,32 @@ const genPropsLine = (props: { [key: string]: string }) => {
   return lines.join(' ');
 };
 
-const createTag = (root) => {
+const createTag = (root, imports) => {
   // if (!root.tag) return `${root.name}`;
   const {
-    tag, name, props = {}, items = [], title, components = [],
+    tag, name, props = {}, items = [], title, components = [], imported, isSubModule,
   } = root;
   if (!tag) {
     return `${title || name}`;
+  }
+  if (imported) {
+    if (isSubModule) {
+      const existedIndex = findIndex(imports, (ip: string) => ip.includes(`from '${imported}';\n`));
+      if (existedIndex === -1) {
+        imports.push(`import { ${tag} } from '${imported}';\n`);
+      } else {
+        imports[existedIndex] = imports[existedIndex].replace(/{ ([^}]+) }:/g, `$1, ${tag}`);
+      }
+    } else {
+      imports.push(imported);
+    }
   }
   const propsLine = genPropsLine(props);
   if (!items.length && isEmpty(components)) {
     return `<${tag} ${propsLine}/>`;
   }
-  const renderChildren = items.map(child => createTag(child)).join('\n');
-  const renderComponents = components.map(child => createTag(child)).join('\n');
+  const renderChildren = items.map(child => createTag(child, imports)).join('\n');
+  const renderComponents = components.map(child => createTag(child, imports)).join('\n');
   return `<${tag} ${propsLine}>
     ${renderChildren}
     ${renderComponents}
@@ -227,6 +239,7 @@ const createTag = (root) => {
 };
 
 export function genReactComponentString(treeData) {
-  const component = createTag(treeData);
-  return { component };
+  const imports = [];
+  const component = createTag(treeData, imports);
+  return { imports, component };
 }
