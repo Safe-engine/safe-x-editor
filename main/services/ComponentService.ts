@@ -27,6 +27,7 @@ import rimraf from 'rimraf';
 import { fallback } from '../utils/ParseData';
 import { spliceString } from '../utils/StringHelper';
 import { dirPathPromise } from './FilesService';
+import { lintFile } from './TerminalService';
 
 const { app } = require('electron');
 
@@ -237,6 +238,7 @@ export const updateComponentTag = ({ nodesData, filePath }) => {
     filePath,
     spliceString(input, start, end - start, component)
   );
+  lintFile(filePath)
   return true;
 };
 

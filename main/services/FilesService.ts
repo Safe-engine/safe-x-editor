@@ -11,6 +11,7 @@ import path from 'path';
 import rimraf from 'rimraf';
 import sizeOf from 'image-size';
 import { getClassesMetaData } from '@@/parser/metadata';
+import { GlobalData } from '@@/parser/global';
 
 // const logFolder = app.getPath('logs');
 // const genFolder = pathUtil.join(logFolder, 'gen');
@@ -43,6 +44,7 @@ export const getFilesInFolder = ({ src, excludes = [] }) => {
   if (!content.includes("safe-x")) {
     throw Error('Not Safex project.');
   }
+  GlobalData.rootProject = src
   getClassesMetaData(src)
   const components = DirectoryTree(path.join(src, 'src'), {
     extensions: /\.(j|t)sx?$/,

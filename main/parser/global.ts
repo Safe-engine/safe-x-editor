@@ -1,4 +1,5 @@
 export class GlobalData {
+  static rootProject = '';
   static isDebugParser = false;
   static assetsInfo: any = {};
   static clickEventHandlers = [];
