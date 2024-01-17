@@ -1,7 +1,7 @@
 import React, { useContext, useState } from 'react';
 import { AppContext } from 'states/app.context';
 import { selectComponentTree, selectEditingClassName, selectSelectedFilePath } from 'states/app.selectors';
-import { genClassName, updateEditingTagClass } from 'states/app.action';
+import { genComponent, updateEditingTagClass } from 'states/app.action';
 import { objectToClassName } from 'helper/reactUtils';
 import ColorPicker from './ColorPicker';
 import SelectBox from 'base/SelectBox';
@@ -37,7 +37,7 @@ function StyleProperties() {
     console.log('onChangeProp', type, value);
     dispatch(updateEditingTagClass(objectToClassName({ ...selectedEditingClassName, [type]: value })));
     if (getIsAutoSaveGenComp()) {
-      dispatch(genClassName(treeData[0], filePath, 'tailwind'));
+      dispatch(genComponent(treeData[0], filePath, 'tailwind'));
     }
   }
 
@@ -45,7 +45,7 @@ function StyleProperties() {
     delete selectedEditingClassName[type];
     dispatch(updateEditingTagClass(objectToClassName({ ...selectedEditingClassName })));
     if (getIsAutoSaveGenComp()) {
-      dispatch(genClassName(treeData[0], filePath, 'tailwind'));
+      dispatch(genComponent(treeData[0], filePath, 'tailwind'));
     }
   }
 

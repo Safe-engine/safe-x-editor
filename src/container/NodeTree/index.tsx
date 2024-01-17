@@ -9,7 +9,7 @@ import { contextMenuItems } from '../../data/dataContextMenu';
 import CheckBox from 'devextreme-react/check-box';
 import {
   addNode, deleteNode,
-  duplicateNode, genClassName, selectEditingTagClass, selectEditingText
+  duplicateNode, genComponent, selectEditingTagClass, selectEditingText
 } from 'states/app.action';
 import {
   ADD_DIV, ADD_TEXT_NODE,
@@ -35,7 +35,7 @@ export default function NodeTree() {
     if (treeData) {
       setIsChangeState(true);
       if (getIsAutoSaveGenComp()) {
-        onClickGenClassName();
+        onClickGenComponent();
       }
     }
   }, [treeData]);
@@ -45,9 +45,9 @@ export default function NodeTree() {
     setIsAutoSave(getIsAutoSaveGenComp());
   }, []);
 
-  function onClickGenClassName() {
+  function onClickGenComponent() {
     setIsChangeState(false);
-    dispatch(genClassName(treeData[0], filePath, styleType));
+    dispatch(genComponent(treeData[0], filePath, styleType));
   }
 
   function treeViewItemContextMenu(e) {
@@ -77,7 +77,7 @@ export default function NodeTree() {
     setIsAutoSave(value);
     setIsAutoSaveGenComp(value);
     if (getIsAutoSaveGenComp()) {
-      onClickGenClassName();
+      onClickGenComponent();
     }
   }
 
@@ -171,7 +171,7 @@ export default function NodeTree() {
         width={200}
         target='#hierarchyComponent .dx-treeview-item'
         onItemClick={contextMenuItemClick} />
-      <div className='fixed bottom-0 flex justify-around px-4'>
+      <div className='fixed bottom-0 flex justify-around px-4 w-[300px]'>
         <CheckBox text='Auto save'
           value={isAutoSave}
           onValueChange={onChangeAutoSave}></CheckBox>
@@ -181,7 +181,7 @@ export default function NodeTree() {
             text={`Save ${isChangeState ? '*' : ''}`}
             stylingMode='contained'
             type='danger'
-            onClick={onClickGenClassName}
+            onClick={onClickGenComponent}
           />
         }
       </div>

@@ -3,7 +3,7 @@ import {
   CHANGE_LANGUAGE, CHECK_FILE_EXIST,
   CREATE_ACTION, CREATE_I18N, CREATE_NEW_ACTION,
   DELETE_COMPONENT, DUPLICATE_COMPONENT,
-  GEN_CLASS_NAME_REQUEST, GEN_PROP_TYPES_REQUEST, GET_FOLDER_FILES,
+  GEN_COMPONENT_REQUEST, GEN_PROP_TYPES_REQUEST, GET_FOLDER_FILES,
   LOAD_COMPONENT_REQUEST, NEW_COMPONENT,
   NEW_PAGE, RE_NAME_COMPONENT
 } from "./constant.message";
@@ -16,7 +16,7 @@ export type IpcRequest =
   | { key: typeof GET_FOLDER_FILES, src: string, patternList?: [string] }
   | { key: typeof CHECK_FILE_EXIST, folderPath: string }
   | { key: typeof LOAD_COMPONENT_REQUEST, path: string }
-  | { key: typeof GEN_CLASS_NAME_REQUEST }
+  | { key: typeof GEN_COMPONENT_REQUEST, nodesData: any, filePath: string }
   | { key: typeof GEN_PROP_TYPES_REQUEST }
   | { key: typeof NEW_COMPONENT }
   | { key: typeof RE_NAME_COMPONENT }
@@ -36,7 +36,7 @@ export type IpcResponse =
   | { key: typeof GET_FOLDER_FILES }
   | { key: typeof CHECK_FILE_EXIST }
   | { key: typeof LOAD_COMPONENT_REQUEST }
-  | { key: typeof GEN_CLASS_NAME_REQUEST }
+  | { key: typeof GEN_COMPONENT_REQUEST }
   | { key: typeof GEN_PROP_TYPES_REQUEST }
   | { key: typeof NEW_COMPONENT }
   | { key: typeof RE_NAME_COMPONENT }

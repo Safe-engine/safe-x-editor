@@ -15,7 +15,7 @@ import {
   CREATE_I18N,
   DELETE_COMPONENT,
   DUPLICATE_COMPONENT,
-  GEN_CLASS_NAME_REQUEST,
+  GEN_COMPONENT_REQUEST,
   GEN_PROP_TYPES_REQUEST,
   GET_FOLDER_FILES,
   LOAD_COMPONENT_REQUEST,
@@ -51,7 +51,7 @@ export default function Router() {
   addListener(RE_NAME_COMPONENT, renameComponent);
   addListener(DUPLICATE_COMPONENT, duplicateComponent);
   addListener(DELETE_COMPONENT, deleteFolder);
-  addListener(GEN_CLASS_NAME_REQUEST, updateComponentTag);
+  addListener(GEN_COMPONENT_REQUEST, updateComponentTag);
   addListener(GEN_PROP_TYPES_REQUEST, updateComponentPropTypes);
   addListener(CREATE_I18N, createI18n);
   addListener(ADD_NEW_STATE, addNewState);

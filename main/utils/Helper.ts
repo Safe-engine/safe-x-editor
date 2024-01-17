@@ -83,7 +83,7 @@ export function isTsFile(filePath = '') {
   return filePath.endsWith('.ts');
 }
 
-export function getComponentNameByPah(filePath) {
+export function getComponentNameByPath(filePath) {
   return pathUtil.basename(filePath)
     .replace('.js', '')
     .replace('.ts', '');

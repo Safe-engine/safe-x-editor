@@ -14,7 +14,7 @@ import {
   EXECUTE_COMMAND,
   SELECT_NODE,
   GEN_CLASS_NAME_SUCCESS,
-  GEN_CLASS_NAME,
+  GEN_COMPONENT,
   LOAD_COMPONENT_ERROR,
   GET_FILES_ERROR,
   TOGGLE_FOLDER,
@@ -212,14 +212,14 @@ export function selectNode(path, selectedNode) {
   };
 }
 
-export function genClassName(nodesData, filePath, styleType): {
-  type: typeof GEN_CLASS_NAME,
+export function genComponent(nodesData, filePath, styleType): {
+  type: typeof GEN_COMPONENT,
   nodesData,
   filePath: string,
   styleType: string,
 } {
   return {
-    type: GEN_CLASS_NAME,
+    type: GEN_COMPONENT,
     nodesData,
     filePath,
     styleType,
@@ -284,7 +284,7 @@ export type AppAction = ReturnType<typeof changeComponentName>
   | ReturnType<typeof addNode>
   | ReturnType<typeof deleteNode>
   | ReturnType<typeof duplicateNode>
-  | ReturnType<typeof genClassName>
+  | ReturnType<typeof genComponent>
   | ReturnType<typeof genPropTypes>
   | ReturnType<typeof updatePropType>
   | ReturnType<typeof executeFileCommandAction>

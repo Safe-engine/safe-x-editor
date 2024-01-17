@@ -45,69 +45,6 @@ export default function PropertiesPanel() {
   const [isAutoSave, setIsAutoSave] = useState(false);
   const rightData = useSelector(selectRightData);
 
-  useEffect(() => {
-    ipcRenderer.on(CREATE_NEW_ACTION, () => {
-      setOpen(true);
-    });
-  }, []);
-
-  useEffect(() => {
-    const lastRoot = getLastRootFolder();
-    // console.log(lastRoot, root)
-    if (lastRoot && !root) {
-      onClickSelectFolder(lastRoot);
-    }
-  }, [root]);
-
-  function onClickSelectFolder(src) {
-    dispatch({ type: GET_FILES, src });
-  }
-
-  function onItemClick(event) {
-    // console.log(event.node);
-    const { key, itemData } = event.node;
-    const { path, isDirectory } = itemData;
-    if (isDirectory) {
-      dispatch({
-        type: TOGGLE_FOLDER,
-        key,
-      });
-    } else {
-      dispatch({
-        type: LOAD_COMPONENT,
-        path
-      });
-    }
-  }
-
-  function treeViewItemContextMenu(e) {
-    setCreatePath(e.itemData.path);
-  }
-
-  function contextMenuItemClick(e) {
-    // console.log(e.itemData)
-    switch (e.itemData.text) {
-      case CREATE_ACTION:
-        setOpen(true);
-        break;
-      case NEW_COMPONENT:
-        setOpenCreateComponent(true);
-        break;
-      case DELETE_COMPONENT:
-        setOpenConfirmDeleteComponent(true);
-        break;
-      case RE_NAME_COMPONENT:
-        setOpenRenameComponent(true);
-        break;
-      case ADD_NEW_STATE:
-        setOpenNewState(true);
-        break;
-      default:
-        // dispatch(executeFileCommandAction(type, path, rootFolder));
-        break;
-    }
-  }
-
   function getComponentName(path) {
     let name = pathUtils.basename(path)
       .replace('.js', '')
@@ -160,45 +97,7 @@ export default function PropertiesPanel() {
 
   return (
     <div className=''>
-      {/* <FileChooser isFolder
-        title='Select Root Project'
-        selectedFile={root}
-        onChosenFolder={onClickSelectFolder} /> */}
       <div className='flex h-screen'>
-        {/* <Sortable
-          id='hierarchyFiles'
-          className='pb-20'
-          height={'100%'}
-          filter='.dx-treeview-item'
-          group='shared'
-          data={rightData.title}
-          allowDropInsideItem={false}
-          allowReordering={true}
-          // onDragChange={onDragChange}
-          onDragEnd={onDragEnd}
-        >
-          <TreeView
-            id='treeViewProject'
-            expandNodesRecursive={false}
-            dataStructure='tree'
-            ref={ctx => treeViewProjectRef.current = ctx}
-            onItemContextMenu={treeViewItemContextMenu}
-            items={rightData.tree}
-            width={280}
-            // height={'100%'}
-            scrollDirection='vertical'
-            // height={380}
-            displayExpr='name'
-            keyExpr='path'
-            onItemClick={onItemClick}
-          />
-        </Sortable>
-        <ContextMenu
-          ref={contextMenuRef}
-          dataSource={contextMenuFilesItems}
-          width={200}
-          target='#hierarchyFiles .dx-treeview-item'
-          onItemClick={contextMenuItemClick} /> */}
         <div className='w-full border border-orange-200 bg-gray-100'>
           <div className='py-2 text-orange-800 text-lg font-bold text-center border-cool-gray-300 border-b'>Components</div>
           {Object.entries(componentPropTypes)

@@ -46,7 +46,7 @@ export const SELECT_EDITING_TEXT = 'leftPanel/SELECT_EDITING_TEXT';
 export const SELECT_EDITING_TAG_CLASS = 'leftPanel/SELECT_EDITING_TAG_CLASS';
 export const UPDATE_EDITING_TAG_CLASS = 'leftPanel/UPDATE_EDITING_TAG_CLASS';
 
-export const GEN_CLASS_NAME = 'RightPanel/GEN_CLASS_NAME';
+export const GEN_COMPONENT = 'RightPanel/GEN_COMPONENT';
 export const GEN_CLASS_NAME_SUCCESS = 'RightPanel/GEN_CLASS_NAME_SUCCESS';
 export const GEN_CLASS_NAME_CANCEL = 'RightPanel/GEN_CLASS_NAME_CANCEL';
 export const GEN_CLASS_NAME_ERROR = 'RightPanel/GEN_CLASS_NAME_ERROR';

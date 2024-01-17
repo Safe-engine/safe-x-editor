@@ -1,8 +1,8 @@
 import { setLastRootFolder } from 'data/AppData';
 import { Dispatch } from 'react';
-import { CREATE_ACTION, CREATE_NEW_ACTION, GEN_CLASS_NAME_REQUEST, GEN_PROP_TYPES_REQUEST, GET_FOLDER_FILES, LOAD_COMPONENT_REQUEST, NEW_COMPONENT, NEW_PAGE, RE_NAME_COMPONENT } from 'shared/constant.message';
+import { CREATE_ACTION, CREATE_NEW_ACTION, GEN_COMPONENT_REQUEST, GEN_PROP_TYPES_REQUEST, GET_FOLDER_FILES, LOAD_COMPONENT_REQUEST, NEW_COMPONENT, NEW_PAGE, RE_NAME_COMPONENT } from 'shared/constant.message';
 import { AppAction } from './app.action';
-import { EXECUTE_COMMAND, GEN_CLASS_NAME, GEN_PROP_TYPES, GET_FILES, GET_FILES_SUCCESS, LOAD_COMPONENT, LOAD_COMPONENT_SUCCESS } from './app.constant';
+import { EXECUTE_COMMAND, GEN_COMPONENT, GEN_PROP_TYPES, GET_FILES, GET_FILES_SUCCESS, LOAD_COMPONENT, LOAD_COMPONENT_SUCCESS } from './app.constant';
 import { toast } from 'react-hot-toast';
 import { sendRequest } from 'app/app.ipc';
 
@@ -34,9 +34,9 @@ export const applyMiddleware =
         dispatch({ type: LOAD_COMPONENT_SUCCESS, data });
         break;
       }
-      case GEN_CLASS_NAME: {
+      case GEN_COMPONENT: {
         const data: any = await sendRequest({
-          key: GEN_CLASS_NAME_REQUEST,
+          key: GEN_COMPONENT_REQUEST,
           ...action
         });
         toast.success('Gen React Component Success');

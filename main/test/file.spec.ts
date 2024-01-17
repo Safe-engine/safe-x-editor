@@ -57,7 +57,7 @@ describe('createAction', () => {
   it('update file', async () => {
     const result = await createAction({
       path: folder,
-      name: 'genClassName',
+      name: 'genComponent',
       params: 'nodesData',
       isUseLogic: true,
       filesPath: {},

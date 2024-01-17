@@ -7,7 +7,7 @@ import {
   createUseStateLine,
   pageTemplate,
 } from '@@/template/component';
-import { getComponentNameByPah, getContainer, isTsx } from '@@/utils/Helper';
+import { getComponentNameByPath, getContainer, isTsx } from '@@/utils/Helper';
 import {
   convertComponentData,
   genReactComponentString,
@@ -196,12 +196,12 @@ function writeNewComponent(file, componentName, newName) {
 
 async function duplicateFiles(componentPath, name?) {
   if (!isDirectory.sync(componentPath)) {
-    const componentName = getComponentNameByPah(componentPath);
+    const componentName = getComponentNameByPath(componentPath);
     const newName = name || `${componentName}(2)`;
     writeNewComponent(componentPath, componentName, newName);
     return;
   }
-  const componentName = getComponentNameByPah(componentPath);
+  const componentName = getComponentNameByPath(componentPath);
   const paths = await dirPathPromise(componentPath);
   const newName = name || `${componentName}(2)`;
   const newFolder = replaceLast(componentPath, componentName, newName);
