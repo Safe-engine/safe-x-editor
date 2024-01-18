@@ -2,7 +2,7 @@ const path = require('path')
 const createElectronReloadWebpackPlugin = require('webpack-electron-reload')
 const TsconfigPathsPlugin = require('tsconfig-paths-webpack-plugin')
 const { dependencies: externals } = require('./package.json')
-
+const CopyPlugin = require("copy-webpack-plugin");
 const ElectronReloadWebpackPlugin = createElectronReloadWebpackPlugin({
   // Path to `package.json` file with main field set to main process file path, or just main process file path
   path: path.join(__dirname, 'build/main/index.js'),
@@ -29,7 +29,11 @@ module.exports = {
   },
   externals: [...Object.keys(externals || {})],
   plugins: [
-    // CopyPlugin,
+    new CopyPlugin({
+      patterns: [
+        { from: "main/template/safex", to: "../template/safex" },
+      ],
+    }),
     // Call created plugin here
     ElectronReloadWebpackPlugin(),
     // If your config `target` is different from recommended one then you should also specify it like this `ElectronReloadWebpackPlugin('electron-renderer')`

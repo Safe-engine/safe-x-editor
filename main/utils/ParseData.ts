@@ -1,16 +1,15 @@
-import path from 'path';
+import { readFileContent } from '@@/helper/string.util';
+import { parseValue } from '@@/parser/ast';
+import { GlobalData } from '@@/parser/global';
+import { updateEditorJSX } from '@@/services/FilesService';
+import { traverse } from 'estraverse';
+import endsWith from 'lodash/endsWith';
+import findIndex from 'lodash/findIndex';
 import get from 'lodash/get';
-import reverse from 'lodash/reverse';
-import repeat from 'lodash/repeat';
-import groupBy from 'lodash/groupBy';
 import isEmpty from 'lodash/isEmpty';
 import startsWith from 'lodash/startsWith';
-import endsWith from 'lodash/endsWith';
-import { loadSvgFromFile, loadScssFromFile } from './FileParser';
-import { traverse } from 'estraverse';
+import { basename, join } from 'path';
 import { getPropsType } from './Helper';
-import findIndex from 'lodash/findIndex';
-import { parseValue } from '@@/parser/ast';
 import { noRenderList } from './constants';
 
 export function fallback(node) {
@@ -180,10 +179,14 @@ function getPropType(parsed, exportedName) {
 }
 
 export const convertComponentData = async (parsed, filePath, fileOrigin) => {
-  const exportedName = path.basename(filePath).split('.')[0];
+  const exportedName = basename(filePath).split('.')[0];
   // console.log('exportedName', exportedName);
   const jsxBlock = getJSXBlock(parsed);
   const treeData = parseTreeData(jsxBlock, fileOrigin);
+  const input = readFileContent(filePath);
+  const [start, end] = jsxBlock.range;
+  const content = input.slice(start, end)
+  updateEditorJSX(content)
   return {
     name: exportedName,
     treeData,

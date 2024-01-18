@@ -10,6 +10,6 @@ export default function SceneView() {
 
   // Necessary because we will have to use Greet as a component later.
   return <div ref={divRef} className='flex justify-center'>
-    <iframe className='h-screen m-auto' src='http://localhost:1234' />
+    <iframe className='h-screen m-auto' src='http://localhost:10234' />
   </div>
 }

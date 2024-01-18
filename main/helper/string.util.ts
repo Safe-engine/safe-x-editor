@@ -33,3 +33,7 @@ export function renderMustacheFile(template: string, data: object) {
   // const template = readTemplateFile(`cpp/${name}.hbs`);
   return Handlebars.compile(template, { noEscape: true })(data);
 }
+
+export function readFileContent(filePath: string): string {
+  return fs.readFileSync(filePath, 'utf8');
+}
