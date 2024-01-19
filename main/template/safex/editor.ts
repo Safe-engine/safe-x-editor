@@ -2,10 +2,6 @@ import { CollideSystem, GameWorld, initWorld } from '../src/lib/safex'
 import { settings } from '../src/settings'
 import { EditingScene } from './EditingScene'
 
-if (module.hot) {
-  module.hot.accept()
-}
-
 class EditorScene extends cc.Scene {
   constructor() {
     // 1. super init first
@@ -25,12 +21,6 @@ window.onload = function () {
   cc.game.onStart = function onStart() {
     const { designedResolution } = settings
     const { width, height } = designedResolution
-    // if (!cc.sys.isNative && document.getElementById('cocosLoading')) {
-    //   // If referenced loading.js, please remove it
-    //   const loadingNode: any = document.getElementById('cocosLoading');
-    //   document.body.removeChild(loadingNode);
-    // }
-
     // Pass true to enable retina display, disabled by default to improve performance
     cc.view.enableRetina(cc.sys.os === cc.sys.OS_IOS)
     // Adjust viewport meta

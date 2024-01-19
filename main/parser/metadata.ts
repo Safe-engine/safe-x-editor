@@ -19,7 +19,19 @@ export async function getClassesMetaData(srcDir: string, idDebug = false) {
     const parsed: any = parseFile(filePath)
     ESTraverse.traverse(parsed, {
       enter: function (node, parent) {
-        if (node.type === 'ClassDeclaration') {
+        if (node.type === 'ExportDefaultDeclaration') {
+          if (node.declaration.type === 'ClassDeclaration') {
+            const { id } = node.declaration
+            const { name: className } = id
+            GlobalData.importPaths[className] = `import ${className} from '../src/${file}'`
+          }
+        } else if (node.type === 'ExportNamedDeclaration') {
+          if (node.declaration.type === 'ClassDeclaration') {
+            const { id } = node.declaration
+            const { name: className } = id
+            GlobalData.importPaths[className] = `import { ${className} } from '../src/${file}'`
+          }
+        } else if (node.type === 'ClassDeclaration') {
           const { superClass, id, body } = node
           const { name: className } = id
           if (parseValue(superClass) === 'NoRenderComponentX') {

@@ -1,15 +1,14 @@
 import { readFileContent } from '@@/helper/string.util';
 import { parseValue } from '@@/parser/ast';
-import { GlobalData } from '@@/parser/global';
 import { updateEditorJSX } from '@@/services/FilesService';
 import { traverse } from 'estraverse';
+import { uniq } from 'lodash';
 import endsWith from 'lodash/endsWith';
 import findIndex from 'lodash/findIndex';
 import get from 'lodash/get';
 import isEmpty from 'lodash/isEmpty';
 import startsWith from 'lodash/startsWith';
-import { basename, join } from 'path';
-import { getPropsType } from './Helper';
+import { basename } from 'path';
 import { noRenderList } from './constants';
 
 export function fallback(node) {
@@ -51,16 +50,6 @@ const getAttributeProps = (openingElement, fileOrigin) => {
   return props;
 };
 
-function getNodeName(className) {
-  if (!className) { return undefined; }
-  if (className.indexOf('--') === -1) { return className; }
-  const element = className.split('--')[1];
-  if (className.indexOf('__') !== -1) {
-    return element.split('__')[1];
-  }
-  return element;
-}
-
 const parseTreeData = (root, fileOrigin = '', depth = 0, index = 0) => {
   const {
     openingElement, children = [],
@@ -97,19 +86,6 @@ const parseTreeData = (root, fileOrigin = '', depth = 0, index = 0) => {
   };
 };
 
-// FIXME! load alias when load project
-const alias = {
-  '@@': './src',
-  '@images': './public/images',
-};
-
-function resolveAlias(pathSource = '') {
-  return Object.entries(alias).reduce(
-    (prv, [key, val]) => prv.replace(key, val),
-    pathSource
-  );
-}
-
 export function getJSXBlock(parsed): any {
   let jsxBlock = {};
   traverse(parsed, {
@@ -122,60 +98,6 @@ export function getJSXBlock(parsed): any {
     fallback,
   });
   return jsxBlock;
-}
-
-function getPropType(parsed, exportedName) {
-  const propTypes = {};
-  traverse(parsed, {
-    enter: function (node: any) {
-      // console.log(node.type)
-      switch (node.type) {
-        case 'FunctionDeclaration': {
-          if (node.id.name === exportedName && node.params[0]) {
-            node.params[0].properties.forEach(({ key }) => {
-              if (!propTypes[key.name]) {
-                propTypes[key.name] = { type: 'any', isRequired: true };
-              }
-            });
-          }
-          break;
-        }
-        case 'TSTypeAliasDeclaration': {
-          if (node.id.name === 'Props') {
-            node.typeAnnotation.members.forEach(anno => {
-              propTypes[anno.key.name] = {
-                type: getPropsType(anno.typeAnnotation),
-                isRequired: !anno.optional
-              };
-            });
-          }
-          break;
-        }
-        case 'AssignmentExpression': {
-          // console.log('AssignmentExpression', node)
-          if (node.left.property?.name === 'propTypes') {
-            node.right.properties.forEach(prop => {
-              propTypes[prop.key.name] = {
-                ...propTypes[prop.key.name],
-                type: prop.value.object.property ? prop.value.object.property.name : prop.value.property.name,
-                isRequired: prop.value.property.name === 'isRequired',
-              };
-            });
-          } else if (node.left.property?.name === 'defaultProps') {
-            node.right.properties.forEach(prop => {
-              propTypes[prop.key.name] = {
-                ...propTypes[prop.key.name],
-                value: prop.value.value,
-              };
-            });
-          }
-          break;
-        }
-      }
-    },
-    fallback,
-  });
-  return propTypes;
 }
 
 export const convertComponentData = async (parsed, filePath, fileOrigin) => {
@@ -245,4 +167,17 @@ export function genReactComponentString(treeData) {
   const imports = [];
   const component = createTag(treeData, imports);
   return { imports, component };
+}
+
+export function getListTagUsed(parsed): string[] {
+  const listUsed = [];
+  traverse(parsed, {
+    enter: function (node: any) {
+      if (node.type === 'JSXOpeningElement') {
+        listUsed.push(node.name.name);
+      }
+    },
+    fallback: 'iteration',
+  });
+  return uniq(listUsed);
 }

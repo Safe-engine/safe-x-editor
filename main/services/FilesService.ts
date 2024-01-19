@@ -7,7 +7,7 @@ import {
   filterTree,
   getTreeData
 } from '@@/utils/Helper';
-import { getJSXBlock } from '@@/utils/ParseData';
+import { getJSXBlock, getListTagUsed } from '@@/utils/ParseData';
 import { spliceString } from '@@/utils/StringHelper';
 import { parse } from '@typescript-eslint/typescript-estree';
 import DirectoryTree from 'directory-tree';
@@ -19,29 +19,7 @@ import { join } from 'path';
 import rimraf from 'rimraf';
 import { startEditorScene } from './TerminalService';
 
-// const logFolder = app.getPath('logs');
-// const genFolder = pathUtil.join(logFolder, 'gen');
-// if (!existsSync(genFolder)) {
-//   mkdirSync(genFolder);
-// }
-
-export const defaultExclude = [
-  /\/node_modules/,
-  /\/build/,
-  /\/release/,
-  /\/gen\//,
-  /\/network/,
-  /\/storage/,
-  /\/out/,
-  /\/dist/,
-  /\/main\//,
-  /\.git/,
-  /\.next/,
-  /\/helper/,
-  /\/i18n/,
-];
-
-export const getFilesInFolder = ({ src, excludes = [] }) => {
+export const getFilesInFolder = ({ src, exclude = [] }) => {
   const packageJson = join(src, 'package.json');
   if (!existsSync(packageJson)) {
     throw Error('No package.json.');
@@ -53,16 +31,18 @@ export const getFilesInFolder = ({ src, excludes = [] }) => {
   GlobalData.rootProject = src
   getClassesMetaData(src)
   setupEditorFiles(src)
-  const components = DirectoryTree(join(src, 'src'), {
+  const jsxOption: DirectoryTree.DirectoryTreeOptions = {
     extensions: /\.(j|t)sx?$/,
-    exclude: [...defaultExclude, ...excludes, /\/public/],
+    exclude,
     attributes: ['type', 'extension'],
-  });
+  }
+  const components = DirectoryTree(join(src, 'src', 'components'), jsxOption);
+  const scenes = DirectoryTree(join(src, 'src', 'scenes'), jsxOption);
   const images: any = DirectoryTree(
     join(src, 'res'),
     {
       extensions: /\.(gif|jpe?g|tiff?|png|webp|bmp)$/i,
-      exclude: [...defaultExclude, ...excludes, /\/src/],
+      exclude,
       attributes: ['type'],
     },
     (item: any, path) => {
@@ -74,7 +54,8 @@ export const getFilesInFolder = ({ src, excludes = [] }) => {
   // console.log('imagesData', JSON.stringify(images, null, 2));
   // console.log('treeNodeUtils', treeNodeUtils.filterNodes([tree], filterTreeFunction));
   return {
-    src: getTreeData(filterTree([components])),
+    components: getTreeData(filterTree([components])),
+    scenes: getTreeData(filterTree([scenes])),
     res: getTreeData(filterImages([images])),
   };
 };
@@ -112,10 +93,15 @@ export function updateEditorJSX(jsxString: string) {
   const parsed = parse(input, { jsx: true, range: true });
   const jsxBlock = getJSXBlock(parsed);
   const [start, end] = jsxBlock.range;
-  const content = jsxString.includes('SceneComponent') ? jsxString :
-    `<SceneComponent>\n      ${jsxString}\n      </SceneComponent>`
-  writeFileSync(
-    editorSceneFile,
-    spliceString(input, start, end - start, content)
-  );
+  let content = jsxString.includes('SceneComponent') ? jsxString :
+    `<SceneComponent>\n      ${jsxString.replace('>', ' node={{x:540,y:960}}>')}\n      </SceneComponent>`
+  const tagUsed = getListTagUsed(parsed)
+  content = spliceString(input, start, end - start, content)
+  tagUsed.forEach(tag => {
+    const importLine = GlobalData.importPaths[tag]
+    if (!input.includes(importLine)) {
+      content = `${importLine}\n${content}`
+    }
+  })
+  writeFileSync(editorSceneFile, content);
 }

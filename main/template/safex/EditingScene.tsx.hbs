@@ -1,6 +1,17 @@
 import { SpriteSourceAssets } from '../src/assets'
 import { loadAssets } from '../src/binding/loader'
-import { ComponentX, ProgressTimerComp, SceneComponent, SpriteRender } from '../src/lib/safex'
+import {
+  BoxCollider, Collider,
+  ButtonComp, FillType, LabelComp, ProgressTimerComp, ScrollViewComp,
+  NodeComp,
+  EventRegister, ExtraDataComp, TouchEventRegister,
+  PhysicsBoxCollider, PhysicsCollider, RigidBody,
+  GraphicsRender, NodeRender, ParticleComp, SpineSkeleton, SpriteRender,
+  ComponentX,
+  SceneComponent,
+  CollideSystem,
+  Size, Vec2,
+} from '../src/lib/safex'
 
 export class EditingScene extends ComponentX {
   start() {
@@ -11,7 +22,6 @@ export class EditingScene extends ComponentX {
   }
 
   static create(): EditingScene {
-{{initParams}}
     return (
       <SceneComponent>
         {{sceneGraph}}

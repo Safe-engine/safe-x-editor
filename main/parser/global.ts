@@ -37,4 +37,5 @@ export class GlobalData {
     ProgressTimerComp: { fillType: 'FillType::HORIZONTAL', fillRange: 1, fillCenter: 'Vec2(0, 0)', isReverse: false },
     ScrollViewComp: { bounceEnabled: true },
   };
+  static importPaths: any = {};
 }
