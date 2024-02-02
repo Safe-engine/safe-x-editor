@@ -48,7 +48,7 @@ export default class MenuBuilder {
       submenu: [
         {
           label: '&Open',
-          accelerator: 'Ctrl+O',
+          accelerator: 'Command+O',
           click: () => {
             const [root] = dialog.showOpenDialogSync(this.mainWindow, {
               title: 'Select project folder.',

@@ -37,7 +37,7 @@ export const getFilesInFolder = ({ src, exclude = [] }) => {
     attributes: ['type', 'extension'],
   }
   const components = DirectoryTree(join(src, 'src', 'components'), jsxOption);
-  const scenes = DirectoryTree(join(src, 'src', 'scenes'), jsxOption);
+  const scenes = DirectoryTree(join(src, 'src', 'scene'), jsxOption);
   const images: any = DirectoryTree(
     join(src, 'res'),
     {
@@ -55,7 +55,7 @@ export const getFilesInFolder = ({ src, exclude = [] }) => {
   // console.log('treeNodeUtils', treeNodeUtils.filterNodes([tree], filterTreeFunction));
   return {
     components: getTreeData(filterTree([components])),
-    scenes: getTreeData(filterTree([scenes])),
+    scenes: getTreeData(([scenes])),
     res: getTreeData(filterImages([images])),
   };
 };

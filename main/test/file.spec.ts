@@ -1,8 +1,5 @@
+import { loadComponent } from '@@/services/ComponentService';
 import path from 'path';
-import fs from 'fs';
-import { defaultExclude, getFilesInFolder } from '@@/services/FilesService';
-import { loadComponent, updateComponentPropTypes, updateComponentTag } from '@@/services/ComponentService';
-import { getClassesMetaData } from '@@/parser/metadata';
 
 // require('chai/register-should');
 const file = path.join(__dirname, '../../../../axmol/googselement/src/components/UpgradeDialog.tsx');

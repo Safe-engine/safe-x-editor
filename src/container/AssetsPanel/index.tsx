@@ -25,6 +25,7 @@ import pathUtils from 'path-browserify';
 import { getIsAutoSaveGenPropTypes, setIsAutoSaveGenPropTypes } from 'data/AppData'
 import { contextMenuFilesItems } from 'data/dataContextMenu'
 import PropDisplay from 'components/PropDisplay'
+import clsx from 'clsx'
 
 export default function AssetsPanel() {
   const { appDispatch: dispatch, useSelector } = useContext(AppContext);
@@ -45,6 +46,7 @@ export default function AssetsPanel() {
   const [isOpenNewState, setOpenNewState] = useState(false);
   const [isChangeState, setIsChangeState] = useState(false);
   const [isAutoSave, setIsAutoSave] = useState(false);
+  const [selectedTab, setSelectedTab] = useState('components');
 
   function itemTitleRender(tab) {
     return <span>{tab.title}</span>;
@@ -174,13 +176,26 @@ export default function AssetsPanel() {
   function onChangePropData(name, propsData) {
     dispatch(updatePropType(name, propsData));
   }
+
+  function changeSelected(tab) {
+    return function () {
+      setSelectedTab(tab)
+    }
+  }
   // Necessary because we will have to use Greet as a component later.
   return (
     <div className=''>
       <div className='flex flex-wrap w-[280px]'>
-        <AssetTypeBlock>Scene</AssetTypeBlock>
-        <AssetTypeBlock>Components</AssetTypeBlock>
-        <AssetTypeBlock>Resources</AssetTypeBlock>
+        <AssetTypeBlock
+          onClick={changeSelected('scenes')}
+          className={clsx({ 'bg-orange-600': selectedTab === 'scenes' })}
+        >Scene</AssetTypeBlock>
+        <AssetTypeBlock onClick={changeSelected('components')}
+          className={clsx({ 'bg-orange-600': selectedTab === 'components' })}
+        >Components</AssetTypeBlock>
+        <AssetTypeBlock onClick={changeSelected('res')}
+          className={clsx({ 'bg-orange-600': selectedTab === 'res' })}
+        >Resources</AssetTypeBlock>
       </div>
       <div className='flex h-screen'>
         <Sortable
@@ -201,7 +216,7 @@ export default function AssetsPanel() {
             dataStructure='tree'
             ref={ctx => treeViewProjectRef.current = ctx}
             onItemContextMenu={treeViewItemContextMenu}
-            items={treeData.src}
+            items={treeData[selectedTab]}
             width={270}
             // height={'100%'}
             scrollDirection='vertical'

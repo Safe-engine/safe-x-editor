@@ -18,8 +18,8 @@ export function startEditorScene() {
     if (status === 'closed') {
       const cmd = `parcel .safex/editor.html -p ${port}`
       log(cmd, GlobalData.rootProject)
-      const res = execSync(cmd, { cwd: GlobalData.rootProject })
-      if (res) log(res.toString())
+      // const res = execSync(cmd, { cwd: GlobalData.rootProject })
+      // if (res) log(res.toString())
     }
   })
 }
