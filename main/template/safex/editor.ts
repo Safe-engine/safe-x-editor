@@ -3,7 +3,7 @@ import { extensions, ResizePlugin, TickerPlugin } from 'pixi.js';
 
 import { loadAssets } from '../binding/loader';
 import { settings } from '../settings'
-import { EditingScene } from './EditingScene';
+import { Boot } from './Boot';
 
 const { designedResolution } = settings;
 const systemsList = [
@@ -22,7 +22,7 @@ async function start() {
   startGameWithSystems(systemsList)
   await loadAssets((progress) => {
     if (progress >= 1) {
-      EditingScene.create()
+      Boot.create()
     }
   })
 };

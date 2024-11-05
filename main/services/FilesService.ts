@@ -80,6 +80,7 @@ function setupEditorFiles(src: string) {
   const desDir = join(src, 'src', '.safex')
   copySync(join(safexTemplateDir, 'editor.ts'), join(desDir, 'editor.ts'))
   copySync(join(safexTemplateDir, 'editor.html'), join(desDir, 'editor.html'))
+  copySync(join(safexTemplateDir, 'Boot.tsx'), join(desDir, 'Boot.tsx'))
   const editorSceneFile = join(desDir, 'EditingScene.tsx')
   const template = readFileContent(sceneTemplate);
   const content = renderMustacheFile(template, {})
