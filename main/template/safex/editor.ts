@@ -1,37 +1,43 @@
-import { CollideSystem, GameWorld, initWorld } from '../src/lib/safex'
-import { settings } from '../src/settings'
-import { EditingScene } from './EditingScene'
+import { addGameCanvasTo, app, GUISystem, RenderSystem, setupResolution, startGameWithSystems } from '@safe-engine/pixi'
+import { extensions, ResizePlugin, TickerPlugin } from 'pixi.js';
 
-class EditorScene extends cc.Scene {
-  constructor() {
-    // 1. super init first
-    super()
-    super.ctor() // always call this for compatibility with cocos2dx JS Javascript class system
-  }
-  onEnter() {
-    super.onEnter()
-    const collideSystem = GameWorld.Instance.systems.get(CollideSystem)
-    collideSystem.toggleDebugDraw(true)
-    EditingScene.create()
-  }
-}
+import { loadAssets } from '../binding/loader';
+import { settings } from '../settings'
+import { EditingScene } from './EditingScene';
 
-window.onload = function () {
-  cc._isContextMenuEnable = true
-  cc.game.onStart = function onStart() {
-    const { designedResolution } = settings
-    const { width, height } = designedResolution
-    // Pass true to enable retina display, disabled by default to improve performance
-    cc.view.enableRetina(cc.sys.os === cc.sys.OS_IOS)
-    // Adjust viewport meta
-    cc.view.adjustViewPort(true)
-    // Setup the resolution policy and design resolution size
-    cc.view.setDesignResolutionSize(width, height, cc.ResolutionPolicy.SHOW_ALL)
-    // The game will be resized when browser size change
-    cc.view.resizeWithBrowserSize(true)
+const { designedResolution } = settings;
+const systemsList = [
+  RenderSystem,
+  GUISystem,
+];
 
-    initWorld()
-    cc.director.runScene(new EditorScene())
-  }
-  cc.game.run()
+async function start() {
+  await addGameCanvasTo()
+  Object.assign(app.canvas.style, {
+    width: `${window.innerWidth}px`,
+    height: `${window.innerHeight}px`,
+    overflow: 'visible',
+  })
+  setupResolution(designedResolution)
+  startGameWithSystems(systemsList)
+  await loadAssets((progress) => {
+    if (progress >= 1) {
+      EditingScene.create()
+    }
+  })
+};
+start()
+
+if (module.hot) {
+  module.hot.dispose(() => {
+    try {
+      extensions.remove(ResizePlugin);
+      extensions.remove(TickerPlugin);
+    } catch (error) {
+      console.log(error)
+    }
+  })
+  module.hot.accept(() => {
+    console.log('hot accept is needed');
+  })
 }

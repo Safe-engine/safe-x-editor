@@ -1,5 +1,4 @@
-import { SpriteSourceAssets } from '../src/assets'
-import { loadAssets } from '../src/binding/loader'
+import * as _assets from '../assets'
 import {
   BoxCollider, Collider,
   ButtonComp, FillType, LabelComp, ProgressTimerComp, ScrollViewComp,
@@ -11,14 +10,10 @@ import {
   SceneComponent,
   CollideSystem,
   Size, Vec2,
-} from '../src/lib/safex'
+} from '@safe-engine/pixi'
 
 export class EditingScene extends ComponentX {
   start() {
-    loadAssets(this.onProgress.bind(this))
-  }
-
-  onProgress(p: number) {
   }
 
   static create(): EditingScene {

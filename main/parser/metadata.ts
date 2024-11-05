@@ -23,13 +23,13 @@ export async function getClassesMetaData(srcDir: string, idDebug = false) {
           if (node.declaration.type === 'ClassDeclaration') {
             const { id } = node.declaration
             const { name: className } = id
-            GlobalData.importPaths[className] = `import ${className} from '../src/${file}'`
+            GlobalData.importPaths[className] = `import ${className} from '../${file}'`
           }
         } else if (node.type === 'ExportNamedDeclaration') {
           if (node.declaration.type === 'ClassDeclaration') {
             const { id } = node.declaration
             const { name: className } = id
-            GlobalData.importPaths[className] = `import { ${className} } from '../src/${file}'`
+            GlobalData.importPaths[className] = `import { ${className} } from '../${file}'`
           }
         } else if (node.type === 'ClassDeclaration') {
           const { superClass, id, body } = node

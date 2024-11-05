@@ -77,7 +77,7 @@ export const dirPathPromise = (componentPath) =>
   });
 
 function setupEditorFiles(src: string) {
-  const desDir = join(src, '.safex')
+  const desDir = join(src, 'src', '.safex')
   copySync(join(safexTemplateDir, 'editor.ts'), join(desDir, 'editor.ts'))
   copySync(join(safexTemplateDir, 'editor.html'), join(desDir, 'editor.html'))
   const editorSceneFile = join(desDir, 'EditingScene.tsx')
@@ -88,18 +88,18 @@ function setupEditorFiles(src: string) {
 }
 
 export function updateEditorJSX(jsxString: string) {
-  const editorSceneFile = join(GlobalData.rootProject, '.safex', 'EditingScene.tsx')
+  const editorSceneFile = join(GlobalData.rootProject, 'src', '.safex', 'EditingScene.tsx')
   const input = readFileContent(editorSceneFile);
   const parsed = parse(input, { jsx: true, range: true });
   const jsxBlock = getJSXBlock(parsed);
   const [start, end] = jsxBlock.range;
   let content = jsxString.includes('SceneComponent') ? jsxString :
-    `<SceneComponent>\n      ${jsxString.replace('>', ' node={{x:540,y:960}}>')}\n      </SceneComponent>`
+    `<SceneComponent>\n      ${jsxString}\n      </SceneComponent>`
   const tagUsed = getListTagUsed(parsed)
   content = spliceString(input, start, end - start, content)
   tagUsed.forEach(tag => {
     const importLine = GlobalData.importPaths[tag]
-    if (!input.includes(importLine)) {
+    if (importLine && !input.includes(importLine)) {
       content = `${importLine}\n${content}`
     }
   })
