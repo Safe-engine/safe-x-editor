@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 
-import { ScrollAblePanel } from '../components/common'
+import { ScrollAblePanel } from '../../components/common'
 
 export default function ConsolePanel() {
   useEffect(() => { }, [])

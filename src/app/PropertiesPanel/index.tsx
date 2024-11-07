@@ -4,7 +4,7 @@ import AddNewStateDialog from 'components/AddNewStateDialog';
 import ConfirmDeleteDialog from 'components/ConfirmDeleteDialog';
 import CreateActionModal from 'components/CreateActionModal';
 import CreateComponentModal from 'components/CreateComponentModal';
-import PropDisplay from 'components/PropDisplay';
+import PropDisplay from 'app/PropertiesPanel/PropDisplay';
 import ReNameComponentDialog from 'components/ReNameComponentDialog';
 import { getIsAutoSaveGenPropTypes, getLastRootFolder, setIsAutoSaveGenPropTypes } from 'data/AppData';
 import { contextMenuFilesItems } from 'data/dataContextMenu';

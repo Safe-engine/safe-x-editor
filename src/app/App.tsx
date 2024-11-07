@@ -2,11 +2,11 @@ import { Allotment } from 'allotment'
 import { useEffect } from 'react'
 
 // import 'allotment/dist/style.css'
-import AssetsPanel from '../container/AssetsPanel'
-import ConsolePanel from '../container/ConsolePanel'
-import NodeTree from '../container/NodeTree'
-import PropertiesPanel from '../container/PropertiesPanel'
-import SceneView from '../container/SceneView'
+import AssetsPanel from './AssetsPanel'
+import ConsolePanel from './ConsolePanel'
+import NodeTree from './NodeTree'
+import PropertiesPanel from './PropertiesPanel'
+import SceneView from './SceneView'
 import './globals.css'
 
 export function App() {

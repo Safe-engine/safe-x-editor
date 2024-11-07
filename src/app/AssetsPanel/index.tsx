@@ -24,7 +24,7 @@ import { selectPropTypes, selectRootFolder, selectSelectedFilePath } from 'state
 import pathUtils from 'path-browserify';
 import { getIsAutoSaveGenPropTypes, setIsAutoSaveGenPropTypes } from 'data/AppData'
 import { contextMenuFilesItems } from 'data/dataContextMenu'
-import PropDisplay from 'components/PropDisplay'
+import PropDisplay from 'app/PropertiesPanel/PropDisplay'
 import clsx from 'clsx'
 
 export default function AssetsPanel() {
