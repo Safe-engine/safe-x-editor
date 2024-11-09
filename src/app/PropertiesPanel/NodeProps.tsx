@@ -2,16 +2,17 @@ import FormControlLabel from 'base/FormControlLabel';
 import Input from 'base/Input';
 import Label from 'base/Label';
 import { memo, useContext } from 'react';
-import { genComponent, updateEditingComponent } from 'states/app.action';
+import { updateEditingComponent } from 'states/app.action';
 import { AppContext } from 'states/app.context';
-import { selectComponentTree, selectEditingComponent, selectRootFolder } from 'states/app.selectors';
-import pathUtils from 'path-browserify';
+import { selectEditingComponent } from 'states/app.selectors';
 
 function NodeProps() {
   const { appDispatch: dispatch, useSelector } = useContext(AppContext);
   const selectedEditingComponent = useSelector(selectEditingComponent);
-  const treeData = useSelector(selectComponentTree);
-  const rootProject = useSelector(selectRootFolder);
+
+  if (!selectedEditingComponent) return
+  const { node = {} } = selectedEditingComponent.props
+  const { x = 0, y = 0 } = node
 
   function onChangeProp(type) {
     return function (event) {
@@ -22,14 +23,9 @@ function NodeProps() {
           ...node, [type]: value
         }
       }));
-      const editorSceneFile = pathUtils.join(rootProject, 'src', '.safex', 'EditingScene.tsx')
-      dispatch(genComponent(treeData[0], editorSceneFile, 'tailwind'));
     }
   }
 
-  if (!selectedEditingComponent) return
-  const { node = {} } = selectedEditingComponent.props
-  const { x = 0, y = 0 } = node
   return (<div className='p-1'>
     <div className='text-orange-600'>[Node]</div>
     <div className='flex'>

@@ -1,12 +1,11 @@
-import { AppContext } from 'states/app.context';
-import { selectComponentTree, selectRootFolder, selectSelectedEditingClassNamePath, selectSelectedFilePath } from 'states/app.selectors';
+import { getIsAddDivText, getIsAutoSaveGenComp, setIsAutoSaveGenComp } from 'data/AppData';
+import { Button } from 'devextreme-react/button';
+import CheckBox from 'devextreme-react/check-box';
+import ContextMenu from 'devextreme-react/context-menu';
 import Sortable from 'devextreme-react/sortable';
 import TreeView from 'devextreme-react/tree-view';
-import { Button } from 'devextreme-react/button';
-import ContextMenu from 'devextreme-react/context-menu';
-import React, { useContext, useEffect, useRef, useState } from 'react';
-import { contextMenuItems } from '../../data/dataContextMenu';
-import CheckBox from 'devextreme-react/check-box';
+import pathUtils from 'path-browserify';
+import { useContext, useEffect, useRef, useState } from 'react';
 import {
   addNode, deleteNode,
   duplicateNode, genComponent, selectEditingTagNode, selectEditingText
@@ -15,7 +14,9 @@ import {
   ADD_DIV, ADD_TEXT_NODE,
   DELETE_NODE, DUPLICATE_NODE
 } from 'states/app.constant';
-import { getIsAddDivText, getIsAutoSaveGenComp, setIsAutoSaveGenComp } from 'data/AppData';
+import { AppContext } from 'states/app.context';
+import { selectComponentTree, selectRootFolder, selectSelectedEditingClassNamePath, selectSelectedFilePath } from 'states/app.selectors';
+import { contextMenuItems } from '../../data/dataContextMenu';
 import TagTreeRender from './TagTreeRender';
 
 export default function NodeTree() {
@@ -37,6 +38,8 @@ export default function NodeTree() {
       if (getIsAutoSaveGenComp()) {
         onClickGenComponent();
       }
+      const editorSceneFile = pathUtils.join(rootPath, 'src', '.safex', 'EditingScene.tsx')
+      dispatch(genComponent(treeData[0], editorSceneFile, 'tailwind'));
     }
   }, [treeData]);
 
