@@ -1,10 +1,10 @@
+import { sendRequest } from 'app/app.ipc';
 import { setLastRootFolder } from 'data/AppData';
 import { Dispatch } from 'react';
-import { CREATE_ACTION, CREATE_NEW_ACTION, GEN_COMPONENT_REQUEST, GEN_PROP_TYPES_REQUEST, GET_FOLDER_FILES, LOAD_COMPONENT_REQUEST, NEW_COMPONENT, NEW_PAGE, RE_NAME_COMPONENT } from 'shared/constant.message';
+import { toast } from 'react-hot-toast';
+import { GEN_COMPONENT_REQUEST, GEN_PROP_TYPES_REQUEST, GET_FOLDER_FILES, LOAD_COMPONENT_REQUEST, NEW_COMPONENT, NEW_PAGE, RE_NAME_COMPONENT } from 'shared/constant.message';
 import { AppAction } from './app.action';
 import { EXECUTE_COMMAND, GEN_COMPONENT, GEN_PROP_TYPES, GET_FILES, GET_FILES_SUCCESS, LOAD_COMPONENT, LOAD_COMPONENT_SUCCESS } from './app.constant';
-import { toast } from 'react-hot-toast';
-import { sendRequest } from 'app/app.ipc';
 
 export type MiddlewareKey = AppAction['type'];
 

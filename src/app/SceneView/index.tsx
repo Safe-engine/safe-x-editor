@@ -17,8 +17,8 @@ export default function SceneView() {
     }
   })
   // Necessary because we will have to use Greet as a component later.
-  return <div ref={divRef} className='flex justify-center'>
-    <iframe className='h-screen m-auto' src='http://localhost:10234' />
+  return <div ref={divRef} className='flex h-screen justify-center'>
+    <iframe className='w-full' style={{ height: '50vh' }} src='http://localhost:10234' />
     <ArrowControl position={position} />
   </div>
 }

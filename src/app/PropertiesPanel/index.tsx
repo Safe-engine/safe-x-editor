@@ -100,10 +100,10 @@ export default function PropertiesPanel() {
       <div className='flex h-screen'>
         <div className='w-full border border-orange-200 bg-gray-100'>
           <div className='py-2 text-orange-800 text-lg font-bold text-center border-cool-gray-300 border-b'>Components</div>
-          {Object.entries(componentPropTypes)
+          {/* {Object.entries(componentPropTypes)
             .map(([name, value]) => {
               return <PropDisplay name={name} data={value} onChangePropData={onChangePropData} key={name} />;
-            })}
+            })} */}
           <NodeProps />
           {/* <div className='fixed bottom-0 flex justify-around px-4 w-[300px]'>
             <CheckBox text='Auto save'

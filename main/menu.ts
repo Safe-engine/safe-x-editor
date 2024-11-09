@@ -1,5 +1,6 @@
 import { app, Menu, shell, dialog, ipcMain } from 'electron';
 import { getFilesInFolder } from './services/FilesService';
+import { GET_FOLDER_FILES } from '@shared/constant.message';
 
 export default class MenuBuilder {
   mainWindow;
@@ -54,9 +55,9 @@ export default class MenuBuilder {
               title: 'Select project folder.',
               properties: ['openDirectory']
             });
-            const files = getFilesInFolder({ src: root })
+            // const files = getFilesInFolder({ src: root })
             // console.log(files)
-            this.mainWindow.webContents.send('GET_FOLDER_FILES', files);
+            this.mainWindow.webContents.send('GET_FOLDER_FILES', { src: root });
             // ipcMain.emit('GET_FOLDER_FILES', files)
           }
         },
@@ -237,9 +238,9 @@ export default class MenuBuilder {
                 title: 'Select project folder.',
                 properties: ['openDirectory']
               });
-              const files = getFilesInFolder({ src: root })
+              // const files = getFilesInFolder({ src: root })
               // console.log(files)
-              this.mainWindow.webContents.send('GET_FOLDER_FILES', files);
+              this.mainWindow.webContents.send(GET_FOLDER_FILES, { src: root });
               // ipcMain.emit('GET_FOLDER_FILES', files)
             }
           },

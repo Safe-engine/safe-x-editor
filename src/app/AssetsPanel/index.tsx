@@ -12,13 +12,13 @@ import ContextMenu from 'devextreme-react/context-menu';
 import Sortable from 'devextreme-react/sortable';
 import TreeView from 'devextreme-react/tree-view';
 import { AppContext } from 'states/app.context';
-import { selectRightData } from 'states/app.selectors';
+import { selectFilesData, selectRightData } from 'states/app.selectors';
 import {
   ADD_NEW_STATE, CREATE_ACTION,
   CREATE_NEW_ACTION, DELETE_COMPONENT,
   NEW_COMPONENT, RE_NAME_COMPONENT
 } from 'shared/constant.message';
-import { addNode, genPropTypes, updatePropType } from 'states/app.action';
+import { addNode, genPropTypes, getFiles, updatePropType } from 'states/app.action';
 import { GET_FILES, LOAD_COMPONENT, TOGGLE_FOLDER } from 'states/app.constant';
 import { selectPropTypes, selectRootFolder, selectSelectedFilePath } from 'states/app.selectors';
 import pathUtils from 'path-browserify';
@@ -29,7 +29,7 @@ import clsx from 'clsx'
 
 export default function AssetsPanel() {
   const { appDispatch: dispatch, useSelector } = useContext(AppContext);
-  const [treeData, setTreeData] = useState<any>({})
+  // const [treeData, setTreeData] = useState<any>({})
   const rightData = useSelector(selectRightData);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const treeViewProjectRef = useRef(null);
@@ -41,7 +41,7 @@ export default function AssetsPanel() {
   const [openConfirmDeleteComponent, setOpenConfirmDeleteComponent] = useState(false);
   const [openRenameComponent, setOpenRenameComponent] = useState(false);
   const [createPath, setCreatePath] = useState('');
-  // const filesData = useSelector(makeSelectFilesData());
+  const treeData = useSelector(selectFilesData);
   const [openCreateComponent, setOpenCreateComponent] = useState(false);
   const [isOpenNewState, setOpenNewState] = useState(false);
   const [isChangeState, setIsChangeState] = useState(false);
@@ -59,8 +59,10 @@ export default function AssetsPanel() {
   }
   useEffect(() => {
     function getFilesCB(event, data) {
+      const { src, files } = data
       console.log('GET_FOLDER_FILES', data)
-      setTreeData(data);
+      // setTreeData(files);
+      dispatch(getFiles(src));
     }
     ipcRenderer.on(GET_FOLDER_FILES, getFilesCB);
     // event.event is the event name (useful if you want to use a single callback fn for multiple event types)

@@ -1,7 +1,6 @@
 import {
-  addNewPage,
-  addNewState, createNewComponent, duplicateComponent,
-  loadComponent, renameComponent, updateComponentPropTypes, updateComponentTag,
+  duplicateComponent,
+  loadComponent, renameComponent, updateComponentTag,
 } from '@@/services/ComponentService';
 import {
   checkFileExist,
@@ -47,13 +46,9 @@ export default function Router() {
   addListener(CHECK_FILE_EXIST, checkFileExist);
   addListener(GET_FOLDER_FILES, getFilesInFolder);
   addListener(LOAD_COMPONENT_REQUEST, loadComponent);
-  addListener(NEW_COMPONENT, createNewComponent);
   addListener(RE_NAME_COMPONENT, renameComponent);
   addListener(DUPLICATE_COMPONENT, duplicateComponent);
   addListener(DELETE_COMPONENT, deleteFolder);
   addListener(GEN_COMPONENT_REQUEST, updateComponentTag);
-  addListener(GEN_PROP_TYPES_REQUEST, updateComponentPropTypes);
   addListener(CREATE_I18N, createI18n);
-  addListener(ADD_NEW_STATE, addNewState);
-  addListener(NEW_PAGE, addNewPage);
 }
