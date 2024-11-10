@@ -1,5 +1,5 @@
-productName: react-component-editor
-appId: org.rd.react-component-editor
+productName: safex-component-editor
+appId: org.rd.safex-component-editor
 files:
   - package.json
   - build

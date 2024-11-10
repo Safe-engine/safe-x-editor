@@ -1,13 +1,13 @@
 import { app, BrowserWindow, dialog } from 'electron';
 import path from 'path';
-import isDev from 'electron-is-dev';
+// import isDev from 'electron-is-dev';
 import Router from '@@/router/Router';
 import { installExtensions } from './installExtensions';
 import { initialize, enable } from '@electron/remote/main';
 import url from 'url';
 import MenuBuilder from './menu';
 
-// const isDev = false;
+const isDev = false;
 const basePath = isDev ? __dirname : app.getAppPath();
 
 let mainWindow: BrowserWindow;
@@ -36,7 +36,7 @@ function createWindow() {
   }
 
   const file = url.format({
-    pathname: path.join(basePath, 'build', 'index.html'),
+    pathname: path.join(basePath, '..', 'editor.html'),
     protocol: 'file:',
     slashes: true,
   });
