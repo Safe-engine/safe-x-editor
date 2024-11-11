@@ -13,7 +13,6 @@ import CheckBox from 'devextreme-react/check-box';
 import ContextMenu from 'devextreme-react/context-menu';
 import Sortable from 'devextreme-react/sortable';
 import TreeView from 'devextreme-react/tree-view';
-import { ipcRenderer } from 'electron';
 import pathUtils from 'path-browserify';
 import React, { useContext, useEffect, useRef, useState } from 'react';
 import {

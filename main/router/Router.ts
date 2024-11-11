@@ -35,9 +35,9 @@ const addListener = (name: RequestMessage, listener) => {
     try {
       const response = await listener(data);
       console.log('console res: ', name, response);
-      event.sender.send(name, response);
+      ipcMain.emit(name, response);
     } catch (error) {
-      event.sender.send('ERROR', error.message);
+      ipcMain.emit('ERROR', error.message);
     }
   });
 };

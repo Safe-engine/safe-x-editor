@@ -56,8 +56,8 @@ export default class MenuBuilder {
               properties: ['openDirectory']
             });
             // const files = getFilesInFolder({ src: root })
-            // console.log(files)
-            this.mainWindow.webContents.send('GET_FOLDER_FILES', { src: root });
+            // console.log(root)
+            ipcMain.emit(GET_FOLDER_FILES, { src: root });
             // ipcMain.emit('GET_FOLDER_FILES', files)
           }
         },
@@ -240,8 +240,8 @@ export default class MenuBuilder {
               });
               // const files = getFilesInFolder({ src: root })
               // console.log(files)
-              this.mainWindow.webContents.send(GET_FOLDER_FILES, { src: root });
-              // ipcMain.emit('GET_FOLDER_FILES', files)
+              // this.mainWindow.webContents.send(GET_FOLDER_FILES, { src: root });
+              ipcMain.emit(GET_FOLDER_FILES, { src: root })
             }
           },
           {

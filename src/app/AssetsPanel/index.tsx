@@ -1,31 +1,20 @@
 'use client'
 
 import { useContext, useEffect, useRef, useState } from 'react'
-
-import { AssetTypeBlock, ScrollAblePanel } from '../../components/common'
-import { ipcRenderer } from 'electron'
-import { GET_FOLDER_FILES } from 'shared/constant.message'
-import TabPanel from 'devextreme-react/tab-panel';
-import Button from 'devextreme-react/button';
-import CheckBox from 'devextreme-react/check-box';
-import ContextMenu from 'devextreme-react/context-menu';
-import Sortable from 'devextreme-react/sortable';
-import TreeView from 'devextreme-react/tree-view';
-import { AppContext } from 'states/app.context';
-import { selectFilesData, selectRightData } from 'states/app.selectors';
-import {
-  ADD_NEW_STATE, CREATE_ACTION,
-  CREATE_NEW_ACTION, DELETE_COMPONENT,
-  NEW_COMPONENT, RE_NAME_COMPONENT
-} from 'shared/constant.message';
-import { addNode, genPropTypes, getFiles, updatePropType } from 'states/app.action';
-import { GET_FILES, LOAD_COMPONENT, TOGGLE_FOLDER } from 'states/app.constant';
-import { selectPropTypes, selectRootFolder, selectSelectedFilePath } from 'states/app.selectors';
-import pathUtils from 'path-browserify';
+import { ipcMain } from '@electron/remote'
+import clsx from 'clsx'
 import { getIsAutoSaveGenPropTypes, setIsAutoSaveGenPropTypes } from 'data/AppData'
 import { contextMenuFilesItems } from 'data/dataContextMenu'
-import PropDisplay from 'app/PropertiesPanel/PropDisplay'
-import clsx from 'clsx'
+import ContextMenu from 'devextreme-react/context-menu'
+import Sortable from 'devextreme-react/sortable'
+import TreeView from 'devextreme-react/tree-view'
+import pathUtils from 'path-browserify'
+import { ADD_NEW_STATE, CREATE_ACTION, DELETE_COMPONENT, GET_FOLDER_FILES, NEW_COMPONENT, RE_NAME_COMPONENT } from 'shared/constant.message'
+import { addNode, genPropTypes, getFiles, updatePropType } from 'states/app.action'
+import { LOAD_COMPONENT, TOGGLE_FOLDER } from 'states/app.constant'
+import { AppContext } from 'states/app.context'
+import { selectFilesData, selectPropTypes, selectRightData, selectRootFolder, selectSelectedFilePath } from 'states/app.selectors'
+import { AssetTypeBlock } from '../../components/common'
 
 export default function AssetsPanel() {
   const { appDispatch: dispatch, useSelector } = useContext(AppContext);
@@ -58,13 +47,12 @@ export default function AssetsPanel() {
     }
   }
   useEffect(() => {
-    function getFilesCB(event, data) {
-      const { src, files } = data
+    function getFilesCB(data) {
+      const { src } = data
       console.log('GET_FOLDER_FILES', data)
-      // setTreeData(files);
       dispatch(getFiles(src));
     }
-    ipcRenderer.on(GET_FOLDER_FILES, getFilesCB);
+    ipcMain.on(GET_FOLDER_FILES, getFilesCB);
     // event.event is the event name (useful if you want to use a single callback fn for multiple event types)
     // event.payload is the payload object
     // const selectedProject = await selectFolder()
@@ -80,7 +68,7 @@ export default function AssetsPanel() {
     // }
     // }
     return () => {
-      ipcRenderer.removeListener(GET_FOLDER_FILES, getFilesCB)
+      ipcMain.removeListener(GET_FOLDER_FILES, getFilesCB)
     }
   }, [])
 
