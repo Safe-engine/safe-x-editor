@@ -48,9 +48,8 @@ export default function AssetsPanel() {
   }
   useEffect(() => {
     function getFilesCB(data) {
-      const { src } = data
       console.log('GET_FOLDER_FILES', data)
-      dispatch(getFiles(src));
+      dispatch(getFiles(data));
     }
     ipcMain.on(GET_FOLDER_FILES, getFilesCB);
     // event.event is the event name (useful if you want to use a single callback fn for multiple event types)

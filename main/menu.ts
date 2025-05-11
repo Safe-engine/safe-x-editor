@@ -45,7 +45,7 @@ export default class MenuBuilder {
 
   buildDarwinTemplate() {
     const subMenuAbout = {
-      label: 'Electron',
+      label: 'Safex',
       submenu: [
         {
           label: '&Open',
@@ -57,8 +57,7 @@ export default class MenuBuilder {
             });
             // const files = getFilesInFolder({ src: root })
             // console.log(root)
-            ipcMain.emit(GET_FOLDER_FILES, { src: root });
-            // ipcMain.emit('GET_FOLDER_FILES', files)
+            ipcMain.emit(GET_FOLDER_FILES, root);
           }
         },
         { type: 'separator' },
@@ -239,9 +238,9 @@ export default class MenuBuilder {
                 properties: ['openDirectory']
               });
               // const files = getFilesInFolder({ src: root })
-              // console.log(files)
+              console.log(root)
               // this.mainWindow.webContents.send(GET_FOLDER_FILES, { src: root });
-              ipcMain.emit(GET_FOLDER_FILES, { src: root })
+              // ipcMain.emit(GET_FOLDER_FILES, { src: root })
             }
           },
           {

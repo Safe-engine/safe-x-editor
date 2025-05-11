@@ -31,13 +31,16 @@ const addedListeners = [];
 const addListener = (name: RequestMessage, listener) => {
   if (addedListeners.indexOf(name) !== -1) return;
   addedListeners.push(name);
-  ipcMain.on(name, async (event, data: IpcRequest) => {
+  ipcMain.handle(name, async (event, data: IpcRequest) => {
     try {
+      // console.log('addedListeners', name, event, data)
       const response = await listener(data);
       console.log('console res: ', name, response);
-      ipcMain.emit(name, response);
+      // ipcMain.emit(name, response);
+      return response
     } catch (error) {
-      ipcMain.emit('ERROR', error.message);
+      console.log('ERROR res: ', error);
+      // ipcMain.emit('ERROR', error.message);
     }
   });
 };

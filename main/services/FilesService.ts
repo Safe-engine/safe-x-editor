@@ -32,12 +32,12 @@ export const getFilesInFolder = ({ src, exclude = [] }) => {
   getClassesMetaData(src)
   setupEditorFiles(src)
   const jsxOption: DirectoryTree.DirectoryTreeOptions = {
-    extensions: /\.(j|t)sx?$/,
+    extensions: /\.tsx$/,
     exclude,
     attributes: ['type', 'extension'],
   }
-  const components = DirectoryTree(join(src, 'src', 'components'), jsxOption);
-  const scenes = DirectoryTree(join(src, 'src', 'scene'), jsxOption);
+  const components = DirectoryTree(join(src, 'src'), jsxOption);
+  // const scenes = DirectoryTree(join(src, 'src', 'scene'), jsxOption);
   const images: any = DirectoryTree(
     join(src, 'res'),
     {
@@ -51,11 +51,12 @@ export const getFilesInFolder = ({ src, exclude = [] }) => {
       item.height = height;
     },
   );
-  // console.log('imagesData', JSON.stringify(images, null, 2));
+  console.log('imagesData', JSON.stringify(images, null, 2));
+  console.log('components', JSON.stringify(components, null, 2));
   // console.log('treeNodeUtils', treeNodeUtils.filterNodes([tree], filterTreeFunction));
   return {
     components: getTreeData(filterTree([components])),
-    scenes: getTreeData(([scenes])),
+    // scenes: getTreeData(([scenes])),
     res: getTreeData(filterImages([images])),
   };
 };

@@ -41,7 +41,7 @@ export default function SceneView() {
     onMouseDown={onMouseDown}
     onMouseMove={onMouseMove}
     className='flex h-screen justify-center select-none'>
-    <iframe className='w-full' style={{ height: '50vh' }} src='http://localhost:10234' />
+    {/* <iframe className='w-full' style={{ height: '50vh' }} src='http://localhost:10234' /> */}
     <ArrowControl position={position} />
   </div>
 }
