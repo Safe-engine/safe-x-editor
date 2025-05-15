@@ -12,6 +12,7 @@
     ],
     "typeRoots": [
       "@types",
+      "./node_modules/cocos-html5-ts/@types",
       "node_modules/@types"
     ],
     "moduleResolution": "node"

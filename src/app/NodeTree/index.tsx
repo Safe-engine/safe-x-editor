@@ -33,7 +33,7 @@ export default function NodeTree() {
   const [isAutoSave, setIsAutoSave] = useState(false);
 
   useEffect(() => {
-    if (treeData & treeData[0]) {
+    if (treeData && treeData[0]) {
       console.log('treeData', treeData)
       setIsChangeState(true);
       if (getIsAutoSaveGenComp()) {
