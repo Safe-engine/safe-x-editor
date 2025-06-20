@@ -1,11 +1,10 @@
-import React, { useReducer, Reducer } from 'react';
-import appReducer, { initialState, AppState } from './app.reducer';
-import { AppAction } from './app.action';
+import React, { useReducer } from 'react';
 import { AppContextProvider } from './app.context';
 import { applyMiddleware } from './app.middleware';
+import appReducer, { AppState, initialState } from './app.reducer';
 
 export const AppProvider: React.FC<any> = ({ children }) => {
-  const [appState, dispatch] = useReducer<Reducer<AppState, AppAction>>(appReducer, initialState);
+  const [appState, dispatch] = useReducer(appReducer, initialState);
   const appDispatch = applyMiddleware(dispatch);
   const useSelector = (selector: (state: AppState) => any) => selector(appState);
 

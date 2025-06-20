@@ -1,30 +1,33 @@
 import { CHECK_FILE_EXIST, CREATE_ACTION, DELETE_COMPONENT } from 'shared/constant.message';
 import {
-  UPDATE_TREE, ADD_NODE,
-  LOAD_DATA, LOAD_DATA_SUCCESS,
-  LOAD_DATA_ERROR, CHANGE_TEXT_STYLES,
-  CLICK_ADD_STYLE,
+  ADD_NODE,
   CHANGE_COMPONENT_NAME,
+  CHANGE_TEXT_STYLES,
+  CLICK_ADD_STYLE,
   DELETE_NODE,
   DUPLICATE_NODE,
-  GET_FILES,
-  GET_FILES_SUCCESS,
-  LOAD_COMPONENT,
-  LOAD_COMPONENT_SUCCESS,
   EXECUTE_COMMAND,
-  SELECT_NODE,
   GEN_CLASS_NAME_SUCCESS,
   GEN_COMPONENT,
-  LOAD_COMPONENT_ERROR,
-  GET_FILES_ERROR,
-  TOGGLE_FOLDER,
   GEN_PROP_TYPES,
   GEN_PROP_TYPES_SUCCESS,
+  GET_FILES,
+  GET_FILES_ERROR,
+  GET_FILES_SUCCESS,
+  LOAD_COMPONENT,
+  LOAD_COMPONENT_ERROR,
+  LOAD_COMPONENT_SUCCESS,
+  LOAD_DATA,
+  LOAD_DATA_ERROR,
+  LOAD_DATA_SUCCESS,
+  SELECT_EDITING_TAG_NODE,
+  SELECT_EDITING_TEXT,
+  SELECT_NODE,
+  TOGGLE_FOLDER,
+  UPDATE_EDITING_COMPONENT,
   UPDATE_PROP_TYPE,
   UPDATE_TEXT_TAG,
-  SELECT_EDITING_TEXT,
-  SELECT_EDITING_TAG_NODE,
-  UPDATE_EDITING_COMPONENT,
+  UPDATE_TREE,
 } from './app.constant';
 
 /**
@@ -71,7 +74,7 @@ export function updateTree(payload) {
   };
 }
 
-export function addNode(newNode, path): { type: typeof ADD_NODE, path: string, newNode: any } {
+export function addNode(newNode, path: string) {
   return {
     type: ADD_NODE,
     newNode,
@@ -79,14 +82,14 @@ export function addNode(newNode, path): { type: typeof ADD_NODE, path: string, n
   };
 }
 
-export function duplicateNode(path): { type: typeof DUPLICATE_NODE, path: any } {
+export function duplicateNode(path) {
   return {
     type: DUPLICATE_NODE,
     path,
   };
 }
 
-export function deleteNode(path): { type: typeof DELETE_NODE, path: any } {
+export function deleteNode(path) {
   return {
     type: DELETE_NODE,
     path,
@@ -107,41 +110,35 @@ export function changeTextStyles(style) {
   };
 }
 
-export function changeComponentName(name: string): { type: typeof CHANGE_COMPONENT_NAME, name: string } {
+export function changeComponentName(name: string) {
   return {
     type: CHANGE_COMPONENT_NAME,
     name,
   };
 }
 
-export function updateTextTag(text: string): { type: typeof UPDATE_TEXT_TAG, text: string } {
+export function updateTextTag(text: string) {
   return {
     type: UPDATE_TEXT_TAG,
     text,
   };
 }
 
-export function selectEditingText(path: string): {
-  type: typeof SELECT_EDITING_TEXT, path: string
-} {
+export function selectEditingText(path: string) {
   return {
     type: SELECT_EDITING_TEXT,
     path,
   };
 }
 
-export function selectEditingTagNode(path: string): {
-  type: typeof SELECT_EDITING_TAG_NODE, path: string
-} {
+export function selectEditingTagNode(path: string) {
   return {
     type: SELECT_EDITING_TAG_NODE,
     path,
   };
 }
 
-export function updateEditingComponent(component: string, updated: any): {
-  type: typeof UPDATE_EDITING_COMPONENT, component: string, updated: any
-} {
+export function updateEditingComponent(component: string, updated: any) {
   return {
     type: UPDATE_EDITING_COMPONENT,
     component,
@@ -149,14 +146,14 @@ export function updateEditingComponent(component: string, updated: any): {
   };
 }
 
-export function getFiles(src): { type: typeof GET_FILES, src: string } {
+export function getFiles(src) {
   return {
     type: GET_FILES,
     src,
   };
 }
 
-export function getFilesSuccess(data): { type: typeof GET_FILES_SUCCESS, data: any } {
+export function getFilesSuccess(data) {
   return {
     type: GET_FILES_SUCCESS,
     data,
@@ -191,12 +188,7 @@ export function loadComponentError(error) {
   };
 }
 
-export function executeFileCommandAction(command, data, rootFolder): {
-  type: typeof EXECUTE_COMMAND,
-  command: string,
-  data: any,
-  rootFolder: string,
-} {
+export function executeFileCommandAction(command: string, data, rootFolder: string) {
   return {
     type: EXECUTE_COMMAND,
     command,
@@ -213,12 +205,7 @@ export function selectNode(path, selectedNode) {
   };
 }
 
-export function genComponent(nodesData, filePath, styleType): {
-  type: typeof GEN_COMPONENT,
-  nodesData,
-  filePath: string,
-  styleType: string,
-} {
+export function genComponent(nodesData, filePath: string, styleType: string) {
   return {
     type: GEN_COMPONENT,
     nodesData,
@@ -234,11 +221,7 @@ export function genClassNameSuccess(payload) {
   };
 }
 
-export function genPropTypes(propsData, filePath): {
-  type: typeof GEN_PROP_TYPES,
-  propsData,
-  filePath: string,
-} {
+export function genPropTypes(propsData, filePath: string) {
   return {
     type: GEN_PROP_TYPES,
     propsData,
@@ -246,11 +229,7 @@ export function genPropTypes(propsData, filePath): {
   };
 }
 
-export function updatePropType(name, propsData): {
-  type: typeof UPDATE_PROP_TYPE,
-  propsData,
-  name: string,
-} {
+export function updatePropType(name: string, propsData) {
   return {
     type: UPDATE_PROP_TYPE,
     propsData,
@@ -265,10 +244,7 @@ export function genPropTypesSuccess(payload) {
   };
 }
 
-export function toggleFolder(key): {
-  type: typeof TOGGLE_FOLDER,
-  key: string,
-} {
+export function toggleFolder(key: string) {
   return {
     type: TOGGLE_FOLDER,
     key,
