@@ -20,7 +20,7 @@ export const initialState = {
   componentTree: [],
   libraryComps: getLibraryComponents(),
   images: [],
-  settings: {},
+  settings: { designedResolution: { width: 1280, height: 720 } },
   componentPropTypes: {},
   selectedNode: {}
 };

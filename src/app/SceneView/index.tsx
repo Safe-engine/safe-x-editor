@@ -1,8 +1,7 @@
-import { useContext, useEffect, useRef, useState } from 'react'
-import ArrowControl from './ArrowControl'
-import { selectComponentTree, selectEditingComponent, selectSelectedEditingPath } from 'states/app.selectors';
-import { AppContext } from 'states/app.context';
+import { useContext, useEffect, useRef, useState } from 'react';
 import { updateEditingComponent } from 'states/app.action';
+import { AppContext } from 'states/app.context';
+import { selectComponentTree, selectSelectedEditingPath } from 'states/app.selectors';
 import { onStart } from './cocos';
 
 const filePath = "/Users/antn/Documents/axmol/kingdom-defense/res/Texture/building/farm.png";
@@ -15,26 +14,31 @@ export default function SceneView() {
   const treeData = useSelector(selectSelectedEditingPath);
   const [positionStart, setPositionStart] = useState({ x: 0, y: 0 })
   useEffect(() => {
-    cc.game.run({
-      "debugMode": 1,
-      "showFPS": false,
-      "frameRate": 60,
-      "id": "gameCanvas",
-      "renderMode": 1
-    }, onStart)
-  }, [])
+    const timeout = setTimeout(() => {
+      if (!divRef.current) return;
+      cc.game.run({
+        debugMode: 1,
+        showFPS: false,
+        frameRate: 60,
+        id: "gameCanvas",
+        renderMode: 1
+      }, onStart);
+    }, 110); // Đợi 1 tick để DOM gắn xong
+
+    return () => clearTimeout(timeout);
+  }, []); // Chạy 1 lần khi component đã mount
   useEffect(() => {
     console.log('SceneView isEditing', isEditing, treeData, selectedEditingComponent)
-    if (cc.director.getRunningScene()) {
+    if (cc.director && cc.director.getRunningScene()) {
       cc.loader.load(`file://${filePath}`, function (err, font) {
         if (err) {
           cc.log("Failed to load file:", filePath, err);
           return;
         }
-        console.log('font:', font[0]);
+        console.log('winSize:', cc.winSize);
         var label = new cc.Sprite(font[0]);
-        label.setPosition(cc.winSize.width / 4, cc.winSize.height / 4);
-        cc.director.getRunningScene().addChild(label);
+        label.setPosition(640, 360);
+        cc.director.getRunningScene().children[0].addChild(label);
       });
     }
   }, [selectedEditingComponent]);
@@ -67,9 +71,9 @@ export default function SceneView() {
     onMouseUp={onMouseUp}
     onMouseDown={onMouseDown}
     onMouseMove={onMouseMove}
-    className='flex h-screen justify-center select-none w-full' style={{ width: '40vw', height: '100vh' }}>
+    className='select-none w-full h-full' >
     {/* <iframe className='w-full' style={{ height: '50vh' }} src='http://localhost:10234' /> */}
-    <canvas id='gameCanvas' className='w-full h-full' />
+    <canvas id='gameCanvas' />
     {/* <ArrowControl position={position} /> */}
   </div>
 }

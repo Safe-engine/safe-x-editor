@@ -49,6 +49,11 @@ export const selectPropTypes = createSelector(
   (appState) => appState.componentPropTypes
 );
 
+export const selectDesignResolution = createSelector(
+  selectApp,
+  (appState) => appState.settings.designedResolution
+);
+
 function transformLibraryData(data) {
   const groups = groupBy(data, 'from');
   // console.log(groups);
