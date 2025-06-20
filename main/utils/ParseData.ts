@@ -1,6 +1,5 @@
 import { readFileContent } from '@@/helper/string.util';
 import { parseValue } from '@@/parser/ast';
-import { updateEditorJSX } from '@@/services/FilesService';
 import { traverse } from 'estraverse';
 import { uniq } from 'lodash';
 import endsWith from 'lodash/endsWith';
@@ -83,7 +82,7 @@ const parseTreeData = (root, fileOrigin = '', depth = 0, index = 0) => {
     tag,
     props,
     components,
-    items: filteredChildren.map((child, index) => parseTreeData(child, fileOrigin, depth + 1, index)),
+    children: filteredChildren.map((child, index) => parseTreeData(child, fileOrigin, depth + 1, index)),
   };
 };
 
@@ -109,7 +108,7 @@ export const convertComponentData = async (parsed, filePath, fileOrigin) => {
   const input = readFileContent(filePath);
   const [start, end] = jsxBlock.range;
   const content = input.slice(start, end)
-  updateEditorJSX(content)
+  // updateEditorJSX(content)
   return {
     name: exportedName,
     treeData,

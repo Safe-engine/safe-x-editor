@@ -83,7 +83,7 @@ export default function PropertiesPanel() {
     <div className=''>
       <div className='flex h-screen'>
         <div className='w-full'>
-          <div className='py-2 text-orange-800 text-lg font-bold text-center border-cool-gray-300 border-b'>Components</div>
+          <div className='py-1 text-orange-50 font-bold text-center border-cool-gray-300 border-b'>Components</div>
           {/* {Object.entries(componentPropTypes)
             .map(([name, value]) => {
               return <PropDisplay name={name} data={value} onChangePropData={onChangePropData} key={name} />;

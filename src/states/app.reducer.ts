@@ -1,3 +1,6 @@
+import Tree from '@colin-luo/tree';
+import { getLibraryComponents } from 'data/AppData';
+import { fixKeys } from 'helper/utils';
 import { produce } from 'immer';
 import { AppAction } from './app.action';
 import {
@@ -5,9 +8,6 @@ import {
   DUPLICATE_NODE, GET_FILES, GET_FILES_SUCCESS,
   LOAD_COMPONENT, LOAD_COMPONENT_SUCCESS, SELECT_EDITING_TAG_NODE, SELECT_EDITING_TEXT, TOGGLE_FOLDER, UPDATE_EDITING_COMPONENT, UPDATE_PROP_TYPE, UPDATE_TEXT_TAG
 } from './app.constant';
-import Tree from '@colin-luo/tree';
-import { fixKeys } from 'helper/utils';
-import { getLibraryComponents } from 'data/AppData';
 
 export const initialState = {
   loading: false,
@@ -40,7 +40,8 @@ const reducer = (state: AppState = initialState, action: AppAction) => produce(s
       break;
 
     case LOAD_COMPONENT:
-      draft.filePath = action.path;
+      if (draft.filePath !== action.path)
+        draft.filePath = action.path;
       break;
 
     case LOAD_COMPONENT_SUCCESS:

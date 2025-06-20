@@ -1,7 +1,5 @@
 import { getIsAddDivText, getIsAutoSaveGenComp, setIsAutoSaveGenComp } from 'data/AppData';
 
-import Button from 'base/Button';
-import Checkbox from 'base/Checkbox';
 import pathUtils from 'path-browserify';
 import { useContext, useEffect, useRef, useState } from 'react';
 import { Tree } from 'react-arborist';
@@ -33,15 +31,15 @@ export default function NodeTree() {
 
   useEffect(() => {
     if (treeData && treeData[0]) {
-      console.log('treeData', treeData)
+      console.log('treeData', treeData, filePath)
       setIsChangeState(true);
       if (getIsAutoSaveGenComp()) {
         onClickGenComponent();
       }
       const editorSceneFile = pathUtils.join(rootPath, 'src', '.safex', 'EditingScene.tsx')
-      dispatch(genComponent(treeData[0], editorSceneFile, 'tailwind'));
+      dispatch(genComponent(treeData[0], filePath, 'tailwind'));
     }
-  }, [treeData]);
+  }, [treeData,filePath]);
 
   useEffect(() => {
     setIsChangeState(false);
@@ -135,9 +133,9 @@ export default function NodeTree() {
   return (
     <div className='h-screen' >
       <div className='drive-header dx-treeview-item p-1'>
-        <div className='dx-treeview-item-content'>
+        <div className='dx-treeview-item-content '>
           <i className='dx-icon dx-icon-hierarchy'></i>
-          <span className='text-yellow-400'>{filePath.replace(rootPath, '')}</span>
+          <span className='text-yellow-400 text-ellipsis overflow-hidden whitespace-nowrap text-left rtl'>{filePath.replace(rootPath, '')}&nbsp;</span>
         </div>
       </div>
       <hr />
@@ -160,20 +158,6 @@ export default function NodeTree() {
         width={200}
         target='#hierarchyComponent .dx-treeview-item'
         onItemClick={contextMenuItemClick} /> */}
-      <div className='fixed bottom-0 flex justify-around w-[300px]'>
-        <Checkbox
-          name='Auto save'
-          checked={isAutoSave}
-          onChange={onChangeAutoSave}></Checkbox>
-        {!isAutoSave &&
-          <Button
-            className=''
-            // stylingMode='contained'
-            // type='danger'
-            onClick={onClickGenComponent}
-          >{`Save ${isChangeState ? '*' : ''}`}</Button>
-        }
-      </div>
     </div>
   );
 };

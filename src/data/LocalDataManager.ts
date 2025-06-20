@@ -1,6 +1,4 @@
-// import { decompressFromUTF16, compressToUTF16 } from 'lz-string';
-
-const GAME_NAME = 'react-component-editor';
+const GAME_NAME = 'safex-editor';
 const getKeyForGame = (key: string) => `${GAME_NAME}_${key}`;
 
 export const getStringForKey = (key: string, defaultValue?: string): string => {

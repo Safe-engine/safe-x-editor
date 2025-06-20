@@ -1,7 +1,7 @@
 import { ipcMain } from '@electron/remote'
 import { TreeNode } from 'app/AssetsPanel/TreeNode'
 import clsx from 'clsx'
-import { getIsAutoSaveGenPropTypes, setIsAutoSaveGenPropTypes } from 'data/AppData'
+import { getIsAutoSaveGenPropTypes, getLastRootFolder, setIsAutoSaveGenPropTypes } from 'data/AppData'
 import pathUtils from 'path-browserify'
 import { useContext, useEffect, useRef, useState } from 'react'
 import { Tree } from 'react-arborist'
@@ -48,20 +48,10 @@ export default function AssetsPanel() {
       dispatch(getFiles(data));
     }
     ipcMain.on(GET_FOLDER_FILES, getFilesCB);
-    // event.event is the event name (useful if you want to use a single callback fn for multiple event types)
-    // event.payload is the payload object
-    // const selectedProject = await selectFolder()
-    // console.log(selectedProject)
-    // if (typeof selectedProject === 'string') {
-    //   const entries = await readDir(selectedProject, {
-    //     dir: BaseDirectory.AppData,
-    //     recursive: true,
-    //   })
-    //   // const tree = processEntries(entries)
-    //   console.log(entries)
-    //   setTreeData(entries)
-    // }
-    // }
+    const lastProject = getLastRootFolder()
+    if (lastProject) {
+      dispatch(getFiles(lastProject));
+    }
     return () => {
       ipcMain.removeListener(GET_FOLDER_FILES, getFilesCB)
     }
@@ -170,10 +160,10 @@ export default function AssetsPanel() {
   return (
     <div className=''>
       <div className='flex w-[280px] space-x-1'>
-        <AssetTypeBlock
+        {/* <AssetTypeBlock
           onClick={changeSelected('scenes')}
           className={clsx({ 'bg-orange-600': selectedTab === 'scenes' })}
-        >Scene</AssetTypeBlock>
+        >Scene</AssetTypeBlock> */}
         <AssetTypeBlock onClick={changeSelected('components')}
           className={clsx({ 'bg-orange-600': selectedTab === 'components' })}
         >Components</AssetTypeBlock>

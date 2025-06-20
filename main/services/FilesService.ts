@@ -30,7 +30,7 @@ export const getFilesInFolder = ({ src, exclude = [] }) => {
   }
   GlobalData.rootProject = src
   getClassesMetaData(src)
-  setupEditorFiles(src)
+  // setupEditorFiles(src)
   const jsxOption: DirectoryTree.DirectoryTreeOptions = {
     extensions: /\.tsx$/,
     exclude,
@@ -51,8 +51,8 @@ export const getFilesInFolder = ({ src, exclude = [] }) => {
       item.height = height;
     },
   );
-  console.log('imagesData', JSON.stringify(images, null, 2));
-  console.log('components', JSON.stringify(components, null, 2));
+  // console.log('imagesData', JSON.stringify(images, null, 2));
+  // console.log('components', JSON.stringify(components, null, 2));
   // console.log('treeNodeUtils', treeNodeUtils.filterNodes([tree], filterTreeFunction));
   return {
     components: getTreeData(filterTree([components])),
