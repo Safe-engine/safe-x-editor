@@ -1,0 +1,38 @@
+import { Box, Center, HStack } from "base/Stack";
+import { useState } from "react";
+import { NodeRendererProps } from "react-arborist";
+import { AiFillFolderOpen } from "react-icons/ai";
+import { CiImageOn } from 'react-icons/ci';
+
+function renderIcon(data: ArmatureNode) {
+  if (data.isDirectory) {
+    return <AiFillFolderOpen color="white"/>;
+  }
+  return <CiImageOn color="yellow" />;
+}
+
+export function TreeItem({ node, style, dragHandle }: NodeRendererProps<any>) {
+  const [tempName, setTempName] = useState('');
+  // console.log('style', style);
+  // const { openMenu } = useContextMenuStore();
+
+  const handleContextMenu = (
+    e: React.MouseEvent,
+    node: ArmatureNode
+  ) => {
+    e.preventDefault();
+    // openMenu(node, { x: e.clientX, y: e.clientY });
+  };
+
+  return <HStack ref={dragHandle} onDoubleClick={() => {
+    setTempName(node.data.name)
+    node.edit()
+  }}
+    onContextMenu={(e) => handleContextMenu(e, node.data)}
+  >
+    <Center>
+      <Box style={style} className="m-auto">{renderIcon(node.data)}</Box>
+      <Box className="text-white">{node.data.tag}</Box>
+    </Center>
+  </HStack >
+}

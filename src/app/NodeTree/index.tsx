@@ -1,4 +1,3 @@
-import { TreeNode } from 'app/AssetsPanel/TreeNode';
 import { getIsAddDivText, getIsAutoSaveGenComp, setIsAutoSaveGenComp } from 'data/AppData';
 
 import Button from 'base/Button';
@@ -17,6 +16,7 @@ import {
 import { AppContext } from 'states/app.context';
 import { selectComponentTree, selectRootFolder, selectSelectedEditingClassNamePath, selectSelectedFilePath } from 'states/app.selectors';
 import TagTreeRender from './TagTreeRender';
+import { TreeItem } from './TreeItem';
 
 export default function NodeTree() {
   const { appDispatch: dispatch, useSelector } = useContext(AppContext);
@@ -134,13 +134,15 @@ export default function NodeTree() {
 
   return (
     <div className='h-screen' >
-      <div className='drive-header dx-treeview-item'>
+      <div className='drive-header dx-treeview-item p-1'>
         <div className='dx-treeview-item-content'>
           <i className='dx-icon dx-icon-hierarchy'></i>
-          {/* <span className='text-yellow-400'>{filePath.replace(rootPath, '')}</span> */}
+          <span className='text-yellow-400'>{filePath.replace(rootPath, '')}</span>
         </div>
       </div>
+      <hr />
       <Tree
+        className='p-1'
         data={treeData}
         onSelect={(nodes) => {
           console.log('nodes', nodes);
@@ -150,36 +152,8 @@ export default function NodeTree() {
         }}
         openByDefault
       >
-        {TreeNode}
+        {TreeItem}
       </Tree>
-      {/* <Sortable
-        id='hierarchyComponent'
-        className='pb-20'
-        filter='.dx-treeview-item'
-        height={'100%'}
-        group='shared'
-        data='componentView'
-        allowDropInsideItem={true}
-        allowReordering={true}
-      >
-        <TreeView
-          id='treeviewcomponentView'
-          expandNodesRecursive={false}
-          dataStructure='tree'
-          // scrollDirection="vertical"
-          ref={ctx => treeViewComponentRef.current = ctx}
-          onItemContextMenu={treeViewItemContextMenu}
-          itemRender={renderTreeViewItem}
-          items={treeData}
-          onItemClick={onItemClick}
-          // width={250}
-          // height={'100%'}
-          // displayExpr={getTreeCompData}
-          // itemKeyFn={getTreeCompData}
-          // itemsExpr="children"
-          keyExpr='key'
-        />
-      </Sortable> */}
       {/* <ContextMenu
         // ref={contextMenuRef}
         actions={contextMenuItems}

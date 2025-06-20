@@ -6,7 +6,7 @@ import { CiImageOn } from 'react-icons/ci';
 
 function renderIcon(data: ArmatureNode) {
   if (data.isDirectory) {
-    return <AiFillFolderOpen />;
+    return <AiFillFolderOpen color="white"/>;
   }
   return <CiImageOn color="yellow" />;
 }
