@@ -1,8 +1,8 @@
 import { dialog, getCurrentWindow } from '@electron/remote';
 import { useRef } from 'react';
+import { FaRegFolderOpen } from "react-icons/fa6";
 import Button from './Button';
 import Label from './Label';
-
 type Props = {
   onChosenFolder: Function;
   isFolder?: boolean;
@@ -44,10 +44,11 @@ const FileChooser = ({
 
   return (
     <Label className="flex">
-      <Button icon="activefolder"
-        text={title || label}
-        onClick={onClickSource} />
-      <div className="ml-2 my-auto">{selectedFile}</div>
+      <Button onClick={onClickSource} />
+      <div className="ml-2 my-auto">
+        <FaRegFolderOpen />
+        {title || label}
+        {selectedFile}</div>
     </Label>
   );
 };

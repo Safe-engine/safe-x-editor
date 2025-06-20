@@ -35,11 +35,7 @@
   "devDependencies": {
     "@colin-luo/tree": "^4.3.0",
     "@electron/remote": "^2.1.1",
-    "@fortawesome/fontawesome-svg-core": "^6.4.2",
-    "@fortawesome/free-solid-svg-icons": "^6.4.2",
-    "@fortawesome/react-fontawesome": "^0.2.0",
     "@headlessui/react": "^1.7.17",
-    "@heroicons/react": "^2.1.1",
     "@parcel/config-default": "^2.9.3",
     "@types/electron": "1.6.10",
     "@types/estraverse": "^5.1.1",

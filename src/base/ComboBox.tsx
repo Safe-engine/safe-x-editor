@@ -1,6 +1,7 @@
-import React, { Fragment, useState } from 'react';
-import { Combobox, Transition } from '@headlessui/react'
-import { CheckIcon, SelectorIcon } from '@heroicons/react/solid';
+import { Combobox, Transition } from '@headlessui/react';
+import { Fragment, useState } from 'react';
+import { IoMdCheckmark } from "react-icons/io";
+import { TbSelector } from "react-icons/tb";
 
 function ComboBox({ title, items, onChange, value, onCreateNew }) {
   const [query, setQuery] = useState('');
@@ -33,7 +34,7 @@ function ComboBox({ title, items, onChange, value, onCreateNew }) {
             onChange={onChangeInput}
           />
           <Combobox.Button className="absolute inset-y-0 right-0 flex items-center pr-2">
-            <SelectorIcon
+            <TbSelector
               className="w-5 h-5 text-gray-400"
               aria-hidden="true"
             />
@@ -74,7 +75,7 @@ function ComboBox({ title, items, onChange, value, onCreateNew }) {
                           className={`absolute inset-y-0 left-0 flex items-center pl-3 ${active ? 'text-white' : 'text-teal-600'
                             }`}
                         >
-                          <CheckIcon className="w-5 h-5" aria-hidden="true" />
+                          <IoMdCheckmark className="w-5 h-5" aria-hidden="true" />
                         </span>
                       ) : null}
                     </>
