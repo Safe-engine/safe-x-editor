@@ -1,14 +1,10 @@
-'use client'
-
-import { useContext, useEffect, useRef, useState } from 'react'
 import { ipcMain } from '@electron/remote'
+import { TreeNode } from 'app/AssetsPanel/TreeNode'
 import clsx from 'clsx'
 import { getIsAutoSaveGenPropTypes, setIsAutoSaveGenPropTypes } from 'data/AppData'
-import { contextMenuFilesItems } from 'data/dataContextMenu'
-import ContextMenu from 'devextreme-react/context-menu'
-import Sortable from 'devextreme-react/sortable'
-import TreeView from 'devextreme-react/tree-view'
 import pathUtils from 'path-browserify'
+import { useContext, useEffect, useRef, useState } from 'react'
+import { Tree } from 'react-arborist'
 import { ADD_NEW_STATE, CREATE_ACTION, DELETE_COMPONENT, GET_FOLDER_FILES, NEW_COMPONENT, RE_NAME_COMPONENT } from 'shared/constant.message'
 import { addNode, genPropTypes, getFiles, updatePropType } from 'states/app.action'
 import { LOAD_COMPONENT, TOGGLE_FOLDER } from 'states/app.constant'
@@ -71,10 +67,9 @@ export default function AssetsPanel() {
     }
   }, [])
 
-  function onItemClick(event) {
-    // console.log(event.node);
-    const { key, itemData } = event.node;
-    const { path, isDirectory } = itemData;
+  function onItemClick(node) {
+    console.log('onItemClick', node);
+    const { id: key, path, isDirectory } = node.data;
     if (isDirectory) {
       dispatch({
         type: TOGGLE_FOLDER,
@@ -174,7 +169,7 @@ export default function AssetsPanel() {
   // Necessary because we will have to use Greet as a component later.
   return (
     <div className=''>
-      <div className='flex flex-wrap w-[280px]'>
+      <div className='flex w-[280px] space-x-1'>
         <AssetTypeBlock
           onClick={changeSelected('scenes')}
           className={clsx({ 'bg-orange-600': selectedTab === 'scenes' })}
@@ -186,89 +181,29 @@ export default function AssetsPanel() {
           className={clsx({ 'bg-orange-600': selectedTab === 'res' })}
         >Resources</AssetTypeBlock>
       </div>
+      <hr />
       <div className='flex h-screen'>
-        <Sortable
-          id='hierarchyFiles'
-          className='pb-20'
-          height={'100%'}
-          filter='.dx-treeview-item'
-          group='shared'
-          data={treeData.res}
-          allowDropInsideItem={false}
-          allowReordering={true}
-          // onDragChange={onDragChange}
-          onDragEnd={onDragEnd}
+        <Tree
+          data={treeData[selectedTab]}
+          onSelect={(nodes) => {
+            console.log('nodes', nodes);
+            if (nodes[0])
+              onItemClick(nodes[0])
+          }}
+          onRename={(node) => {
+            console.log('onRename', node);
+          }}
+          openByDefault
         >
-          <TreeView
-            id='treeViewProject'
-            expandNodesRecursive={false}
-            dataStructure='tree'
-            ref={ctx => treeViewProjectRef.current = ctx}
-            onItemContextMenu={treeViewItemContextMenu}
-            items={treeData[selectedTab]}
-            width={270}
-            // height={'100%'}
-            scrollDirection='vertical'
-            // height={380}
-            displayExpr='name'
-            keyExpr='path'
-            onItemClick={onItemClick}
-          />
-        </Sortable>
-        <ContextMenu
+          {TreeNode}
+        </Tree>
+        {/* <ContextMenu
           ref={contextMenuRef}
           dataSource={contextMenuFilesItems}
           width={200}
           target='#hierarchyFiles .dx-treeview-item'
-          onItemClick={contextMenuItemClick} />
-        {/* <div className='ml-4 w-1/2 border border-orange-200 bg-gray-100'>
-          <div className='py-2 text-orange-800 text-lg font-bold text-center border-cool-gray-300 border-b'>Prop types</div>
-          {Object.entries(componentPropTypes)
-            .map(([name, value]) => {
-              return <PropDisplay name={name} data={value} onChangePropData={onChangePropData} key={name} />;
-            })}
-          <div className='fixed bottom-0 flex justify-around px-4'>
-            <CheckBox text='Auto save'
-              value={isAutoSave}
-              onValueChange={onChangeAutoSave}></CheckBox>
-            {!isAutoSave &&
-              <Button
-                className='ml-36 mr-auto'
-                text={`Save ${isChangeState ? '*' : ''}`}
-                stylingMode='contained'
-                type='success'
-                onClick={onClickGenPropTypes}
-              />
-            }
-          </div>
-        </div> */}
+          onItemClick={contextMenuItemClick} /> */}
       </div>
-
-      {/* <CreateActionModal
-        isOpen={isOpen}
-        setOpen={setOpen}
-        createPath={createPath}
-      />
-      <CreateComponentModal
-        isOpen={openCreateComponent}
-        setOpen={setOpenCreateComponent}
-        createPath={createPath}
-      />
-      <ConfirmDeleteDialog
-        isOpen={openConfirmDeleteComponent}
-        setOpen={setOpenConfirmDeleteComponent}
-        componentPath={createPath}
-      />
-      <ReNameComponentDialog
-        isOpen={openRenameComponent}
-        setOpen={setOpenRenameComponent}
-        componentPath={createPath}
-      />
-      <AddNewStateDialog
-        isOpen={isOpenNewState}
-        setOpen={setOpenNewState}
-        createPath={createPath}
-      /> */}
     </div>
   )
 }

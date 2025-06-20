@@ -1,11 +1,11 @@
+import { TreeNode } from 'app/AssetsPanel/TreeNode';
 import { getIsAddDivText, getIsAutoSaveGenComp, setIsAutoSaveGenComp } from 'data/AppData';
-import { Button } from 'devextreme-react/button';
-import CheckBox from 'devextreme-react/check-box';
-import ContextMenu from 'devextreme-react/context-menu';
-import Sortable from 'devextreme-react/sortable';
-import TreeView from 'devextreme-react/tree-view';
+
+import Button from 'base/Button';
+import Checkbox from 'base/Checkbox';
 import pathUtils from 'path-browserify';
 import { useContext, useEffect, useRef, useState } from 'react';
+import { Tree } from 'react-arborist';
 import {
   addNode, deleteNode,
   duplicateNode, genComponent, selectEditingTagNode, selectEditingText
@@ -16,7 +16,6 @@ import {
 } from 'states/app.constant';
 import { AppContext } from 'states/app.context';
 import { selectComponentTree, selectRootFolder, selectSelectedEditingClassNamePath, selectSelectedFilePath } from 'states/app.selectors';
-import { contextMenuItems } from '../../data/dataContextMenu';
 import TagTreeRender from './TagTreeRender';
 
 export default function NodeTree() {
@@ -141,7 +140,19 @@ export default function NodeTree() {
           {/* <span className='text-yellow-400'>{filePath.replace(rootPath, '')}</span> */}
         </div>
       </div>
-      <Sortable
+      <Tree
+        data={treeData}
+        onSelect={(nodes) => {
+          console.log('nodes', nodes);
+        }}
+        onRename={(node) => {
+          console.log('onRename', node);
+        }}
+        openByDefault
+      >
+        {TreeNode}
+      </Tree>
+      {/* <Sortable
         id='hierarchyComponent'
         className='pb-20'
         filter='.dx-treeview-item'
@@ -168,25 +179,25 @@ export default function NodeTree() {
           // itemsExpr="children"
           keyExpr='key'
         />
-      </Sortable>
-      <ContextMenu
-        ref={ctx => contextMenuRef.current = ctx}
-        dataSource={contextMenuItems}
+      </Sortable> */}
+      {/* <ContextMenu
+        // ref={contextMenuRef}
+        actions={contextMenuItems}
         width={200}
         target='#hierarchyComponent .dx-treeview-item'
-        onItemClick={contextMenuItemClick} />
+        onItemClick={contextMenuItemClick} /> */}
       <div className='fixed bottom-0 flex justify-around w-[300px]'>
-        <CheckBox text='Auto save'
-          value={isAutoSave}
-          onValueChange={onChangeAutoSave}></CheckBox>
+        <Checkbox
+          name='Auto save'
+          checked={isAutoSave}
+          onChange={onChangeAutoSave}></Checkbox>
         {!isAutoSave &&
           <Button
             className=''
-            text={`Save ${isChangeState ? '*' : ''}`}
-            stylingMode='contained'
-            type='danger'
+            // stylingMode='contained'
+            // type='danger'
             onClick={onClickGenComponent}
-          />
+          >{`Save ${isChangeState ? '*' : ''}`}</Button>
         }
       </div>
     </div>

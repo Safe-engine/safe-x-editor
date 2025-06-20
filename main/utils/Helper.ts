@@ -1,12 +1,13 @@
 import Tree, { TreeNode } from '@colin-luo/tree';
+import { DirectoryTree } from 'directory-tree';
 import fs from 'fs';
 import pathUtil from 'path';
-import { DirectoryTree } from 'directory-tree';
 
 export const getTreeData = (treeData: any[]) => {
   const tree = new Tree(treeData, 'path', 'children');
   const ret: any = tree.mapNodes((currentNode): any => (
     {
+      id: currentNode.path,
       name: currentNode.name,
       path: currentNode.path,
       isDirectory: currentNode.type === 'directory',
@@ -17,7 +18,7 @@ export const getTreeData = (treeData: any[]) => {
       height: currentNode.height,
     }
   ));
-  return ret as TreeNode<DevExtremeTree, 'key', 'items'>[];
+  return ret as TreeNode<TreeViewData, 'key', 'items'>[];
 };
 
 let filterType;

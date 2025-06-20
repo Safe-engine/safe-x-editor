@@ -77,6 +77,7 @@ const parseTreeData = (root, fileOrigin = '', depth = 0, index = 0) => {
     return (typeof child.value !== 'string') || !!child.value.trim()
   });
   return {
+    id: key,
     key,
     expanded: true,
     tag,

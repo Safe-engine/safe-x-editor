@@ -1,27 +1,12 @@
-import { GreenButton } from 'base/Button';
-import FileChooser from 'base/FileChooser';
 import AddNewStateDialog from 'components/AddNewStateDialog';
 import ConfirmDeleteDialog from 'components/ConfirmDeleteDialog';
 import CreateActionModal from 'components/CreateActionModal';
 import CreateComponentModal from 'components/CreateComponentModal';
-import PropDisplay from 'app/PropertiesPanel/PropDisplay';
 import ReNameComponentDialog from 'components/ReNameComponentDialog';
-import { getIsAutoSaveGenPropTypes, getLastRootFolder, setIsAutoSaveGenPropTypes } from 'data/AppData';
-import { contextMenuFilesItems } from 'data/dataContextMenu';
-import Button from 'devextreme-react/button';
-import CheckBox from 'devextreme-react/check-box';
-import ContextMenu from 'devextreme-react/context-menu';
-import Sortable from 'devextreme-react/sortable';
-import TreeView from 'devextreme-react/tree-view';
+import { getIsAutoSaveGenPropTypes, setIsAutoSaveGenPropTypes } from 'data/AppData';
 import pathUtils from 'path-browserify';
-import React, { useContext, useEffect, useRef, useState } from 'react';
-import {
-  ADD_NEW_STATE, CREATE_ACTION,
-  CREATE_NEW_ACTION, DELETE_COMPONENT,
-  NEW_COMPONENT, RE_NAME_COMPONENT
-} from 'shared/constant.message';
+import { useContext, useRef, useState } from 'react';
 import { addNode, genPropTypes, updatePropType } from 'states/app.action';
-import { GET_FILES, LOAD_COMPONENT, TOGGLE_FOLDER } from 'states/app.constant';
 import { AppContext } from 'states/app.context';
 import { selectPropTypes, selectRightData, selectRootFolder, selectSelectedFilePath } from 'states/app.selectors';
 import NodeProps from './NodeProps';

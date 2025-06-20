@@ -1,6 +1,6 @@
-import React, { useRef } from 'react';
-import { Button } from 'devextreme-react/button';
 import { dialog, getCurrentWindow } from '@electron/remote';
+import { useRef } from 'react';
+import Button from './Button';
 import Label from './Label';
 
 type Props = {
