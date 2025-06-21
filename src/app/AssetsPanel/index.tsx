@@ -3,17 +3,17 @@ import { TreeNode } from 'app/AssetsPanel/TreeNode'
 import clsx from 'clsx'
 import { getIsAutoSaveGenPropTypes, getLastRootFolder, setIsAutoSaveGenPropTypes } from 'data/AppData'
 import pathUtils from 'path-browserify'
-import { useContext, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Tree } from 'react-arborist'
 import { ADD_NEW_STATE, CREATE_ACTION, DELETE_COMPONENT, GET_FOLDER_FILES, NEW_COMPONENT, RE_NAME_COMPONENT } from 'shared/constant.message'
 import { addNode, genPropTypes, getFiles, updatePropType } from 'states/app.action'
 import { LOAD_COMPONENT, TOGGLE_FOLDER } from 'states/app.constant'
-import { AppContext } from 'states/app.context'
+import { useDispatch, useSelector } from 'states/app.context'
 import { selectFilesData, selectPropTypes, selectRightData, selectRootFolder, selectSelectedFilePath } from 'states/app.selectors'
 import { AssetTypeBlock } from '../../components/common'
 
 export default function AssetsPanel() {
-  const { appDispatch: dispatch, useSelector } = useContext(AppContext);
+  const dispatch = useDispatch();
   // const [treeData, setTreeData] = useState<any>({})
   const rightData = useSelector(selectRightData);
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -50,7 +50,7 @@ export default function AssetsPanel() {
     ipcMain.on(GET_FOLDER_FILES, getFilesCB);
     const lastProject = getLastRootFolder()
     if (lastProject) {
-      dispatch(getFiles(lastProject));
+      getFilesCB(lastProject);
     }
     return () => {
       ipcMain.removeListener(GET_FOLDER_FILES, getFilesCB)

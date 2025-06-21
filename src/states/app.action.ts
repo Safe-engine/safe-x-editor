@@ -146,7 +146,7 @@ export function updateEditingComponent(component: string, updated: any) {
   };
 }
 
-export function getFiles(src) {
+export function getFiles(src: string) {
   return {
     type: GET_FILES,
     src,
@@ -167,7 +167,7 @@ export function getFilesError(error) {
   };
 }
 
-export function loadComponent(path) {
+export function loadComponent(path: string) {
   return {
     type: LOAD_COMPONENT,
     path,
