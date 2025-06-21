@@ -1,10 +1,10 @@
-import { app, BrowserWindow, dialog } from 'electron';
-import path from 'path';
-import isDev from 'electron-is-dev';
 import Router from '@@/router/Router';
-import { installExtensions } from './installExtensions';
-import { initialize, enable } from '@electron/remote/main';
+import { enable, initialize } from '@electron/remote/main';
+import { app, BrowserWindow } from 'electron';
+import isDev from 'electron-is-dev';
+import path from 'path';
 import url from 'url';
+import { installDevtoolExtensions } from './installExtensions';
 import MenuBuilder from './menu';
 
 // const isDev = false;
@@ -16,7 +16,7 @@ initialize();
 function createWindow() {
   console.log('basePath', basePath);
   if (process.env.NODE_ENV === 'development') {
-    installExtensions();
+    installDevtoolExtensions();
   }
   mainWindow = new BrowserWindow({
     width: 1366,

@@ -3,23 +3,18 @@ import { TreeNode } from 'app/AssetsPanel/TreeNode'
 import clsx from 'clsx'
 import { getIsAutoSaveGenPropTypes, getLastRootFolder, setIsAutoSaveGenPropTypes } from 'data/AppData'
 import pathUtils from 'path-browserify'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Tree } from 'react-arborist'
 import { ADD_NEW_STATE, CREATE_ACTION, DELETE_COMPONENT, GET_FOLDER_FILES, NEW_COMPONENT, RE_NAME_COMPONENT } from 'shared/constant.message'
 import { addNode, genPropTypes, getFiles, updatePropType } from 'states/app.action'
 import { LOAD_COMPONENT, TOGGLE_FOLDER } from 'states/app.constant'
 import { useDispatch, useSelector } from 'states/app.context'
-import { selectFilesData, selectPropTypes, selectRightData, selectRootFolder, selectSelectedFilePath } from 'states/app.selectors'
+import { selectFilesData, selectPropTypes, selectSelectedFilePath } from 'states/app.selectors'
 import { AssetTypeBlock } from '../../components/common'
 
 export default function AssetsPanel() {
   const dispatch = useDispatch();
-  // const [treeData, setTreeData] = useState<any>({})
-  const rightData = useSelector(selectRightData);
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const treeViewProjectRef = useRef(null);
-  const contextMenuRef = useRef(null);
-  const root = useSelector(selectRootFolder);
   const filePath = useSelector(selectSelectedFilePath);
   const componentPropTypes = useSelector(selectPropTypes);
   const [isOpen, setOpen] = useState(false);
@@ -56,6 +51,14 @@ export default function AssetsPanel() {
       ipcMain.removeListener(GET_FOLDER_FILES, getFilesCB)
     }
   }, [])
+
+  useEffect(() => {
+    // FIXME: remove on done
+    if (treeData[0]) {
+      console.log('treeData', treeData)
+      onItemClick({ data: treeData[0].children[4] })
+    }
+  }, [treeData])
 
   function onItemClick(node) {
     console.log('onItemClick', node);
@@ -174,7 +177,7 @@ export default function AssetsPanel() {
       <hr />
       <div className='flex h-screen'>
         <Tree
-          data={treeData[selectedTab]}
+          data={treeData}
           onSelect={(nodes) => {
             console.log('nodes', nodes);
             if (nodes[0])

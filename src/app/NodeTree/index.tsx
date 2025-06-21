@@ -1,7 +1,7 @@
 import { getIsAddDivText, getIsAutoSaveGenComp, setIsAutoSaveGenComp } from 'data/AppData';
 
 import pathUtils from 'path-browserify';
-import { useContext, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Tree } from 'react-arborist';
 import {
   addNode, deleteNode,
@@ -11,13 +11,13 @@ import {
   ADD_DIV, ADD_TEXT_NODE,
   DELETE_NODE, DUPLICATE_NODE
 } from 'states/app.constant';
-import { AppContext } from 'states/app.context';
+import { useDispatch, useSelector } from 'states/app.context';
 import { selectComponentTree, selectRootFolder, selectSelectedEditingClassNamePath, selectSelectedFilePath } from 'states/app.selectors';
 import TagTreeRender from './TagTreeRender';
 import { TreeItem } from './TreeItem';
 
 export default function NodeTree() {
-  const { appDispatch: dispatch, useSelector } = useContext(AppContext);
+  const dispatch = useDispatch();
   const treeData = useSelector(selectComponentTree);
   const filePath = useSelector(selectSelectedFilePath);
   const rootPath = useSelector(selectRootFolder);
@@ -37,9 +37,9 @@ export default function NodeTree() {
         onClickGenComponent();
       }
       const editorSceneFile = pathUtils.join(rootPath, 'src', '.safex', 'EditingScene.tsx')
-      dispatch(genComponent(treeData[0], filePath, 'tailwind'));
+      // dispatch(genComponent(treeData[0], filePath, 'tailwind'));
     }
-  }, [treeData,filePath]);
+  }, [treeData, filePath]);
 
   useEffect(() => {
     setIsChangeState(false);

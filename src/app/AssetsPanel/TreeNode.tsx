@@ -39,7 +39,7 @@ export function TreeNode({ node, style, dragHandle }: NodeRendererProps<any>) {
   >
     <Center>
       <Box style={style} className="m-auto">{renderIcon(node.data)}</Box>
-      <Box className="text-white">{node.data.name}</Box>
+      <Box className={clsx(node.isSelected ? 'text-yellow-400' : 'text-white')}>{node.data.name}</Box>
     </Center>
   </HStack >
 }

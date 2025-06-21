@@ -1,14 +1,13 @@
-async function installExtensions() {
+import { installExtension, REACT_DEVELOPER_TOOLS } from 'electron-devtools-installer';
+
+export async function installDevtoolExtensions() {
   // eslint-disable-next-line global-require
-  const installer = require('electron-devtools-installer');
   const forceDownload = !!process.env.UPGRADE_EXTENSIONS;
-  const extensions = ['REACT_DEVELOPER_TOOLS'];
+  const extensions = [REACT_DEVELOPER_TOOLS];
 
   return Promise.all(
     extensions.map(
-      name => installer.default(installer[name], forceDownload)
+      name => installExtension(name, { forceDownload })
     )
   ).catch(console.log);
 }
-
-export { installExtensions };

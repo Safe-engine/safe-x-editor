@@ -35,7 +35,7 @@ const reducer = (state: AppState = initialState, action: AppAction) => produce(s
       break;
 
     case GET_FILES_SUCCESS:
-      draft.filesData = action.data;
+      draft.filesData = action.data.components[0].children;
       draft.images = action.data.images;
       break;
 
