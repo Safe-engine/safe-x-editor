@@ -1,8 +1,8 @@
-import { parseInt } from "lodash";
+import { parseVec2 } from "helper/node";
 
 function loadSprite(filePath: string): Promise<cc.Sprite> {
   return new Promise((resolve, reject) => {
-    console.log('loadSprite:', filePath);
+    // console.log('loadSprite:', filePath);
     cc.loader.load(`file://${filePath}`, function (err, texture) {
       if (err) {
         cc.log("Failed to load file:", filePath, err);
@@ -17,7 +17,7 @@ function loadSprite(filePath: string): Promise<cc.Sprite> {
 
 function loadFont(filePath: string): Promise<void> {
   return new Promise((resolve, reject) => {
-    console.log('loadFont:', filePath);
+    // console.log('loadFont:', filePath);
     cc.loader.load(`file://${filePath}`, function (err, font) {
       if (err) {
         cc.log("Failed to load file:", filePath, err);
@@ -35,8 +35,7 @@ async function parseChildren(root, parentNode, data) {
   // console.log('parseChildren:', tag, props);
   let renderNode: cc.Node;
   const { node } = props;
-  const position = node?.position || 'Vec2(0,0)';
-  const [x = 0, y = 0] = position.replace('Vec2(', '').replace(')', '').split(',').map(parseInt);
+  const { x, y } = parseVec2(node?.position);
   if (tag === 'SpriteRender') {
     const { spriteFrame } = props;
     const frameName = spriteFrame.replace('{', '').replace('}', '');
@@ -44,7 +43,7 @@ async function parseChildren(root, parentNode, data) {
     const filePath = `${rootFolder}/res/${texture.value}`;
     const sprite = await loadSprite(filePath);
     sprite.setPosition(x, y);
-    console.log('SpriteRender:', x, y, filePath);
+    // console.log('SpriteRender:', x, y, filePath);
     parentNode.addChild(sprite);
     renderNode = sprite
   } else if (tag === 'LabelComp') {
@@ -57,7 +56,7 @@ async function parseChildren(root, parentNode, data) {
     const fontName = cc.path.basename(filePath, '.ttf')
     await loadFont(filePath);
     const label = new ccui.Text(string, fontName, size)
-    console.log('LabelComp:', x, y, filePath);
+    // console.log('LabelComp:', x, y, filePath);
     label.setTextVerticalAlignment(cc.VERTICAL_TEXT_ALIGNMENT_BOTTOM)
     label.setPosition(x, y);
     parentNode.addChild(label);
@@ -66,15 +65,20 @@ async function parseChildren(root, parentNode, data) {
     renderNode = parentNode
   }
   // console.log('renderNode:', renderNode);
-  await Promise.all(children.map(async child => {
-    await parseChildren(child, renderNode, data);
-  }))
+  for (let index = 0; index < children.length; index++) {
+    const element = children[index];
+    await parseChildren(element, renderNode, data);
+  }
 }
 
 export async function loadSceneView(selectedEditingComponent = [], data) {
   const [root] = selectedEditingComponent
   if (!cc.director || !cc.director.getRunningScene()) return
   const parentNode = cc.director.getRunningScene().children[0]
+  for (let i = 1; i < parentNode.childrenCount; i++) {
+    const child = parentNode.children[i];
+    child.removeFromParent()
+  }
   // console.log('loadSceneView:', parentNode)
   await parseChildren(root, parentNode, data)
 }

@@ -5,7 +5,7 @@ import { NodeRendererProps } from "react-arborist";
 import { AiFillFolderOpen } from "react-icons/ai";
 import { CiImageOn } from 'react-icons/ci';
 
-function renderIcon(data: ArmatureNode) {
+function renderIcon(data: any) {
   if (data.isDirectory) {
     return <AiFillFolderOpen color="white" />;
   }
@@ -19,7 +19,7 @@ export function TreeNode({ node, style, dragHandle }: NodeRendererProps<any>) {
 
   const handleContextMenu = (
     e: React.MouseEvent,
-    node: ArmatureNode
+    node: any
   ) => {
     e.preventDefault();
     // openMenu(node, { x: e.clientX, y: e.clientY });

@@ -1,48 +1,48 @@
-import FormControlLabel from 'base/FormControlLabel';
-import Input from 'base/Input';
-import Label from 'base/Label';
-import { memo, useContext } from 'react';
+import { parseVec2, Vec2 } from 'helper/node';
+import { Leva, useControls } from 'leva';
+import { memo, useEffect } from 'react';
 import { updateEditingComponent } from 'states/app.action';
-import { AppContext } from 'states/app.context';
+import { useDispatch, useSelector } from 'states/app.context';
 import { selectEditingComponent } from 'states/app.selectors';
 
 function NodeProps() {
-  const { appDispatch: dispatch, useSelector } = useContext(AppContext);
+  const dispatch = useDispatch();
   const selectedEditingComponent = useSelector(selectEditingComponent);
-
+  // console.log('selectedEditingComponent', selectedEditingComponent)
   if (!selectedEditingComponent) return
   const { node = {} } = selectedEditingComponent.props
-  const { x = 0, y = 0 } = node
+  const { x, y } = parseVec2(node?.position);
 
-  function onChangeProp(type) {
-    return function (event) {
-      const { value } = event.target
-      console.log('onChangeProp', type, value);
-      dispatch(updateEditingComponent('props', {
-        node: {
-          ...node, [type]: value
-        }
-      }));
+  const [, set] = useControls(() => ({
+    position: {
+      value: {
+        x, y
+      },
+      label: 'Position',
+      joystick: false,
+      step: 1,
+      // render: () => showProperties(selectedArmature!, 'position'),
+      onChange: (value: { x: number; y: number }) => {
+        // console.log('onChangeProp', 'position', value);
+        dispatch(updateEditingComponent('props', {
+          node: {
+            ...node, position: Vec2(value)
+          }
+        }));
+      },
     }
-  }
+  }))
+
+  useEffect(() => {
+    const { node = {} } = selectedEditingComponent.props
+    const { x, y } = parseVec2(node?.position);
+    // console.log('selectedEditingComponent', 'position', x, y);
+    set({ position: { x, y } })
+  }, [selectedEditingComponent])
 
   return (<div className='p-1'>
     <div className='text-orange-600'>[Node]</div>
-    <div className='flex'>
-      <Label className='my-auto'>Position: </Label>
-      <FormControlLabel
-        control={(
-          <Input value={x} onChange={onChangeProp('x')} type='number' style={{ width: 60 }} />
-        )}
-        label='X: '
-      />
-      <FormControlLabel
-        control={(
-          <Input value={y} onChange={onChangeProp('y')} type='number' style={{ width: 60 }} />
-        )}
-        label='Y: '
-      />
-    </div>
+    <Leva fill titleBar={{ drag: false }} />
   </div>);
 }
 

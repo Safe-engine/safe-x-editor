@@ -19,12 +19,14 @@ export function App() {
   return (
     <main className="bg-gray-600 h-screen">
       <Allotment>
-        <Allotment.Pane snap minSize={200} maxSize={270}>
+        <Allotment.Pane snap minSize={200} maxSize={250}>
           <AssetsPanel />
         </Allotment.Pane>
-        <Allotment.Pane minSize={270} maxSize={300}>
-          <NodeTree />
-        </Allotment.Pane>
+        {width < height &&
+          <Allotment.Pane minSize={250} maxSize={280}>
+            <NodeTree />
+          </Allotment.Pane>
+        }
         <Allotment.Pane>
           <Allotment vertical={true}>
             <Allotment.Pane minSize={480}>
@@ -32,14 +34,14 @@ export function App() {
             </Allotment.Pane>
             {width > height &&
               <Allotment.Pane snap minSize={200} maxSize={300}>
-                <PropertiesPanel />
+                <NodeTree />
               </Allotment.Pane>
             }
           </Allotment>
         </Allotment.Pane>
-        {width < height && <Allotment.Pane snap minSize={200} maxSize={300}>
+        <Allotment.Pane snap minSize={200} maxSize={300}>
           <PropertiesPanel />
-        </Allotment.Pane>}
+        </Allotment.Pane>
       </Allotment>
     </main>
   )

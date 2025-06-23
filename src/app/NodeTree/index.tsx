@@ -65,12 +65,13 @@ export default function NodeTree() {
     }
   }
 
-  function onItemClick(event) {
-    // console.log(event.node)
-    if (!event.itemData.tag) {
-      dispatch(selectEditingText(event.node.key));
+  function onItemClick(node) {
+    console.log('onItemClick node', node.data)
+    const { id: key, tag } = node.data;
+    if (!tag) {
+      dispatch(selectEditingText(key));
     } else {
-      dispatch(selectEditingTagNode(event.node.key));
+      dispatch(selectEditingTagNode(key));
     }
   }
 
@@ -143,7 +144,9 @@ export default function NodeTree() {
         className='p-1'
         data={treeData}
         onSelect={(nodes) => {
-          console.log('nodes', nodes);
+          console.log('node tree', nodes);
+          if (nodes[0])
+            onItemClick(nodes[0])
         }}
         onRename={(node) => {
           console.log('onRename', node);

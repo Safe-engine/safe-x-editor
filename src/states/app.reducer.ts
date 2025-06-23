@@ -57,7 +57,7 @@ const reducer = (state: AppState = initialState, action: AppAction) => produce(s
     case ADD_NODE: {
       const { path, newNode } = action;
       newNode.key = new Date().getTime();
-      let tree = new Tree(draft.componentTree, 'key', 'items');
+      let tree = new Tree(draft.componentTree, 'key', 'children');
       const node = tree.getNode(path);
       if (!node.expanded) { break; }
       if (!node.items) {
@@ -70,7 +70,7 @@ const reducer = (state: AppState = initialState, action: AppAction) => produce(s
 
     case DUPLICATE_NODE: {
       const { path } = action;
-      let tree = new Tree(draft.componentTree, 'key', 'items');
+      let tree = new Tree(draft.componentTree, 'key', 'children');
       const node = tree.getParent(path);
       const fixedNode = fixKeys(path);
       // console.log(path, fixedNode)
@@ -80,14 +80,14 @@ const reducer = (state: AppState = initialState, action: AppAction) => produce(s
 
     case DELETE_NODE: {
       const { path } = action;
-      let tree = new Tree(draft.componentTree, 'key', 'items');
+      let tree = new Tree(draft.componentTree, 'key', 'children');
       tree.remove(path);
       break;
     }
 
     case TOGGLE_FOLDER: {
       const { key } = action;
-      let tree = new Tree(draft.filesData, 'path', 'items');
+      let tree = new Tree(draft.filesData, 'path', 'children');
       const node = tree.getNode(key);
       // console.log(key, node, tree)
       node.expanded = !node.expanded;
@@ -103,7 +103,7 @@ const reducer = (state: AppState = initialState, action: AppAction) => produce(s
     case SELECT_EDITING_TEXT: {
       const { path } = action;
       if (draft.editingPath === path) { return; }
-      let tree = new Tree(draft.componentTree, 'key', 'items');
+      let tree = new Tree(draft.componentTree, 'key', 'children');
       const lastNode = tree.getNode(draft.editingPath);
       if (lastNode) {
         lastNode.editing = false;
@@ -116,7 +116,7 @@ const reducer = (state: AppState = initialState, action: AppAction) => produce(s
 
     case UPDATE_TEXT_TAG: {
       const { text } = action;
-      const tree = new Tree(draft.componentTree, 'key', 'items');
+      const tree = new Tree(draft.componentTree, 'key', 'children');
       const node = tree.getNode(draft.editingPath);
       node.name = text;
       break;
@@ -125,7 +125,7 @@ const reducer = (state: AppState = initialState, action: AppAction) => produce(s
     case SELECT_EDITING_TAG_NODE: {
       const { path } = action;
       draft.editingClassNamePath = path;
-      const tree = new Tree(draft.componentTree, 'key', 'items');
+      const tree = new Tree(draft.componentTree, 'key', 'children');
       const node = tree.getNode(draft.editingClassNamePath);
       if (node && node.props) {
         draft.componentPropTypes = node.props;
@@ -136,7 +136,7 @@ const reducer = (state: AppState = initialState, action: AppAction) => produce(s
 
     case UPDATE_EDITING_COMPONENT: {
       const { component, updated } = action;
-      const tree = new Tree(draft.componentTree, 'key', 'items');
+      const tree = new Tree(draft.componentTree, 'key', 'children');
       const node = tree.getNode(draft.editingClassNamePath);
       node[component] = { ...node[component], ...updated };
       break;

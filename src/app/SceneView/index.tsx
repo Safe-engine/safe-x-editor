@@ -21,7 +21,7 @@ export default function SceneView() {
       // if (!divRef.current) return;
       cc.game.run({
         debugMode: 1,
-        showFPS: false,
+        showFPS: true,
         frameRate: 60,
         id: "gameCanvas",
         renderMode: 1
