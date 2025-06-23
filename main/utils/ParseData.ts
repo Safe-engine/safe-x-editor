@@ -115,18 +115,19 @@ export const convertComponentData = async (parsed, filePath, fileOrigin) => {
   };
 };
 
-const genPropsLine = (props: { [key: string]: string }) => {
+const genPropsLine = (props: { [key: string]: any }) => {
   const lines = Object.entries(props)
     .map(([key, val]) => {
       if (val === undefined) { return key; }
       if (!val) { return ''; }
       if (key === 'node') {
+        if (val.position === 'Vec2(0,0)' || val.position === 'Vec2(0, 0)') return ''
         return `node={{${Object.entries(val).map(([key, val]) => `${key}: ${val}`).join(', ')}}}`
       }
       if (swapperWith(val, '{', '}') || /^{.*}$/.test(val)) {
         return `${key}=${val}`;
       }
-      return `${key}='${val}'`;
+      return `${key}="${val}"`;
     });
   return lines.join(' ');
 };
@@ -134,7 +135,7 @@ const genPropsLine = (props: { [key: string]: string }) => {
 const createTag = (root, imports) => {
   // if (!root.tag) return `${root.name}`;
   const {
-    tag, name, props = {}, items = [], title, components = [], imported, isSubModule,
+    tag, name, props = {}, children = [], title, components = [], imported, isSubModule,
   } = root;
   if (!tag) {
     return `${title || name}`;
@@ -152,15 +153,14 @@ const createTag = (root, imports) => {
     }
   }
   const propsLine = genPropsLine(props);
-  if (!items.length && isEmpty(components)) {
-    return `<${tag} ${propsLine}/>`;
+  // console.log('propsLine', propsLine, ';');
+  if (!children.length && isEmpty(components)) {
+    return `<${tag}${!isEmpty(propsLine) ? ' ' : ''}${propsLine}/>`;
   }
-  const renderChildren = items.map(child => createTag(child, imports)).join('\n');
-  const renderComponents = components.map(child => createTag(child, imports)).join('\n');
-  return `<${tag} ${propsLine}>
-    ${renderChildren}
-    ${renderComponents}
-  </${tag}>`;
+  const renderChildren = children.length ? '\n' + children.map(child => createTag(child, imports)).join('\n') : '';
+  const renderComponents = components.length ? '\n' + components.map(child => createTag(child, imports)).join('\n') : '';
+  return `<${tag}${!isEmpty(propsLine) ? ' ' : ''}${propsLine}>${renderChildren}${renderComponents}
+</${tag}>`;
 };
 
 export function genReactComponentString(treeData) {
