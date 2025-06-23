@@ -1,7 +1,7 @@
 import { useContext, useEffect, useRef, useState } from 'react';
 import { updateEditingComponent } from 'states/app.action';
 import { AppContext } from 'states/app.context';
-import { selectAssetsTextureList, selectComponentTree, selectRootFolder, selectSelectedEditingPath } from 'states/app.selectors';
+import { selectAssetsTextureList, selectComponentTree, selectFontAssets, selectRootFolder, selectSelectedEditingPath } from 'states/app.selectors';
 import { onStart } from './cocos';
 import { loadSceneView } from './loader';
 
@@ -11,6 +11,7 @@ export default function SceneView() {
   const selectedEditingComponent = useSelector(selectComponentTree);
   const rootFolder = useSelector(selectRootFolder);
   const assetsTextureList = useSelector(selectAssetsTextureList);
+  const fontAssets = useSelector(selectFontAssets);
   const divRef = useRef<HTMLDivElement>(null)
   const [isEditing, setIsEditing] = useState(false)
   const treeData = useSelector(selectSelectedEditingPath);
@@ -31,7 +32,7 @@ export default function SceneView() {
   }, []); // Chạy 1 lần khi component đã mount
   useEffect(() => {
     console.log('SceneView isEditing', selectedEditingComponent)
-    loadSceneView(selectedEditingComponent, rootFolder, assetsTextureList)
+    loadSceneView(selectedEditingComponent, { rootFolder, assetsTextureList, fontAssets })
   }, [selectedEditingComponent]);
 
   function onMouseUp() {

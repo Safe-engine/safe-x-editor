@@ -50,8 +50,10 @@ export const getFilesInFolder = ({ src, exclude = [] }) => {
   //     item.height = height;
   //   },
   // );
-  const filePathAssets = join(src, 'src', 'assets', 'TextureAssets.ts');
-  const assetsTextureList = parseAssetsSrcFile(filePathAssets);
+  const filePathTextureAssets = join(src, 'src', 'assets', 'TextureAssets.ts');
+  const filePathFontAssets = join(src, 'src', 'assets', 'FontAssets.ts');
+  const assetsTextureList = parseAssetsSrcFile(filePathTextureAssets);
+  const fontAssets = parseAssetsSrcFile(filePathFontAssets);
   // console.log('imagesData', JSON.stringify(images, null, 2));
   // console.log('components', JSON.stringify(components, null, 2));
   // console.log('treeNodeUtils', treeNodeUtils.filterNodes([tree], filterTreeFunction));
@@ -60,6 +62,7 @@ export const getFilesInFolder = ({ src, exclude = [] }) => {
     // scenes: getTreeData(([scenes])),
     // res: getTreeData(filterImages([images])),
     assetsTextureList,
+    fontAssets,
   };
 };
 

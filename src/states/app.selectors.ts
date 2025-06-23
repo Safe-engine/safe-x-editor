@@ -80,10 +80,10 @@ export const selectRightData = createSelector(selectApp, (appState) => [
     title: 'Library',
     tree: transformLibraryData(appState.libraryComps),
   },
-  {
-    title: 'Images',
-    tree: appState.images,
-  },
+  // {
+  //   title: 'Images',
+  //   tree: appState.images,
+  // },
   {
     title: 'Settings',
     tree: appState.settings,
@@ -124,4 +124,9 @@ export const selectSelectedNode = createSelector(
 export const selectAssetsTextureList = createSelector(
   selectApp,
   (appState) => appState.assetsTextureList
+);
+
+export const selectFontAssets = createSelector(
+  selectApp,
+  (appState) => appState.fontAssets
 );

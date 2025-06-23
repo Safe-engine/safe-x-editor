@@ -19,7 +19,7 @@ export const initialState = {
   editingClassNamePath: '',
   componentTree: [],
   libraryComps: getLibraryComponents(),
-  images: [],
+  fontAssets: [],
   assetsTextureList: [],
   settings: { designedResolution: { width: 1280, height: 720 } },
   componentPropTypes: {},
@@ -37,7 +37,7 @@ const reducer = (state: AppState = initialState, action: AppAction) => produce(s
 
     case GET_FILES_SUCCESS:
       draft.filesData = action.data.components[0].children;
-      draft.images = action.data.images;
+      draft.fontAssets = action.data.fontAssets;
       draft.assetsTextureList = action.data.assetsTextureList;
       break;
 
