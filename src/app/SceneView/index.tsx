@@ -30,6 +30,7 @@ export default function SceneView() {
 
     return () => clearTimeout(timeout);
   }, []); // Chạy 1 lần khi component đã mount
+
   useEffect(() => {
     console.log('SceneView isEditing', selectedEditingComponent)
     loadSceneView(selectedEditingComponent, { rootFolder, assetsTextureList, fontAssets })

@@ -19,7 +19,7 @@ function NodeProps() {
         x, y
       },
       label: 'Position',
-      joystick: false,
+      joystick: 'invertY',
       step: 1,
       // render: () => showProperties(selectedArmature!, 'position'),
       onChange: (value: { x: number; y: number }) => {

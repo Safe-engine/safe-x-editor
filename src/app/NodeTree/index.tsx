@@ -1,8 +1,9 @@
 import { getIsAddDivText, getIsAutoSaveGenComp, setIsAutoSaveGenComp } from 'data/AppData';
 
-import pathUtils from 'path-browserify';
+import { ipcMain } from '@electron/remote';
 import { useEffect, useRef, useState } from 'react';
 import { Tree } from 'react-arborist';
+import { GEN_COMPONENT_REQUEST } from 'shared/constant.message';
 import {
   addNode, deleteNode,
   duplicateNode, genComponent, selectEditingTagNode, selectEditingText
@@ -36,8 +37,13 @@ export default function NodeTree() {
       if (getIsAutoSaveGenComp()) {
         onClickGenComponent();
       }
-      const editorSceneFile = pathUtils.join(rootPath, 'src', '.safex', 'EditingScene.tsx')
-      // dispatch(genComponent(treeData[0], filePath, 'tailwind'));
+      function genComponentCB() {
+        dispatch(genComponent(treeData[0], filePath, 'tailwind'));
+      }
+      ipcMain.on(GEN_COMPONENT_REQUEST, genComponentCB);
+      return () => {
+        ipcMain.removeListener(GEN_COMPONENT_REQUEST, genComponentCB)
+      }
     }
   }, [treeData, filePath]);
 

@@ -73,7 +73,7 @@ async function parseChildren(root, parentNode, data) {
 
 export async function loadSceneView(selectedEditingComponent = [], data) {
   const [root] = selectedEditingComponent
-  if (!cc.director || !cc.director.getRunningScene()) return
+  if (!cc.director || !cc.director.getRunningScene() || !root) return
   const parentNode = cc.director.getRunningScene().children[0]
   for (let i = 1; i < parentNode.childrenCount; i++) {
     const child = parentNode.children[i];

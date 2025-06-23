@@ -1,6 +1,5 @@
-import { app, Menu, shell, dialog, ipcMain } from 'electron';
-import { getFilesInFolder } from './services/FilesService';
-import { GET_FOLDER_FILES } from '@shared/constant.message';
+import { GEN_COMPONENT_REQUEST, GET_FOLDER_FILES } from '@shared/constant.message';
+import { app, dialog, ipcMain, Menu, shell } from 'electron';
 
 export default class MenuBuilder {
   mainWindow;
@@ -58,6 +57,13 @@ export default class MenuBuilder {
             // const files = getFilesInFolder({ src: root })
             // console.log(root)
             ipcMain.emit(GET_FOLDER_FILES, root);
+          }
+        },
+        {
+          label: '&Save',
+          accelerator: 'Command+S',
+          click: () => {
+            ipcMain.emit(GEN_COMPONENT_REQUEST);
           }
         },
         { type: 'separator' },
