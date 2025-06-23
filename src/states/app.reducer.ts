@@ -20,6 +20,7 @@ export const initialState = {
   componentTree: [],
   libraryComps: getLibraryComponents(),
   images: [],
+  assetsTextureList: [],
   settings: { designedResolution: { width: 1280, height: 720 } },
   componentPropTypes: {},
   selectedNode: {}
@@ -37,6 +38,7 @@ const reducer = (state: AppState = initialState, action: AppAction) => produce(s
     case GET_FILES_SUCCESS:
       draft.filesData = action.data.components[0].children;
       draft.images = action.data.images;
+      draft.assetsTextureList = action.data.assetsTextureList;
       break;
 
     case LOAD_COMPONENT:

@@ -1,21 +1,23 @@
 import { useContext, useEffect, useRef, useState } from 'react';
 import { updateEditingComponent } from 'states/app.action';
 import { AppContext } from 'states/app.context';
-import { selectComponentTree, selectSelectedEditingPath } from 'states/app.selectors';
+import { selectAssetsTextureList, selectComponentTree, selectRootFolder, selectSelectedEditingPath } from 'states/app.selectors';
 import { onStart } from './cocos';
+import { loadSceneView } from './loader';
 
-const filePath = "/Users/antn/Documents/axmol/kingdom-defense/res/Texture/building/farm.png";
 export default function SceneView() {
   const [position, setPosition] = useState({ x: 0, y: 0 })
   const { appDispatch: dispatch, useSelector } = useContext(AppContext);
   const selectedEditingComponent = useSelector(selectComponentTree);
+  const rootFolder = useSelector(selectRootFolder);
+  const assetsTextureList = useSelector(selectAssetsTextureList);
   const divRef = useRef<HTMLDivElement>(null)
   const [isEditing, setIsEditing] = useState(false)
   const treeData = useSelector(selectSelectedEditingPath);
   const [positionStart, setPositionStart] = useState({ x: 0, y: 0 })
   useEffect(() => {
     const timeout = setTimeout(() => {
-      if (!divRef.current) return;
+      // if (!divRef.current) return;
       cc.game.run({
         debugMode: 1,
         showFPS: false,
@@ -28,19 +30,8 @@ export default function SceneView() {
     return () => clearTimeout(timeout);
   }, []); // Chạy 1 lần khi component đã mount
   useEffect(() => {
-    console.log('SceneView isEditing', isEditing, treeData, selectedEditingComponent)
-    if (cc.director && cc.director.getRunningScene()) {
-      cc.loader.load(`file://${filePath}`, function (err, font) {
-        if (err) {
-          cc.log("Failed to load file:", filePath, err);
-          return;
-        }
-        console.log('winSize:', cc.winSize);
-        var label = new cc.Sprite(font[0]);
-        label.setPosition(640, 360);
-        cc.director.getRunningScene().children[0].addChild(label);
-      });
-    }
+    console.log('SceneView isEditing', selectedEditingComponent)
+    loadSceneView(selectedEditingComponent, rootFolder, assetsTextureList)
   }, [selectedEditingComponent]);
 
   function onMouseUp() {

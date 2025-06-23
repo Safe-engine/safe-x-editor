@@ -1,11 +1,10 @@
 /**
  * The App state selectors
  */
-import { createSelector } from 'reselect';
-import { initialState, AppState } from 'states/app.reducer';
 import Tree from '@colin-luo/tree';
 import groupBy from 'lodash/groupBy';
-import { classNameToObject } from 'helper/reactUtils';
+import { createSelector } from 'reselect';
+import { AppState, initialState } from 'states/app.reducer';
 
 const selectApp = (state: AppState) => state || initialState;
 
@@ -120,4 +119,9 @@ export const selectEditingComponent = createSelector(
 export const selectSelectedNode = createSelector(
   selectApp,
   (appState) => appState.selectedNode
+);
+
+export const selectAssetsTextureList = createSelector(
+  selectApp,
+  (appState) => appState.assetsTextureList
 );

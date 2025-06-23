@@ -54,9 +54,9 @@ export default function AssetsPanel() {
 
   useEffect(() => {
     // FIXME: remove on done
-    if (treeData[0]) {
-      console.log('treeData', treeData)
-      onItemClick({ data: treeData[0].children[4] })
+    if (treeData[1]) {
+      console.log('treeData Files', treeData)
+      onItemClick({ data: treeData[1].children[4] })
     }
   }, [treeData])
 

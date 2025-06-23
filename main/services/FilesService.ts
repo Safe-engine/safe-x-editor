@@ -3,7 +3,6 @@ import { readFileContent, renderMustacheFile } from '@@/helper/string.util';
 import { GlobalData } from '@@/parser/global';
 import { getClassesMetaData } from '@@/parser/metadata';
 import {
-  filterImages,
   filterTree,
   getTreeData
 } from '@@/utils/Helper';
@@ -13,11 +12,11 @@ import { parse } from '@typescript-eslint/typescript-estree';
 import DirectoryTree from 'directory-tree';
 import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { copySync } from 'fs-extra';
-import sizeOf from 'image-size';
 import dir from 'node-dir';
 import { join } from 'path';
 import rimraf from 'rimraf';
 import { startEditorScene } from './TerminalService';
+import { parseAssetsSrcFile } from './assets';
 
 export const getFilesInFolder = ({ src, exclude = [] }) => {
   const packageJson = join(src, 'package.json');
@@ -38,26 +37,29 @@ export const getFilesInFolder = ({ src, exclude = [] }) => {
   }
   const components = DirectoryTree(join(src, 'src'), jsxOption);
   // const scenes = DirectoryTree(join(src, 'src', 'scene'), jsxOption);
-  const images: any = DirectoryTree(
-    join(src, 'res'),
-    {
-      extensions: /\.(gif|jpe?g|tiff?|png|webp|bmp)$/i,
-      exclude,
-      attributes: ['type'],
-    },
-    (item: any, path) => {
-      const { width, height } = sizeOf(path);
-      item.width = width;
-      item.height = height;
-    },
-  );
+  // const images: any = DirectoryTree(
+  //   join(src, 'res'),
+  //   {
+  //     extensions: /\.(gif|jpe?g|tiff?|png|webp|bmp)$/i,
+  //     exclude,
+  //     attributes: ['type'],
+  //   },
+  //   (item: any, path) => {
+  //     const { width, height } = sizeOf(path);
+  //     item.width = width;
+  //     item.height = height;
+  //   },
+  // );
+  const filePathAssets = join(src, 'src', 'assets', 'TextureAssets.ts');
+  const assetsTextureList = parseAssetsSrcFile(filePathAssets);
   // console.log('imagesData', JSON.stringify(images, null, 2));
   // console.log('components', JSON.stringify(components, null, 2));
   // console.log('treeNodeUtils', treeNodeUtils.filterNodes([tree], filterTreeFunction));
   return {
     components: getTreeData(filterTree([components])),
     // scenes: getTreeData(([scenes])),
-    res: getTreeData(filterImages([images])),
+    // res: getTreeData(filterImages([images])),
+    assetsTextureList,
   };
 };
 
