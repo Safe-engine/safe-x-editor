@@ -23,7 +23,7 @@ export const initialState = {
   assetsTextureList: [],
   settings: { designedResolution: { width: 1280, height: 720 } },
   componentPropTypes: {},
-  selectedNode: {}
+  selectedNode: {} as any
 };
 
 export type AppState = typeof initialState;
@@ -139,6 +139,7 @@ const reducer = (state: AppState = initialState, action: AppAction) => produce(s
       const tree = new Tree(draft.componentTree, 'id', 'children');
       const node = tree.getNode(draft.editingClassNamePath);
       node[component] = { ...node[component], ...updated };
+      draft.selectedNode = node
       break;
     }
   }

@@ -1,3 +1,5 @@
+import { parseVec2 } from 'helper/node';
+import { parseInt } from 'lodash';
 import { useContext, useEffect, useRef, useState } from 'react';
 import { updateEditingComponent } from 'states/app.action';
 import { AppContext } from 'states/app.context';
@@ -42,14 +44,18 @@ export default function SceneView() {
   useEffect(() => {
     if (!cc.director || !cc.director.getRunningScene()) return
     const parentNode = cc.director.getRunningScene().children[0]
-    const childrenIndex = editingClassNamePath.split('.')[0].split('-')
+    const childrenIndex = editingClassNamePath.split('.')[0].split('-').map(parseInt)
+    // console.log('editingClassNamePath', childrenIndex, editingClassNamePath)
     let currentNode = parentNode
-    childrenIndex.forEach(child => {
-      currentNode = currentNode.children[child]
+    childrenIndex.forEach((child, i) => {
+      const index = i === 0 ? child + 1 : child
+      // console.log('selectedNode', child, i, index, currentNode)
+      if (currentNode.children[index])
+        currentNode = currentNode.children[index]
     })
-    // currentNode.x = selectSelectedNode
-    console.log('selectedNode', currentNode, selectedNode)
-
+    const { x, y } = parseVec2(selectedNode.props.node.position)
+    currentNode.setPosition(x, y)
+    // console.log('selectedNode', currentNode, selectedNode)
   }, [selectedNode])
 
   function onMouseUp() {

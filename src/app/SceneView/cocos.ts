@@ -3,6 +3,7 @@ export function onStart() {
   const newScene = new cc.Scene()
   const gray = cc.color(75, 85, 99, 255); // Màu xám (cool gray)
   const drawLayer = new cc.LayerColor(gray)
+  drawLayer.setName('drawLayer')
   // Tạo một DrawNode để vẽ khung viền
   const border = new cc.DrawNode();
   const pink = cc.color(227, 11, 93, 255); // Màu hồng (hot pink)
