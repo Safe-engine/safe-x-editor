@@ -1,7 +1,7 @@
 import { useContext, useEffect, useRef, useState } from 'react';
 import { updateEditingComponent } from 'states/app.action';
 import { AppContext } from 'states/app.context';
-import { selectAssetsTextureList, selectComponentTree, selectFontAssets, selectRootFolder, selectSelectedEditingPath } from 'states/app.selectors';
+import { selectAssetsTextureList, selectComponentTree, selectFontAssets, selectRootFolder, selectSelectedEditingClassNamePath, selectSelectedEditingPath, selectSelectedFilePath, selectSelectedNode } from 'states/app.selectors';
 import { onStart } from './cocos';
 import { loadSceneView } from './loader';
 
@@ -9,12 +9,15 @@ export default function SceneView() {
   const [position, setPosition] = useState({ x: 0, y: 0 })
   const { appDispatch: dispatch, useSelector } = useContext(AppContext);
   const selectedEditingComponent = useSelector(selectComponentTree);
+  const selectedNode = useSelector(selectSelectedNode);
+  const filePath = useSelector(selectSelectedFilePath);
   const rootFolder = useSelector(selectRootFolder);
   const assetsTextureList = useSelector(selectAssetsTextureList);
   const fontAssets = useSelector(selectFontAssets);
   const divRef = useRef<HTMLDivElement>(null)
   const [isEditing, setIsEditing] = useState(false)
   const treeData = useSelector(selectSelectedEditingPath);
+  const editingClassNamePath = useSelector(selectSelectedEditingClassNamePath);
   const [positionStart, setPositionStart] = useState({ x: 0, y: 0 })
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -34,7 +37,20 @@ export default function SceneView() {
   useEffect(() => {
     console.log('SceneView isEditing', selectedEditingComponent)
     loadSceneView(selectedEditingComponent, { rootFolder, assetsTextureList, fontAssets })
-  }, [selectedEditingComponent]);
+  }, [filePath]);
+
+  useEffect(() => {
+    if (!cc.director || !cc.director.getRunningScene()) return
+    const parentNode = cc.director.getRunningScene().children[0]
+    const childrenIndex = editingClassNamePath.split('.')[0].split('-')
+    let currentNode = parentNode
+    childrenIndex.forEach(child => {
+      currentNode = currentNode.children[child]
+    })
+    // currentNode.x = selectSelectedNode
+    console.log('selectedNode', currentNode, selectedNode)
+
+  }, [selectedNode])
 
   function onMouseUp() {
     setIsEditing(false)
@@ -49,7 +65,7 @@ export default function SceneView() {
     // console.log('Mouse move:', positionStart, isEditing)
     setPosition({ x, y })
     if (!selectedEditingComponent || !isEditing) return
-    const { node = {} } = selectedEditingComponent.props
+    const { node = {} } = selectedEditingComponent[0].props
     const { x: nx = 0, y: ny = 0 } = node
     dispatch(updateEditingComponent('props', {
       node: {

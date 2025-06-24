@@ -5,20 +5,20 @@ import { AppState, initialState } from './app.reducer';
 interface ContextProps {
   appState: AppState,
   appDispatch: Dispatch<AppAction>,
-  useSelector: Function,
+  useSelector<D>(cb?: (state?: AppState) => D): D,
 };
 
 export const AppContext = createContext<ContextProps>({
   appState: initialState,
-  appDispatch: () => { },
-  useSelector: () => { },
+  appDispatch: null,
+  useSelector: null,
 });
 
 export const AppContextProvider = AppContext.Provider;
 
-export function useSelector(sel) {
+export function useSelector<D>(sel: (state?: AppState) => D) {
   const { useSelector } = useContext(AppContext);
-  return useSelector(sel)
+  return useSelector<D>(sel)
 }
 
 export function useDispatch() {

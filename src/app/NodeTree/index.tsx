@@ -91,7 +91,7 @@ export default function NodeTree() {
 
   function contextMenuItemClick(e) {
     // console.log(selectedTreeItem);
-    if (!selectedTreeItem.key) { return; }
+    if (!selectedTreeItem.id) { return; }
     switch (e.itemData.text) {
       case ADD_DIV: {
         dispatch(addNode({ tag: 'div', name: 'div', expanded: true }, selectedTreeItem.key));
@@ -127,7 +127,7 @@ export default function NodeTree() {
       </span>;
     }
     return (<div
-      className={selectedEditingClassNamePath === item.key ?
+      className={selectedEditingClassNamePath === item.id ?
         'bg-blue-200 p-1 rounded-md' : ('')}>
       <span className='text-green-600 font-medium'>
         &lt;{item.tag}&gt;

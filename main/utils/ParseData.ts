@@ -1,4 +1,3 @@
-import { readFileContent } from '@@/helper/string.util';
 import { parseValue } from '@@/parser/ast';
 import { traverse } from 'estraverse';
 import { uniq } from 'lodash';
@@ -49,14 +48,14 @@ const getAttributeProps = (openingElement, fileOrigin) => {
   return props;
 };
 
-const parseTreeData = (root, fileOrigin = '', depth = 0, index = 0) => {
+const parseTreeData = (root, fileOrigin = '', childrenIndex = []) => {
   const {
     openingElement, children = [],
     type, value, range = []
   } = root;
   const [start, end] = range;
   // console.log('parseTreeData', root);
-  const key = `${depth}-${index}-${Math.random()}`;
+  const key = `${childrenIndex.join('-')}.${Math.random()}`;
   if (type === 'JSXText') { return { name: value.trim(), key }; }
   if (type === 'JSXExpressionContainer') {
     return { name: fileOrigin.substring(start, end), key };
@@ -77,12 +76,14 @@ const parseTreeData = (root, fileOrigin = '', depth = 0, index = 0) => {
   });
   return {
     id: key,
-    key,
     expanded: true,
     tag,
     props,
     components,
-    children: filteredChildren.map((child, index) => parseTreeData(child, fileOrigin, depth + 1, index)),
+    children: filteredChildren.map((child, index) => {
+      childrenIndex.push(index)
+      return parseTreeData(child, fileOrigin, childrenIndex)
+    }),
   };
 };
 
@@ -105,9 +106,9 @@ export const convertComponentData = async (parsed, filePath, fileOrigin) => {
   // console.log('exportedName', exportedName);
   const jsxBlock = getJSXBlock(parsed);
   const treeData = parseTreeData(jsxBlock, fileOrigin);
-  const input = readFileContent(filePath);
-  const [start, end] = jsxBlock.range;
-  const content = input.slice(start, end)
+  // const input = readFileContent(filePath);
+  // const [start, end] = jsxBlock.range;
+  // const content = input.slice(start, end)
   // updateEditorJSX(content)
   return {
     name: exportedName,

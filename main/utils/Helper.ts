@@ -18,7 +18,7 @@ export const getTreeData = (treeData: any[]) => {
       height: currentNode.height,
     }
   ));
-  return ret as TreeNode<TreeViewData, 'key', 'items'>[];
+  return ret as TreeNode<TreeViewData, 'id', 'items'>[];
 };
 
 let filterType;

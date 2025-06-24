@@ -42,7 +42,7 @@ function NodeProps() {
 
   return (<div className='p-1'>
     <div className='text-orange-600'>[Node]</div>
-    <Leva fill titleBar={{ drag: false }} />
+    <Leva fill titleBar={{ drag: false, title: 'Node' }} />
   </div>);
 }
 

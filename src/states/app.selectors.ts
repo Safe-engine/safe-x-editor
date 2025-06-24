@@ -94,7 +94,7 @@ export const selectEditingText = createSelector(
   selectComponentTree,
   selectSelectedEditingPath,
   (componentTree, editingPath) => {
-    let tree = new Tree(componentTree, 'key', 'children');
+    let tree = new Tree(componentTree, 'id', 'children');
     const node = tree.getNode(editingPath);
     return node ? node.name : '';
   }
@@ -109,7 +109,7 @@ export const selectEditingComponent = createSelector(
   selectComponentTree,
   selectSelectedEditingClassNamePath,
   (componentTree, editingClassNamePath) => {
-    let tree = new Tree(componentTree, 'key', 'children');
+    let tree = new Tree(componentTree, 'id', 'children');
     const node = tree.getNode(editingClassNamePath);
     // console.log('name', editingClassNamePath, node?.name);
     return node;
