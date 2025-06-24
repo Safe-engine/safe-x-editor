@@ -49,18 +49,20 @@ export default function SceneView() {
     if (!cc.director || !cc.director.getRunningScene() || !selectedNode.props) return
     const parentNode = cc.director.getRunningScene().children[0]
     const childrenIndex = editingClassNamePath.split('.')[0].split('-').map(parseInt)
+    childrenIndex.shift()
     // console.log('editingClassNamePath', childrenIndex, editingClassNamePath)
     let currentNode = parentNode
     childrenIndex.forEach((child, i) => {
       const index = i === 0 ? child + 1 : child
       // console.log('selectedNode', child, i, index, currentNode)
+      // console.log('currentNode.children', currentNode.children)
       if (currentNode.children[index])
         currentNode = currentNode.children[index]
     })
     const { x, y } = parseVec2(selectedNode.props.node.position)
     currentNode.setPosition(x, y)
     // console.log('selectedNode', currentNode, selectedNode)
-  }, [selectedNode])
+  }, [editingClassNamePath, selectedNode])
 
   function onMouseUp() {
     // setIsEditing(false)
@@ -77,8 +79,8 @@ export default function SceneView() {
     const y = event.clientY - divRef.current.getBoundingClientRect().top
     setPosition({ x, y })
     if (!selectedEditingComponent || !isEditing || !selectedNode.props) return
-    console.log('Mouse move:', positionStart, isEditing)
-    console.log('event.client:', event.clientX, event.clientY)
+    // console.log('Mouse move:', positionStart, isEditing)
+    // console.log('event.client:', event.clientX, event.clientY)
     const { x: nx = 0, y: ny = 0 } = parseVec2(selectedNode.props.node.position)
     dispatch(updateEditingComponent('props', {
       node: {

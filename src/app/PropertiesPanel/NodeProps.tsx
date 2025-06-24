@@ -3,14 +3,14 @@ import { Leva, useControls } from 'leva';
 import { memo, useEffect } from 'react';
 import { updateEditingComponent } from 'states/app.action';
 import { useDispatch, useSelector } from 'states/app.context';
-import { selectEditingComponent } from 'states/app.selectors';
+import { selectSelectedNode } from 'states/app.selectors';
 
 function NodeProps() {
   const dispatch = useDispatch();
-  const selectedEditingComponent = useSelector(selectEditingComponent);
+  const selectedNode = useSelector(selectSelectedNode);
   // console.log('selectedEditingComponent', selectedEditingComponent)
-  if (!selectedEditingComponent) return
-  const { node = {} } = selectedEditingComponent.props
+  if (!selectedNode.props) return
+  const { node = {} } = selectedNode.props
   const { x, y } = parseVec2(node?.position);
 
   const [, set] = useControls(() => ({
@@ -34,11 +34,12 @@ function NodeProps() {
   }))
 
   useEffect(() => {
-    const { node = {} } = selectedEditingComponent.props
+    if (!selectedNode.props) return
+    const { node = {} } = selectedNode.props
     const { x, y } = parseVec2(node?.position);
-    // console.log('selectedEditingComponent', 'position', x, y);
+    // console.log('selectedNode', 'position', x, y);
     set({ position: { x, y } })
-  }, [selectedEditingComponent])
+  }, [selectedNode])
 
   return (<div className='p-1'>
     <div className='text-orange-600'>[Node]</div>

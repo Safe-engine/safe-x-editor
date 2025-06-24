@@ -48,17 +48,18 @@ const getAttributeProps = (openingElement, fileOrigin) => {
   return props;
 };
 
-const parseTreeData = (root, fileOrigin = '', childrenIndex = []) => {
+const parseTreeData = (root, fileOrigin = '', childrenIndex = [], index = 0) => {
   const {
     openingElement, children = [],
     type, value, range = []
   } = root;
   const [start, end] = range;
   // console.log('parseTreeData', root);
-  const key = `${childrenIndex.join('-')}.${Math.random()}`;
-  if (type === 'JSXText') { return { name: value.trim(), key }; }
+  const thisIndexes = [...childrenIndex, index];
+  const id = `${thisIndexes.join('-')}.${Math.random()}`;
+  if (type === 'JSXText') { return { name: value.trim(), id }; }
   if (type === 'JSXExpressionContainer') {
-    return { name: fileOrigin.substring(start, end), key };
+    return { name: fileOrigin.substring(start, end), id };
   }
   const tag = get(openingElement, 'name.name');
   const props: any = getAttributeProps(openingElement, fileOrigin);
@@ -75,14 +76,13 @@ const parseTreeData = (root, fileOrigin = '', childrenIndex = []) => {
     return (typeof child.value !== 'string') || !!child.value.trim()
   });
   return {
-    id: key,
+    id,
     expanded: true,
     tag,
     props,
     components,
     children: filteredChildren.map((child, index) => {
-      childrenIndex.push(index)
-      return parseTreeData(child, fileOrigin, childrenIndex)
+      return parseTreeData(child, fileOrigin, thisIndexes, index)
     }),
   };
 };

@@ -30,7 +30,7 @@ export default function NodeTree() {
 
   useEffect(() => {
     if (treeData && treeData[0]) {
-      console.log('treeData', treeData, filePath)
+      // console.log('treeData', treeData, filePath)
       setIsChangeState(true);
       if (getIsAutoSaveGenComp()) {
         onClickGenComponent();
@@ -43,7 +43,7 @@ export default function NodeTree() {
         ipcMain.removeListener(GEN_COMPONENT_REQUEST, genComponentCB)
       }
     }
-  }, [filePath]);
+  }, [treeData, filePath]);
 
   useEffect(() => {
     setIsChangeState(false);

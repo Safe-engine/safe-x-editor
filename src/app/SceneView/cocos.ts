@@ -19,6 +19,7 @@ export function onStart() {
   );
   drawLayer.addChild(border);       // Thêm border vào layer
   newScene.addChild(drawLayer)
+  drawLayer.setPosition(-100, -60); // Đặt vị trí của layer
   drawLayer.scale = 0.33; // Giảm kích thước của layer xuống
   cc.director.runScene(newScene)
 }
