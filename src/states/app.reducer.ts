@@ -51,12 +51,12 @@ const reducer = (state: AppState = initialState, action: AppAction) => produce(s
       const { treeData, props } = action.data;
       draft.componentTree = [treeData];
       draft.componentPropTypes = treeData.props;
-      draft.editingClassNamePath = treeData.key;
+      draft.editingClassNamePath = treeData.id;
       break;
 
     case ADD_NODE: {
       const { path, newNode } = action;
-      newNode.key = new Date().getTime();
+      newNode.id = new Date().getTime();
       let tree = new Tree(draft.componentTree, 'id', 'children');
       const node = tree.getNode(path);
       if (!node.expanded) { break; }

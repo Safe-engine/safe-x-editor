@@ -35,10 +35,10 @@ export function findNodeById(nodes, id) {
 }
 
 export function fixKeys(root) {
-  let { key, items = [] } = root;
+  let { id, items = [] } = root;
   return {
     ...root,
-    key: `${key}_${Date.now()}`,
+    id: `${id}_${Date.now()}`,
     items: items.map(fixKeys)
   };
 }

@@ -1,11 +1,15 @@
-import { parseVec2 } from 'helper/node';
+import { parseVec2, Vec2 } from 'helper/node';
 import { parseInt } from 'lodash';
 import { useContext, useEffect, useRef, useState } from 'react';
 import { updateEditingComponent } from 'states/app.action';
 import { AppContext } from 'states/app.context';
-import { selectAssetsTextureList, selectComponentTree, selectFontAssets, selectRootFolder, selectSelectedEditingClassNamePath, selectSelectedEditingPath, selectSelectedFilePath, selectSelectedNode } from 'states/app.selectors';
+import { selectAssetsTextureList, selectComponentTree, selectFontAssets, selectRootFolder, selectSelectedEditingClassNamePath, selectSelectedFilePath, selectSelectedNode } from 'states/app.selectors';
+import ArrowControl from './ArrowControl';
 import { onStart } from './cocos';
 import { loadSceneView } from './loader';
+
+let isEditing = false
+let positionStart = { x: 0, y: 0 }
 
 export default function SceneView() {
   const [position, setPosition] = useState({ x: 0, y: 0 })
@@ -17,10 +21,10 @@ export default function SceneView() {
   const assetsTextureList = useSelector(selectAssetsTextureList);
   const fontAssets = useSelector(selectFontAssets);
   const divRef = useRef<HTMLDivElement>(null)
-  const [isEditing, setIsEditing] = useState(false)
-  const treeData = useSelector(selectSelectedEditingPath);
+  // const [isEditing, setIsEditing] = useState(false)
   const editingClassNamePath = useSelector(selectSelectedEditingClassNamePath);
-  const [positionStart, setPositionStart] = useState({ x: 0, y: 0 })
+  // const [positionStart, setPositionStart] = useState({ x: 0, y: 0 })
+
   useEffect(() => {
     const timeout = setTimeout(() => {
       // if (!divRef.current) return;
@@ -31,7 +35,7 @@ export default function SceneView() {
         id: "gameCanvas",
         renderMode: 1
       }, onStart);
-    }, 110); // Đợi 1 tick để DOM gắn xong
+    }, 50); // Đợi 1 tick để DOM gắn xong
 
     return () => clearTimeout(timeout);
   }, []); // Chạy 1 lần khi component đã mount
@@ -42,7 +46,7 @@ export default function SceneView() {
   }, [filePath]);
 
   useEffect(() => {
-    if (!cc.director || !cc.director.getRunningScene()) return
+    if (!cc.director || !cc.director.getRunningScene() || !selectedNode.props) return
     const parentNode = cc.director.getRunningScene().children[0]
     const childrenIndex = editingClassNamePath.split('.')[0].split('-').map(parseInt)
     // console.log('editingClassNamePath', childrenIndex, editingClassNamePath)
@@ -59,27 +63,33 @@ export default function SceneView() {
   }, [selectedNode])
 
   function onMouseUp() {
-    setIsEditing(false)
+    // setIsEditing(false)
+    isEditing = false
   }
   function onMouseDown(event) {
-    setIsEditing(true)
-    setPositionStart({ x: event.clientX, y: event.clientY })
+    // setIsEditing(true)
+    // setPositionStart({ x: event.clientX, y: event.clientY })
+    isEditing = true
+    positionStart = { x: event.clientX, y: event.clientY }
   }
   function onMouseMove(event) {
     const x = event.clientX - divRef.current.getBoundingClientRect().left
     const y = event.clientY - divRef.current.getBoundingClientRect().top
-    // console.log('Mouse move:', positionStart, isEditing)
     setPosition({ x, y })
-    if (!selectedEditingComponent || !isEditing) return
-    const { node = {} } = selectedEditingComponent[0].props
-    const { x: nx = 0, y: ny = 0 } = node
+    if (!selectedEditingComponent || !isEditing || !selectedNode.props) return
+    console.log('Mouse move:', positionStart, isEditing)
+    console.log('event.client:', event.clientX, event.clientY)
+    const { x: nx = 0, y: ny = 0 } = parseVec2(selectedNode.props.node.position)
     dispatch(updateEditingComponent('props', {
       node: {
-        ...node,
-        x: nx + event.clientX - positionStart.x,
-        y: ny + event.clientY - positionStart.y,
+        ...selectedNode.props.node,
+        position: Vec2({
+          x: nx + (event.clientX - positionStart.x) / 0.33,
+          y: ny + (event.clientY - positionStart.y) / -0.33,
+        })
       }
     }));
+    positionStart = { x: event.clientX, y: event.clientY }
   }
   // Necessary because we will have to use Greet as a component later.
   return <div ref={divRef}
@@ -87,8 +97,7 @@ export default function SceneView() {
     onMouseDown={onMouseDown}
     onMouseMove={onMouseMove}
     className='select-none w-full h-full' >
-    {/* <iframe className='w-full' style={{ height: '50vh' }} src='http://localhost:10234' /> */}
     <canvas id='gameCanvas' />
-    {/* <ArrowControl position={position} /> */}
+    <ArrowControl position={position} />
   </div>
 }
