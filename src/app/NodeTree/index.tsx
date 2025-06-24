@@ -24,9 +24,7 @@ export default function NodeTree() {
   const rootPath = useSelector(selectRootFolder);
   const selectedEditingClassNamePath = useSelector(selectSelectedEditingClassNamePath);
   const [selectedTreeItem, setSelectedTreeItem] = useState<any>({});
-  const treeViewComponentRef = useRef(null);
   const contextMenuRef = useRef(null);
-  const [styleType, setStyleType] = useState('tailwind');
   const [isChangeState, setIsChangeState] = useState(false);
   const [isAutoSave, setIsAutoSave] = useState(false);
 
@@ -38,14 +36,14 @@ export default function NodeTree() {
         onClickGenComponent();
       }
       function genComponentCB() {
-        dispatch(genComponent(treeData[0], filePath, 'tailwind'));
+        dispatch(genComponent(treeData[0], filePath));
       }
       ipcMain.on(GEN_COMPONENT_REQUEST, genComponentCB);
       return () => {
         ipcMain.removeListener(GEN_COMPONENT_REQUEST, genComponentCB)
       }
     }
-  }, [treeData, filePath]);
+  }, [filePath]);
 
   useEffect(() => {
     setIsChangeState(false);
@@ -54,7 +52,7 @@ export default function NodeTree() {
 
   function onClickGenComponent() {
     setIsChangeState(false);
-    dispatch(genComponent(treeData[0], filePath, styleType));
+    dispatch(genComponent(treeData[0], filePath));
   }
 
   function treeViewItemContextMenu(e) {

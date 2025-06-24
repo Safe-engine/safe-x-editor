@@ -205,12 +205,11 @@ export function selectNode(path, selectedNode) {
   };
 }
 
-export function genComponent(nodesData, filePath: string, styleType: string) {
+export function genComponent(nodesData, filePath: string) {
   return {
     type: GEN_COMPONENT,
     nodesData,
     filePath,
-    styleType,
   };
 }
 

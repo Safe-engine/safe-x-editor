@@ -11,7 +11,7 @@ export type MiddlewareKey = AppAction['type'];
 export const applyMiddleware =
   (dispatch: Dispatch<AppAction>) => async (action: AppAction) => {
     // registeredMiddleware[action.type](dispatch, action);
-    console.log('applyMiddleware', action);
+    let hadMiddleware = true;
     switch (action.type) {
       case GET_FILES: {
         const data: any = await sendRequest({
@@ -67,7 +67,11 @@ export const applyMiddleware =
       }
 
       default:
+        hadMiddleware = false;
         break;
+    }
+    if (hadMiddleware) {
+      console.log('hadMiddleware', action);
     }
     dispatch(action);
   };
