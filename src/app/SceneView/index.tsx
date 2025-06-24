@@ -67,6 +67,27 @@ export default function SceneView() {
   function onMouseUp() {
     // setIsEditing(false)
     isEditing = false
+    const parentNode = cc.director.getRunningScene().children[0]
+    const childrenIndex = editingClassNamePath.split('.')[0].split('-').map(parseInt)
+    childrenIndex.shift()
+    // console.log('editingClassNamePath', childrenIndex, editingClassNamePath)
+    let currentNode = parentNode
+    childrenIndex.forEach((child, i) => {
+      const index = i === 0 ? child + 1 : child
+      // console.log('selectedNode', child, i, index, currentNode)
+      // console.log('currentNode.children', currentNode.children)
+      if (currentNode.children[index])
+        currentNode = currentNode.children[index]
+    })
+    dispatch(updateEditingComponent('props', {
+      node: {
+        ...selectedNode.props.node,
+        position: Vec2({
+          x: currentNode.x,
+          y: currentNode.y,
+        })
+      }
+    }));
   }
   function onMouseDown(event) {
     // setIsEditing(true)
@@ -81,16 +102,25 @@ export default function SceneView() {
     if (!selectedEditingComponent || !isEditing || !selectedNode.props) return
     // console.log('Mouse move:', positionStart, isEditing)
     // console.log('event.client:', event.clientX, event.clientY)
-    const { x: nx = 0, y: ny = 0 } = parseVec2(selectedNode.props.node.position)
-    dispatch(updateEditingComponent('props', {
-      node: {
-        ...selectedNode.props.node,
-        position: Vec2({
-          x: nx + (event.clientX - positionStart.x) / 0.33,
-          y: ny + (event.clientY - positionStart.y) / -0.33,
-        })
-      }
-    }));
+    {
+      const parentNode = cc.director.getRunningScene().children[0]
+      const childrenIndex = editingClassNamePath.split('.')[0].split('-').map(parseInt)
+      childrenIndex.shift()
+      // console.log('editingClassNamePath', childrenIndex, editingClassNamePath)
+      let currentNode = parentNode
+      childrenIndex.forEach((child, i) => {
+        const index = i === 0 ? child + 1 : child
+        // console.log('selectedNode', child, i, index, currentNode)
+        // console.log('currentNode.children', currentNode.children)
+        if (currentNode.children[index])
+          currentNode = currentNode.children[index]
+      })
+      // const { x, y } = parseVec2(selectedNode.props.node.position)
+      const { x: nx = 0, y: ny = 0 } = currentNode.getPosition()
+      const x = nx + (event.clientX - positionStart.x) * 2.4
+      const y = ny + (event.clientY - positionStart.y) * -2.4
+      currentNode.setPosition(x, y)
+    }
     positionStart = { x: event.clientX, y: event.clientY }
   }
   // Necessary because we will have to use Greet as a component later.
