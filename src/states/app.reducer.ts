@@ -1,5 +1,4 @@
 import Tree from '@colin-luo/tree';
-import { getLibraryComponents } from 'data/AppData';
 import { fixKeys } from 'helper/utils';
 import { produce } from 'immer';
 import { AppAction } from './app.action';
@@ -18,7 +17,6 @@ export const initialState = {
   editingPath: '',
   editingClassNamePath: '',
   componentTree: [],
-  libraryComps: getLibraryComponents(),
   assets: {
     fontAssets: [],
     assetsTextureList: [],

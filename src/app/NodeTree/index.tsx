@@ -1,5 +1,3 @@
-import { getIsAddDivText, getIsAutoSaveGenComp, setIsAutoSaveGenComp } from 'data/AppData';
-
 import { ipcMain } from '@electron/remote';
 import { useEffect, useRef, useState } from 'react';
 import { Tree } from 'react-arborist';
@@ -32,9 +30,9 @@ export default function NodeTree() {
     if (treeData && treeData[0]) {
       // console.log('treeData', treeData, filePath)
       setIsChangeState(true);
-      if (getIsAutoSaveGenComp()) {
-        onClickGenComponent();
-      }
+      // if (getIsAutoSaveGenComp()) {
+      //   onClickGenComponent();
+      // }
       function genComponentCB() {
         dispatch(genComponent(treeData[0], filePath));
       }
@@ -47,7 +45,7 @@ export default function NodeTree() {
 
   useEffect(() => {
     setIsChangeState(false);
-    setIsAutoSave(getIsAutoSaveGenComp());
+    // setIsAutoSave(getIsAutoSaveGenComp());
   }, []);
 
   function onClickGenComponent() {
@@ -79,14 +77,6 @@ export default function NodeTree() {
     }
   }
 
-  function onChangeAutoSave(value) {
-    setIsAutoSave(value);
-    setIsAutoSaveGenComp(value);
-    if (getIsAutoSaveGenComp()) {
-      onClickGenComponent();
-    }
-  }
-
   function contextMenuItemClick(e) {
     // console.log(selectedTreeItem);
     if (!selectedTreeItem.id) { return; }
@@ -96,11 +86,7 @@ export default function NodeTree() {
         break;
       }
       case ADD_TEXT_NODE:
-        if (getIsAddDivText()) {
-          dispatch(addNode({ tag: 'div', name: 'text', items: [{ key: `text_${Date.now()}`, name: 'text' }], expanded: true }, selectedTreeItem.key));
-        } else {
-          dispatch(addNode({ name: 'text' }, selectedTreeItem.key));
-        }
+        dispatch(addNode({ name: 'text' }, selectedTreeItem.key));
         break;
       case DUPLICATE_NODE:
         dispatch(duplicateNode(selectedTreeItem));

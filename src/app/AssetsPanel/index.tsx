@@ -1,7 +1,7 @@
 import { ipcMain } from '@electron/remote'
 import { TreeNode } from 'app/AssetsPanel/TreeNode'
 import clsx from 'clsx'
-import { getIsAutoSaveGenPropTypes, getLastRootFolder, setIsAutoSaveGenPropTypes } from 'data/AppData'
+import { getLastRootFolder } from 'data/AppData'
 import pathUtils from 'path-browserify'
 import { useEffect, useState } from 'react'
 import { Tree } from 'react-arborist'
@@ -135,14 +135,6 @@ export default function AssetsPanel() {
     imported = `import ${name} from '${imported}';`;
     // console.log('fromNode', fromNode, toNode, nameTo, imported)
     dispatch(addNode({ tag: name, imported, expanded: true }, toNode));
-  }
-
-  function onChangeAutoSave(value) {
-    setIsAutoSave(value);
-    setIsAutoSaveGenPropTypes(value);
-    if (getIsAutoSaveGenPropTypes()) {
-      onClickGenPropTypes();
-    }
   }
 
   function onClickGenPropTypes() {

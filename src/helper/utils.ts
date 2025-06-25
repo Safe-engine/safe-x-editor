@@ -51,6 +51,14 @@ export const handleCheck = (setter) => (evt) => {
   setter(evt.target.checked);
 };
 
+export const handleChangeNumber = (setter) => (evt) => {
+  try {
+    setter(parseFloat(evt.target.value));
+  } catch (error) {
+    console.error("Invalid input:", error);
+  }
+};
+
 export const addNoneItem = arr => [NONE_ITEM, ...arr];
 
 export function isNumeric(str) {

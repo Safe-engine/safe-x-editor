@@ -1,10 +1,8 @@
 import {
-  setStringForKey,
+  getIntForKey,
   getStringForKey,
-  getBoolForKey,
-  setBoolForKey,
-  getObjectForKey,
-  setObjectForKey,
+  setIntForKey,
+  setStringForKey
 } from './LocalDataManager';
 
 const LAST_ROOT_FOLDER = 'LAST_ROOT_FOLDER';
@@ -66,30 +64,11 @@ export const getLastViFile = () => getStringForKey('LAST_Vi_FILE', '');
 export const setLastViFile = (value: string) =>
   setStringForKey('LAST_Vi_FILE', value);
 
-export const getIsNextProject = () => getBoolForKey('IsNextProject', true);
-export const setIsNextProject = (value: boolean) =>
-  setBoolForKey('IsNextProject', value);
+export const getLastSceneScale = () => getIntForKey('LastSceneScale', 1)
+export const setLastSceneScale = (value: number) => setIntForKey('LastSceneScale', value)
 
-export const getIsAutoSaveGenComp = () =>
-  getBoolForKey('IsAutoSaveGenComp', false);
-export const setIsAutoSaveGenComp = (value: boolean) =>
-  setBoolForKey('IsAutoSaveGenComp', value);
+export const getLastSceneX = () => getIntForKey('LastSceneX', 100)
+export const setLastSceneX = (value: number) => setIntForKey('LastSceneX', value)
 
-export const getIsAutoSaveGenPropTypes = () =>
-  getBoolForKey('IsAutoSaveGenPropTypes', false);
-export const setIsAutoSaveGenPropTypes = (value: boolean) =>
-  setBoolForKey('IsAutoSaveGenPropTypes', value);
-
-export const getIsAddDivText = () => getBoolForKey('IsAddDivText', true);
-export const setIsAddDivText = (value: boolean) =>
-  setBoolForKey('IsAddDivText', value);
-
-export const getLibraryComponents = () =>
-  getObjectForKey('LibraryComponents', [
-    { isSubModule: true, name: 'BuyButton', from: 'src/base/Buttons' },
-    { isSubModule: true, name: 'CancelButton', from: 'src/base/Buttons' },
-    { isSubModule: true, name: 'DarkInput', from: 'src/base/Inputs' },
-    { isSubModule: true, name: 'LightInput', from: 'src/base/Inputs' },
-  ]);
-export const setLibraryComponents = (value: object) =>
-  setObjectForKey('LibraryComponents', value);
+export const getLastSceneY = () => getIntForKey('LastSceneY', 10)
+export const setLastSceneY = (value: number) => setIntForKey('LastSceneY', value)

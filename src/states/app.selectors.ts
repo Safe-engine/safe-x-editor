@@ -67,29 +67,6 @@ function transformLibraryData(data) {
   }));
 }
 
-export const selectRightData = createSelector(selectApp, (appState) => [
-  {
-    title: 'Components',
-    tree: appState.filesData,
-  },
-  {
-    title: 'ClassNameEditor',
-    tree: appState.componentTree,
-  },
-  {
-    title: 'Library',
-    tree: transformLibraryData(appState.libraryComps),
-  },
-  // {
-  //   title: 'Images',
-  //   tree: appState.images,
-  // },
-  {
-    title: 'Settings',
-    tree: appState.settings,
-  },
-]);
-
 export const selectEditingText = createSelector(
   selectComponentTree,
   selectSelectedEditingPath,

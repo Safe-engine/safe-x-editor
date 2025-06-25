@@ -1,76 +1,77 @@
-import parseInt from 'lodash/parseInt';
-import { faMinusCircle, faPlusCircle } from '@fortawesome/free-solid-svg-icons';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import clsx from 'clsx';
-import React from 'react';
-import { handleChange } from '../helper/utils';
+import { handleChangeNumber } from "helper/utils";
+import lodash from 'lodash';
+import { FaMinus, FaPlus } from "react-icons/fa";
 
 type Props = {
   label: string,
-  value: string,
+  value?: number,
+  defaultValue?: number,
   onChange: Function,
   min?: number,
   max?: number,
   postfix?: string,
   isShowButton?: boolean,
   isFullWidth?: boolean,
+  step?: number
 };
 
 const NumberInput = ({
   label,
   value,
+  defaultValue,
   onChange,
-  min,
+  min = 0,
   max,
   postfix,
   isShowButton,
   isFullWidth,
+  step = 1
 }: Props) => {
-  function onChangeValue(valStr = '') {
-    const num = parseInt(valStr);
-    onChange(num);
+  function onChangeValue(valStr = 1) {
+    onChange(valStr);
   }
 
   function onClickPlus() {
-    const num = parseInt(value) + 1;
+    const num = value + step;
     if (num >= min && num <= max) {
       onChange(num);
     }
   }
 
   function onClickMinus() {
-    const num = parseInt(value) - 1;
+    const num = value - step;
     if (num >= min && num <= max) {
       onChange(num);
     }
   }
 
   return (
-    <div className={clsx(isShowButton ? 'space-x-2 mt-1 flex' : 'w-full')}>
-      <div className={clsx(isFullWidth ? 'w-full font-bold' : '')}>{label}</div>
-      <div className='flex'>
+    <div className={clsx('space-x-2 flex', { 'w-full': isFullWidth })}>
+      <div className='text-white'>{label}</div>
+      <div className='flex rounded-md bg-green-300'>
         {isShowButton && (
-          <FontAwesomeIcon className='mt-1'
+          <FaMinus className='my-auto'
             onClick={onClickMinus}
-            icon={faMinusCircle}
             height={25}
           />
         )}
         <input
           className={clsx(
-            'rounded-md px-1 border border-gray-800',
-            isShowButton ? 'w-16 text-center' : 'w-32 text-right',
+            'px-1',
+            isShowButton ? 'w-16 text-center' : 'w-12',
           )}
           type="number"
+          step={step}
           min={`${min}`}
           max={`${max}`}
-          value={value}
-          onChange={handleChange(onChangeValue)}
+          value={value && lodash.round(value, 2)}
+          defaultValue={defaultValue}
+          onChange={handleChangeNumber(onChangeValue)}
         />
         {isShowButton && (
-          <FontAwesomeIcon className='mt-1'
+          <FaPlus className='my-auto'
             onClick={onClickPlus}
-            icon={faPlusCircle}
             height={25}
           />
         )}

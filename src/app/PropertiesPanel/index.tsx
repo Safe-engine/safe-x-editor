@@ -3,12 +3,11 @@ import ConfirmDeleteDialog from 'components/ConfirmDeleteDialog';
 import CreateActionModal from 'components/CreateActionModal';
 import CreateComponentModal from 'components/CreateComponentModal';
 import ReNameComponentDialog from 'components/ReNameComponentDialog';
-import { getIsAutoSaveGenPropTypes, setIsAutoSaveGenPropTypes } from 'data/AppData';
 import pathUtils from 'path-browserify';
 import { useContext, useRef, useState } from 'react';
 import { addNode, genPropTypes, updatePropType } from 'states/app.action';
 import { AppContext } from 'states/app.context';
-import { selectPropTypes, selectRightData, selectRootFolder, selectSelectedFilePath } from 'states/app.selectors';
+import { selectPropTypes, selectRootFolder, selectSelectedFilePath } from 'states/app.selectors';
 import NodeProps from './NodeProps';
 
 export default function PropertiesPanel() {
@@ -26,8 +25,6 @@ export default function PropertiesPanel() {
   const [openCreateComponent, setOpenCreateComponent] = useState(false);
   const [isOpenNewState, setOpenNewState] = useState(false);
   const [isChangeState, setIsChangeState] = useState(false);
-  const [isAutoSave, setIsAutoSave] = useState(false);
-  const rightData = useSelector(selectRightData);
 
   function getComponentName(path) {
     let name = pathUtils.basename(path)
@@ -60,14 +57,6 @@ export default function PropertiesPanel() {
     imported = `import ${name} from '${imported}';`;
     // console.log('fromNode', fromNode, toNode, nameTo, imported)
     dispatch(addNode({ tag: name, imported, expanded: true }, toNode));
-  }
-
-  function onChangeAutoSave(value) {
-    setIsAutoSave(value);
-    setIsAutoSaveGenPropTypes(value);
-    if (getIsAutoSaveGenPropTypes()) {
-      onClickGenPropTypes();
-    }
   }
 
   function onClickGenPropTypes() {

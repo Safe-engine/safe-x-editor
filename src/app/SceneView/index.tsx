@@ -1,3 +1,5 @@
+import NumberInput from 'base/NumberInput';
+import { getLastSceneScale, getLastSceneX, getLastSceneY, setLastSceneScale, setLastSceneX, setLastSceneY } from 'data/AppData';
 import { parseVec2, Vec2 } from 'helper/node';
 import { parseInt } from 'lodash';
 import { useEffect, useRef, useState } from 'react';
@@ -20,7 +22,7 @@ function getCurrentNode(editingClassNamePath: string, parentNode: any) {
 }
 
 export default function SceneView() {
-  const [position, setPosition] = useState({ x: 0, y: 0 })
+  const [position, setPosition] = useState({ x: 200, y: 200 })
   const [isEditing, setIsEditing] = useState(false);
   const [positionStart, setPositionStart] = useState({ x: 0, y: 0 });
   const dispatch = useDispatch();
@@ -101,14 +103,57 @@ export default function SceneView() {
   }
 
   return (
-    <div
-      ref={divRef}
-      onMouseUp={onMouseUp}
-      onMouseDown={onMouseDown}
-      onMouseMove={onMouseMove}
-      className='select-none w-full h-full'
-    >
-      <canvas id='gameCanvas' />
+    <div className='select-none w-full h-full'>
+      <div className='flex space-x-1 p-1'>
+        <NumberInput
+          step={0.05}
+          label="Scale"
+          defaultValue={getLastSceneScale()}
+          min={0.1}
+          max={2}
+          onChange={(value) => {
+            if (!cc.director || !cc.director.getRunningScene()) return;
+            const parentNode = cc.director.getRunningScene().children[0];
+            console.log('Scale', value, parentNode)
+            parentNode.scale = value
+            setLastSceneScale(value)
+          }}
+        />
+        <NumberInput
+          label="X"
+          min={-1000}
+          max={1000}
+          defaultValue={getLastSceneX()}
+          onChange={(value) => {
+            if (!cc.director || !cc.director.getRunningScene()) return;
+            const parentNode = cc.director.getRunningScene().children[0];
+            parentNode.x = value
+            setLastSceneX(value)
+          }}
+        />
+        <NumberInput
+          label="Y"
+          min={-1000}
+          max={1000}
+          defaultValue={getLastSceneY()}
+          onChange={(value) => {
+            if (!cc.director || !cc.director.getRunningScene()) return;
+            const parentNode = cc.director.getRunningScene().children[0];
+            parentNode.y = value
+            setLastSceneY(value)
+          }}
+        />
+      </div>
+      <hr />
+      <div
+        ref={divRef}
+        onMouseUp={onMouseUp}
+        onMouseDown={onMouseDown}
+        onMouseMove={onMouseMove}
+        className='select-none w-full h-full'
+      >
+        <canvas id='gameCanvas' />
+      </div>
       <ArrowControl position={position} />
     </div>
   );
