@@ -25,7 +25,7 @@ export const initialState = {
     spriteSheetAssets: [],
     spriteFramesAssets: [],
   },
-  settings: { designedResolution: { width: 1280, height: 720 } },
+  settings: { designedResolution: { width: 0, height: 0 } },
   componentPropTypes: {},
   selectedNode: {} as any
 };
@@ -40,9 +40,10 @@ const reducer = (state: AppState = initialState, action: AppAction) => produce(s
       break;
 
     case GET_FILES_SUCCESS:
-      const { components, assets } = action.data
+      const { components, assets, designedResolution } = action.data
       draft.filesData = components[0].children;
       draft.assets = assets;
+      draft.settings.designedResolution = designedResolution;
       break;
 
     case LOAD_COMPONENT:

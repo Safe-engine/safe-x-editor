@@ -1,5 +1,8 @@
-export function onStart() {
-  cc.view.setDesignResolutionSize(640, 1320, cc.ResolutionPolicy.FIXED_WIDTH)
+export const onStart = (designResolution) => function () {
+  console.log('Start', designResolution)
+  const { width, height } = designResolution
+  const policy = width > height ? cc.ResolutionPolicy.FIXED_HEIGHT : cc.ResolutionPolicy.FIXED_WIDTH
+  cc.view.setDesignResolutionSize(width, height, policy)
   const newScene = new cc.Scene()
   const gray = cc.color(75, 85, 99, 255); // Màu xám (cool gray)
   const drawLayer = new cc.LayerColor(gray)
@@ -12,7 +15,7 @@ export function onStart() {
   // Vẽ khung hình chữ nhật quanh layer
   border.drawRect(
     cc.p(0, 0),                   // Góc trái dưới
-    cc.p(1280, 720),              // Góc phải trên
+    cc.p(width, height),              // Góc phải trên
     gray,
     lineWidth,                     // Độ dày
     pink,                         // Màu viền

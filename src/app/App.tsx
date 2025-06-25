@@ -1,5 +1,5 @@
 import { Allotment } from 'allotment'
-import { useContext, useEffect } from 'react'
+import { useContext, useEffect, useMemo } from 'react'
 
 import { AppContext } from 'states/app.context'
 import { selectDesignResolution } from 'states/app.selectors'
@@ -11,10 +11,15 @@ import './globals.css'
 
 export function App() {
   const { useSelector } = useContext(AppContext);
-  const { width, height } = useSelector(selectDesignResolution);
+  const designResolution = useSelector(selectDesignResolution);
   useEffect(() => {
     // currentMonitor().then(setMonitor)
   }, [])
+
+  // if (!designResolution) return
+  // const { width, height } = designResolution
+  const width = useMemo(() => designResolution.width, [designResolution])
+  const height = useMemo(() => designResolution.height, [designResolution])
 
   return (
     <main className="bg-gray-600 h-screen">

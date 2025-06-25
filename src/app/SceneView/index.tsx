@@ -3,7 +3,7 @@ import { parseInt } from 'lodash';
 import { useEffect, useRef, useState } from 'react';
 import { updateEditingComponent } from 'states/app.action';
 import { useDispatch, useSelector } from 'states/app.context';
-import { selectAssets, selectComponentTree, selectRootFolder, selectSelectedEditingClassNamePath, selectSelectedFilePath, selectSelectedNode } from 'states/app.selectors';
+import { selectAssets, selectComponentTree, selectDesignResolution, selectRootFolder, selectSelectedEditingClassNamePath, selectSelectedFilePath, selectSelectedNode } from 'states/app.selectors';
 import ArrowControl from './ArrowControl';
 import { onStart } from './cocos';
 import { loadSceneView } from './loader';
@@ -25,6 +25,7 @@ export default function SceneView() {
   const [positionStart, setPositionStart] = useState({ x: 0, y: 0 });
   const dispatch = useDispatch();
   const selectedEditingComponent = useSelector(selectComponentTree);
+  const designResolution = useSelector(selectDesignResolution);
   const selectedNode = useSelector(selectSelectedNode);
   const filePath = useSelector(selectSelectedFilePath);
   const rootFolder = useSelector(selectRootFolder);
@@ -33,6 +34,7 @@ export default function SceneView() {
   const editingClassNamePath = useSelector(selectSelectedEditingClassNamePath);
 
   useEffect(() => {
+    if (!designResolution.width) return
     const { spriteSheetAssets = [] } = assets
     Object.values(spriteSheetAssets).forEach((spriteSheet) => {
       cc.spriteFrameCache.addSpriteFrames(spriteSheet)
@@ -44,10 +46,10 @@ export default function SceneView() {
         frameRate: 60,
         id: "gameCanvas",
         renderMode: 1
-      }, onStart);
+      }, onStart(designResolution));
     }, 50);
     return () => clearTimeout(timeout);
-  }, []);
+  }, [designResolution]);
 
   useEffect(() => {
     loadSceneView(selectedEditingComponent, { rootFolder, ...assets });

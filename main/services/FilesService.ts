@@ -1,4 +1,5 @@
 import { safexTemplateDir, sceneTemplate } from '@@/helper/constant';
+import { getResolutionSettings } from '@@/helper/settings';
 import { readFileContent, renderMustacheFile } from '@@/helper/string.util';
 import { GlobalData } from '@@/parser/global';
 import { getClassesMetaData } from '@@/parser/metadata';
@@ -41,6 +42,7 @@ export const getFilesInFolder = ({ src, exclude = [] }) => {
   const fontAssets = parseAssetsSrcFile(join(assetsTSFolder, 'FontAssets.ts'));
   const spriteSheetAssets = parseAssetsSrcFile(join(assetsTSFolder, 'SpriteSheetAssets.ts'));
   const spriteFramesAssets = parseAssetsSrcFile(join(assetsTSFolder, 'SpriteFrames.ts'));
+  const designedResolution = getResolutionSettings(src)
   // console.log('components', JSON.stringify(components, null, 2));
   return {
     components: getTreeData(filterTree([components])),
@@ -49,7 +51,8 @@ export const getFilesInFolder = ({ src, exclude = [] }) => {
       fontAssets,
       spriteSheetAssets,
       spriteFramesAssets,
-    }
+    },
+    designedResolution
   };
 };
 
