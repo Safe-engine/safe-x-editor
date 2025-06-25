@@ -36,33 +36,20 @@ export const getFilesInFolder = ({ src, exclude = [] }) => {
     attributes: ['type', 'extension'],
   }
   const components = DirectoryTree(join(src, 'src'), jsxOption);
-  // const scenes = DirectoryTree(join(src, 'src', 'scene'), jsxOption);
-  // const images: any = DirectoryTree(
-  //   join(src, 'res'),
-  //   {
-  //     extensions: /\.(gif|jpe?g|tiff?|png|webp|bmp)$/i,
-  //     exclude,
-  //     attributes: ['type'],
-  //   },
-  //   (item: any, path) => {
-  //     const { width, height } = sizeOf(path);
-  //     item.width = width;
-  //     item.height = height;
-  //   },
-  // );
-  const filePathTextureAssets = join(src, 'src', 'assets', 'TextureAssets.ts');
-  const filePathFontAssets = join(src, 'src', 'assets', 'FontAssets.ts');
-  const assetsTextureList = parseAssetsSrcFile(filePathTextureAssets);
-  const fontAssets = parseAssetsSrcFile(filePathFontAssets);
-  // console.log('imagesData', JSON.stringify(images, null, 2));
+  const assetsTSFolder = join(src, 'src', 'assets')
+  const assetsTextureList = parseAssetsSrcFile(join(assetsTSFolder, 'TextureAssets.ts'));
+  const fontAssets = parseAssetsSrcFile(join(assetsTSFolder, 'FontAssets.ts'));
+  const spriteSheetAssets = parseAssetsSrcFile(join(assetsTSFolder, 'SpriteSheetAssets.ts'));
+  const spriteFramesAssets = parseAssetsSrcFile(join(assetsTSFolder, 'SpriteFrames.ts'));
   // console.log('components', JSON.stringify(components, null, 2));
-  // console.log('treeNodeUtils', treeNodeUtils.filterNodes([tree], filterTreeFunction));
   return {
     components: getTreeData(filterTree([components])),
-    // scenes: getTreeData(([scenes])),
-    // res: getTreeData(filterImages([images])),
-    assetsTextureList,
-    fontAssets,
+    assets: {
+      assetsTextureList,
+      fontAssets,
+      spriteSheetAssets,
+      spriteFramesAssets,
+    }
   };
 };
 

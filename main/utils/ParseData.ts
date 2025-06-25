@@ -63,6 +63,7 @@ const parseTreeData = (root, fileOrigin = '', childrenIndex = [], index = 0) => 
     if (expression.type === 'JSXEmptyExpression')
       return
     if (expression.type === 'CallExpression') {
+      if ('MemberExpression' === expression.callee.type) return
       const startIndex = get(expression, 'arguments[0].params[0].right.value', 0)
       const startIndexSymbol = get(expression, 'arguments[0].params[0].left.name', 'i')
       let res: any = {};

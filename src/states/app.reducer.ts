@@ -19,8 +19,12 @@ export const initialState = {
   editingClassNamePath: '',
   componentTree: [],
   libraryComps: getLibraryComponents(),
-  fontAssets: [],
-  assetsTextureList: [],
+  assets: {
+    fontAssets: [],
+    assetsTextureList: [],
+    spriteSheetAssets: [],
+    spriteFramesAssets: [],
+  },
   settings: { designedResolution: { width: 1280, height: 720 } },
   componentPropTypes: {},
   selectedNode: {} as any
@@ -36,9 +40,9 @@ const reducer = (state: AppState = initialState, action: AppAction) => produce(s
       break;
 
     case GET_FILES_SUCCESS:
-      draft.filesData = action.data.components[0].children;
-      draft.fontAssets = action.data.fontAssets;
-      draft.assetsTextureList = action.data.assetsTextureList;
+      const { components, assets } = action.data
+      draft.filesData = components[0].children;
+      draft.assets = assets;
       break;
 
     case LOAD_COMPONENT:

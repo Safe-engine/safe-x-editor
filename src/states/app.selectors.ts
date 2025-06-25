@@ -121,12 +121,7 @@ export const selectSelectedNode = createSelector(
   (appState) => appState.selectedNode
 );
 
-export const selectAssetsTextureList = createSelector(
+export const selectAssets = createSelector(
   selectApp,
-  (appState) => appState.assetsTextureList
-);
-
-export const selectFontAssets = createSelector(
-  selectApp,
-  (appState) => appState.fontAssets
+  (appState) => appState.assets
 );

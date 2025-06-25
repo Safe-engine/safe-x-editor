@@ -1,9 +1,9 @@
 import { parseVec2, Vec2 } from 'helper/node';
 import { parseInt } from 'lodash';
-import { useContext, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { updateEditingComponent } from 'states/app.action';
-import { AppContext } from 'states/app.context';
-import { selectAssetsTextureList, selectComponentTree, selectFontAssets, selectRootFolder, selectSelectedEditingClassNamePath, selectSelectedFilePath, selectSelectedNode } from 'states/app.selectors';
+import { useDispatch, useSelector } from 'states/app.context';
+import { selectAssets, selectComponentTree, selectRootFolder, selectSelectedEditingClassNamePath, selectSelectedFilePath, selectSelectedNode } from 'states/app.selectors';
 import ArrowControl from './ArrowControl';
 import { onStart } from './cocos';
 import { loadSceneView } from './loader';
@@ -23,17 +23,20 @@ export default function SceneView() {
   const [position, setPosition] = useState({ x: 0, y: 0 })
   const [isEditing, setIsEditing] = useState(false);
   const [positionStart, setPositionStart] = useState({ x: 0, y: 0 });
-  const { appDispatch: dispatch, useSelector } = useContext(AppContext);
+  const dispatch = useDispatch();
   const selectedEditingComponent = useSelector(selectComponentTree);
   const selectedNode = useSelector(selectSelectedNode);
   const filePath = useSelector(selectSelectedFilePath);
   const rootFolder = useSelector(selectRootFolder);
-  const assetsTextureList = useSelector(selectAssetsTextureList);
-  const fontAssets = useSelector(selectFontAssets);
+  const assets = useSelector(selectAssets);
   const divRef = useRef<HTMLDivElement>(null)
   const editingClassNamePath = useSelector(selectSelectedEditingClassNamePath);
 
   useEffect(() => {
+    const { spriteSheetAssets = [] } = assets
+    Object.values(spriteSheetAssets).forEach((spriteSheet) => {
+      cc.spriteFrameCache.addSpriteFrames(spriteSheet)
+    })
     const timeout = setTimeout(() => {
       cc.game.run({
         debugMode: 1,
@@ -47,7 +50,7 @@ export default function SceneView() {
   }, []);
 
   useEffect(() => {
-    loadSceneView(selectedEditingComponent, { rootFolder, assetsTextureList, fontAssets });
+    loadSceneView(selectedEditingComponent, { rootFolder, ...assets });
   }, [filePath]);
 
   useEffect(() => {

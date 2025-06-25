@@ -31,7 +31,7 @@ function loadFont(filePath: string): Promise<void> {
 
 async function parseChildren(root, parentNode, data) {
   const { tag, props, children = [] } = root
-  const { rootFolder, assetsTextureList, fontAssets } = data;
+  const { rootFolder, assetsTextureList, fontAssets, spriteFramesAssets } = data;
   // console.log('parseChildren:', tag, props);
   let renderNode: cc.Node;
   const { node } = props;
@@ -40,15 +40,21 @@ async function parseChildren(root, parentNode, data) {
     const { spriteFrame } = props;
     const frameName = spriteFrame.replace('{', '').replace('}', '');
     const texture = assetsTextureList.find(item => item.key === frameName);
-    const filePath = `${rootFolder}/res/${texture.value}`;
-    const sprite = await loadSprite(filePath);
-    sprite.setPosition(x, y);
+    if (texture) {
+      const filePath = `${rootFolder}/res/${texture.value}`;
+      const sprite = await loadSprite(filePath);
+      renderNode = sprite
+    } else {
+      const spriteFrame = spriteFramesAssets.find(item => item.key === frameName);
+      const frame = cc.spriteFrameCache.getSpriteFrame(spriteFrame)
+      renderNode = new cc.Sprite(frame)
+    }
+    renderNode.setPosition(x, y);
     // console.log('SpriteRender:', x, y, filePath);
     if (parentNode)
-      parentNode.addChild(sprite);
-    renderNode = sprite
+      parentNode.addChild(renderNode);
   } else if (tag === 'LabelComp') {
-    const { string, font, size = 64 } = props;
+    const { string, font = '', size = 64 } = props;
     let foundFont = fontAssets.find(item => item.key === font.replace('{', '').replace('}', ''));
     if (!foundFont) {
       foundFont = fontAssets.find(item => item.key === 'defaultFont');
