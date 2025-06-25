@@ -9,17 +9,13 @@ import {
 } from '@@/services/FilesService';
 import { createI18n } from '@@/services/LanguageService';
 import {
-  ADD_NEW_STATE,
   CHECK_FILE_EXIST,
   CREATE_I18N,
   DELETE_COMPONENT,
   DUPLICATE_COMPONENT,
   GEN_COMPONENT_REQUEST,
-  GEN_PROP_TYPES_REQUEST,
   GET_FOLDER_FILES,
   LOAD_COMPONENT_REQUEST,
-  NEW_COMPONENT,
-  NEW_PAGE,
   RE_NAME_COMPONENT
 } from '@shared/constant.message';
 import { IpcRequest, RequestMessage } from '@shared/types.message';
@@ -35,7 +31,7 @@ const addListener = (name: RequestMessage, listener) => {
     try {
       // console.log('addedListeners', name, event, data)
       const response = await listener(data);
-      console.log('console res: ', name, response);
+      // console.log('console res: ', name, response);
       // ipcMain.emit(name, response);
       return response
     } catch (error) {

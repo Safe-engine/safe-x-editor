@@ -30,7 +30,7 @@ function loadFont(filePath: string): Promise<void> {
 }
 
 async function parseChildren(root, parentNode, data) {
-  const { tag, props, children } = root
+  const { tag, props, children = [] } = root
   const { rootFolder, assetsTextureList, fontAssets } = data;
   // console.log('parseChildren:', tag, props);
   let renderNode: cc.Node;
@@ -44,7 +44,8 @@ async function parseChildren(root, parentNode, data) {
     const sprite = await loadSprite(filePath);
     sprite.setPosition(x, y);
     // console.log('SpriteRender:', x, y, filePath);
-    parentNode.addChild(sprite);
+    if (parentNode)
+      parentNode.addChild(sprite);
     renderNode = sprite
   } else if (tag === 'LabelComp') {
     const { string, font, size = 64 } = props;
