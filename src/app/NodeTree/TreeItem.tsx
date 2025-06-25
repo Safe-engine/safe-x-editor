@@ -17,15 +17,15 @@ function renderIcon(data: any) {
 
 function renderName(node: any) {
   if (node.data.name)
-    return <Box className={clsx(node.isSelected ? 'text-yellow-700' : 'text-yellow-600')}>{node.data.name}</Box>
+    return <Box className={clsx(node.isSelected ? 'text-yellow-500' : 'text-yellow-600')}>{node.data.name}</Box>
   const spriteFrame = get(node, 'data.props.spriteFrame')
   if (spriteFrame)
-    return <Box className={clsx(node.isSelected ? 'text-yellow-700' : 'text-blue-400')}>
+    return <Box className={clsx(node.isSelected ? 'text-yellow-500' : 'text-blue-400')}>
       {spriteFrame.replace('{sf_', '').replace('}', '')}
     </Box>
   const string = get(node, 'data.props.string')
   if (string)
-    return <Box className={clsx(node.isSelected ? 'text-yellow-700' : 'text-green-400')}>
+    return <Box className={clsx(node.isSelected ? 'text-yellow-500' : 'text-green-400')}>
       {string}
     </Box>
 }

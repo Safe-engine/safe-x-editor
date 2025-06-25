@@ -8,11 +8,21 @@ import ArrowControl from './ArrowControl';
 import { onStart } from './cocos';
 import { loadSceneView } from './loader';
 
-let isEditing = false
-let positionStart = { x: 0, y: 0 }
+function getCurrentNode(editingClassNamePath: string, parentNode: any) {
+  const childrenIndex = editingClassNamePath.split('.')[0].split('-').map(parseInt);
+  childrenIndex.shift();
+  let currentNode = parentNode;
+  childrenIndex.forEach((child, i) => {
+    const index = i === 0 ? child + 1 : child;
+    if (currentNode.children[index]) currentNode = currentNode.children[index];
+  });
+  return currentNode;
+}
 
 export default function SceneView() {
   const [position, setPosition] = useState({ x: 0, y: 0 })
+  const [isEditing, setIsEditing] = useState(false);
+  const [positionStart, setPositionStart] = useState({ x: 0, y: 0 });
   const { appDispatch: dispatch, useSelector } = useContext(AppContext);
   const selectedEditingComponent = useSelector(selectComponentTree);
   const selectedNode = useSelector(selectSelectedNode);
@@ -21,13 +31,10 @@ export default function SceneView() {
   const assetsTextureList = useSelector(selectAssetsTextureList);
   const fontAssets = useSelector(selectFontAssets);
   const divRef = useRef<HTMLDivElement>(null)
-  // const [isEditing, setIsEditing] = useState(false)
   const editingClassNamePath = useSelector(selectSelectedEditingClassNamePath);
-  // const [positionStart, setPositionStart] = useState({ x: 0, y: 0 })
 
   useEffect(() => {
     const timeout = setTimeout(() => {
-      // if (!divRef.current) return;
       cc.game.run({
         debugMode: 1,
         showFPS: true,
@@ -35,50 +42,27 @@ export default function SceneView() {
         id: "gameCanvas",
         renderMode: 1
       }, onStart);
-    }, 50); // Đợi 1 tick để DOM gắn xong
-
+    }, 50);
     return () => clearTimeout(timeout);
-  }, []); // Chạy 1 lần khi component đã mount
+  }, []);
 
   useEffect(() => {
-    console.log('SceneView isEditing', selectedEditingComponent)
-    loadSceneView(selectedEditingComponent, { rootFolder, assetsTextureList, fontAssets })
+    loadSceneView(selectedEditingComponent, { rootFolder, assetsTextureList, fontAssets });
   }, [filePath]);
 
   useEffect(() => {
-    if (!cc.director || !cc.director.getRunningScene() || !selectedNode.props) return
-    const parentNode = cc.director.getRunningScene().children[0]
-    const childrenIndex = editingClassNamePath.split('.')[0].split('-').map(parseInt)
-    childrenIndex.shift()
-    // console.log('editingClassNamePath', childrenIndex, editingClassNamePath)
-    let currentNode = parentNode
-    childrenIndex.forEach((child, i) => {
-      const index = i === 0 ? child + 1 : child
-      // console.log('selectedNode', child, i, index, currentNode)
-      // console.log('currentNode.children', currentNode.children)
-      if (currentNode.children[index])
-        currentNode = currentNode.children[index]
-    })
-    const { x, y } = parseVec2(selectedNode.props.node.position)
-    currentNode.setPosition(x, y)
-    // console.log('selectedNode', currentNode, selectedNode)
-  }, [editingClassNamePath, selectedNode])
+    if (!cc.director || !cc.director.getRunningScene() || !selectedNode.props) return;
+    const parentNode = cc.director.getRunningScene().children[0];
+    const currentNode = getCurrentNode(editingClassNamePath, parentNode);
+    const { x, y } = parseVec2(selectedNode.props.node.position);
+    currentNode.setPosition(x, y);
+  }, [editingClassNamePath, selectedNode]);
 
   function onMouseUp() {
-    // setIsEditing(false)
-    isEditing = false
-    const parentNode = cc.director.getRunningScene().children[0]
-    const childrenIndex = editingClassNamePath.split('.')[0].split('-').map(parseInt)
-    childrenIndex.shift()
-    // console.log('editingClassNamePath', childrenIndex, editingClassNamePath)
-    let currentNode = parentNode
-    childrenIndex.forEach((child, i) => {
-      const index = i === 0 ? child + 1 : child
-      // console.log('selectedNode', child, i, index, currentNode)
-      // console.log('currentNode.children', currentNode.children)
-      if (currentNode.children[index])
-        currentNode = currentNode.children[index]
-    })
+    setIsEditing(false);
+    if (!cc.director || !cc.director.getRunningScene() || !selectedNode.props) return;
+    const parentNode = cc.director.getRunningScene().children[0];
+    const currentNode = getCurrentNode(editingClassNamePath, parentNode);
     dispatch(updateEditingComponent('props', {
       node: {
         ...selectedNode.props.node,
@@ -89,47 +73,38 @@ export default function SceneView() {
       }
     }));
   }
-  function onMouseDown(event) {
-    // setIsEditing(true)
-    // setPositionStart({ x: event.clientX, y: event.clientY })
-    isEditing = true
-    positionStart = { x: event.clientX, y: event.clientY }
+
+  function onMouseDown(event: React.MouseEvent<HTMLDivElement>) {
+    setIsEditing(true);
+    setPositionStart({ x: event.clientX, y: event.clientY });
   }
-  function onMouseMove(event) {
-    const x = event.clientX - divRef.current.getBoundingClientRect().left
-    const y = event.clientY - divRef.current.getBoundingClientRect().top
-    setPosition({ x, y })
-    if (!selectedEditingComponent || !isEditing || !selectedNode.props) return
-    // console.log('Mouse move:', positionStart, isEditing)
-    // console.log('event.client:', event.clientX, event.clientY)
-    {
-      const parentNode = cc.director.getRunningScene().children[0]
-      const childrenIndex = editingClassNamePath.split('.')[0].split('-').map(parseInt)
-      childrenIndex.shift()
-      // console.log('editingClassNamePath', childrenIndex, editingClassNamePath)
-      let currentNode = parentNode
-      childrenIndex.forEach((child, i) => {
-        const index = i === 0 ? child + 1 : child
-        // console.log('selectedNode', child, i, index, currentNode)
-        // console.log('currentNode.children', currentNode.children)
-        if (currentNode.children[index])
-          currentNode = currentNode.children[index]
-      })
-      // const { x, y } = parseVec2(selectedNode.props.node.position)
-      const { x: nx = 0, y: ny = 0 } = currentNode.getPosition()
-      const x = nx + (event.clientX - positionStart.x) * 2.4
-      const y = ny + (event.clientY - positionStart.y) * -2.4
-      currentNode.setPosition(x, y)
-    }
-    positionStart = { x: event.clientX, y: event.clientY }
+
+  function onMouseMove(event: React.MouseEvent<HTMLDivElement>) {
+    const rect = divRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    setPosition({ x, y });
+    if (!selectedEditingComponent || !isEditing || !selectedNode.props) return;
+    const parentNode = cc.director.getRunningScene().children[0];
+    const currentNode = getCurrentNode(editingClassNamePath, parentNode);
+    const { x: nx = 0, y: ny = 0 } = currentNode.getPosition();
+    const dx = (event.clientX - positionStart.x) * 2.4;
+    const dy = (event.clientY - positionStart.y) * -2.4;
+    currentNode.setPosition(nx + dx, ny + dy);
+    setPositionStart({ x: event.clientX, y: event.clientY });
   }
-  // Necessary because we will have to use Greet as a component later.
-  return <div ref={divRef}
-    onMouseUp={onMouseUp}
-    onMouseDown={onMouseDown}
-    onMouseMove={onMouseMove}
-    className='select-none w-full h-full' >
-    <canvas id='gameCanvas' />
-    <ArrowControl position={position} />
-  </div>
+
+  return (
+    <div
+      ref={divRef}
+      onMouseUp={onMouseUp}
+      onMouseDown={onMouseDown}
+      onMouseMove={onMouseMove}
+      className='select-none w-full h-full'
+    >
+      <canvas id='gameCanvas' />
+      <ArrowControl position={position} />
+    </div>
+  );
 }
