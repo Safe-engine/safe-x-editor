@@ -53,9 +53,9 @@ const reducer = (state: AppState = initialState, action: AppAction) => produce(s
     case LOAD_COMPONENT_SUCCESS:
       // eslint-disable-next-line react/forbid-foreign-prop-types
       const { treeData, name } = action.data;
-      draft.componentTree = treeData.tag === 'SceneComponent' ? treeData.children : [treeData];
-      draft.componentPropTypes = draft.componentTree[0].props;
-      draft.editingClassNamePath = draft.componentTree[0].id;
+      draft.componentTree = [treeData];
+      // draft.componentPropTypes = draft.componentTree[0].props;
+      // draft.editingClassNamePath = draft.componentTree[0].id;
       break;
 
     case ADD_NODE: {

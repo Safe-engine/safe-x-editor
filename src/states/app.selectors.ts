@@ -2,7 +2,6 @@
  * The App state selectors
  */
 import Tree from '@colin-luo/tree';
-import groupBy from 'lodash/groupBy';
 import { createSelector } from 'reselect';
 import { AppState, initialState } from 'states/app.reducer';
 
@@ -51,30 +50,6 @@ export const selectPropTypes = createSelector(
 export const selectDesignResolution = createSelector(
   selectApp,
   (appState) => appState.settings.designedResolution
-);
-
-function transformLibraryData(data) {
-  const groups = groupBy(data, 'from');
-  // console.log(groups);
-  return Object.keys(groups).map((from) => ({
-    id: from,
-    text: from,
-    expanded: true,
-    items: groups[from].map(({ name, isSubModule }) => ({
-      id: `${name},${from},${isSubModule}`,
-      text: name,
-    })),
-  }));
-}
-
-export const selectEditingText = createSelector(
-  selectComponentTree,
-  selectSelectedEditingPath,
-  (componentTree, editingPath) => {
-    let tree = new Tree(componentTree, 'id', 'children');
-    const node = tree.getNode(editingPath);
-    return node ? node.name : '';
-  }
 );
 
 export const selectSelectedEditingClassNamePath = createSelector(

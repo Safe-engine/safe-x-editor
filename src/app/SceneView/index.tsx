@@ -14,7 +14,8 @@ function getCurrentNode(editingClassNamePath: string, parentNode: any) {
   const childrenIndex = editingClassNamePath.split('.')[0].split('-').map(parseInt);
   childrenIndex.shift();
   let currentNode = parentNode;
-  childrenIndex.forEach((index) => {
+  childrenIndex.forEach((child, i) => {
+    const index = i === 0 ? child + 1 : child;
     if (currentNode.children[index])
       currentNode = currentNode.children[index];
   });
@@ -23,27 +24,27 @@ function getCurrentNode(editingClassNamePath: string, parentNode: any) {
 
 export default function SceneView() {
   const dispatch = useDispatch();
-  const [position, setPosition] = useState({ x: 200, y: 200 })
+  const [position, setPosition] = useState({ x: 200, y: 200 });
   const [isEditing, setIsEditing] = useState(false);
   const [positionStart, setPositionStart] = useState({ x: 0, y: 0 });
-  const [lastX, setLastX] = useState(getLastSceneX())
-  const [lastY, setLastY] = useState(getLastSceneY())
-  const [scale, setScale] = useState(getLastSceneScale())
+  const [lastX, setLastX] = useState(getLastSceneX());
+  const [lastY, setLastY] = useState(getLastSceneY());
+  const [scale, setScale] = useState(getLastSceneScale());
   const selectedEditingComponent = useSelector(selectComponentTree);
   const designResolution = useSelector(selectDesignResolution);
   const selectedNode = useSelector(selectSelectedNode);
   const filePath = useSelector(selectSelectedFilePath);
   const rootFolder = useSelector(selectRootFolder);
   const assets = useSelector(selectAssets);
-  const divRef = useRef<HTMLDivElement>(null)
+  const divRef = useRef<HTMLDivElement>(null);
   const editingClassNamePath = useSelector(selectSelectedEditingClassNamePath);
 
   useEffect(() => {
-    if (!designResolution.width) return
-    const { spriteSheetAssets = [] } = assets
+    if (!designResolution.width) return;
+    const { spriteSheetAssets = [] } = assets;
     Object.values(spriteSheetAssets).forEach((spriteSheet) => {
-      cc.spriteFrameCache.addSpriteFrames(spriteSheet)
-    })
+      cc.spriteFrameCache.addSpriteFrames(spriteSheet);
+    });
     const timeout = setTimeout(() => {
       cc.game.run({
         debugMode: 1,
@@ -96,18 +97,16 @@ export default function SceneView() {
     const y = event.clientY - rect.top;
     setPosition({ x, y });
     const drawLayer = cc.director.getRunningScene().children[0];
-    const dx = (event.clientX - positionStart.x) * 2.4;
-    const dy = (event.clientY - positionStart.y) * -2.4;
+    const dx = (event.clientX - positionStart.x) / scale * 1.5;
+    const dy = (event.clientY - positionStart.y) / -scale * 1.5;
     setPositionStart({ x: event.clientX, y: event.clientY });
+    // console.log('selectedEditingComponent', scale)
     if (!selectedEditingComponent || !selectedNode.props) {
       const { x: nx = 0, y: ny = 0 } = drawLayer.getPosition();
-      const lastX = Math.round(nx + dx)
-      const lastY = Math.round(ny + dy)
-      drawLayer.setPosition(lastX, lastY);
-      setLastSceneX(lastX)
-      setLastSceneY(lastY)
-      setLastX(lastX)
-      setLastY(lastY)
+      const lastX = Math.round(nx + dx);
+      const lastY = Math.round(ny + dy);
+      updateParentNode('x', lastX, setLastX, setLastSceneX);
+      updateParentNode('y', lastY, setLastY, setLastSceneY);
       return;
     }
     const currentNode = getCurrentNode(editingClassNamePath, drawLayer);
@@ -115,17 +114,24 @@ export default function SceneView() {
     currentNode.setPosition(nx + dx, ny + dy);
   }
 
-  const handleWheel = useCallback((e) => {
-    // console.log("Delta Y:", e.deltaY);
+  const handleWheel = useCallback((e: React.WheelEvent<HTMLDivElement>) => {
+    const value = scale + (e.deltaY > 0 ? -0.05 : 0.05);
+    if (value < 0.1 || value > 2) return;
+    updateParentNode('scale', value, setScale, setLastSceneScale);
+  }, [scale]);
+
+  function updateParentNode(
+    key: 'x' | 'y' | 'scale',
+    value: number,
+    setLast: (v: number) => void,
+    setLastScene: (v: number) => void
+  ) {
     if (!cc.director || !cc.director.getRunningScene()) return;
     const parentNode = cc.director.getRunningScene().children[0];
-    const value = scale + (e.deltaY > 0 ? -0.05 : 0.05)
-    // console.log('Scale', scale, value, parentNode)
-    if (value < 0.1 || value > 2) return
-    parentNode.scale = value
-    setLastSceneScale(value)
-    setScale(value)
-  }, [scale]);
+    parentNode[key] = value;
+    setLastScene(value);
+    setLast(value);
+  }
 
   return (
     <div className='w-full h-full'>
@@ -137,12 +143,7 @@ export default function SceneView() {
           min={0.1}
           max={2}
           onChange={(value) => {
-            if (!cc.director || !cc.director.getRunningScene()) return;
-            const parentNode = cc.director.getRunningScene().children[0];
-            console.log('Scale', value, parentNode)
-            parentNode.scale = value
-            setLastSceneScale(value)
-            setScale(value)
+            updateParentNode('scale', value, setScale, setLastSceneScale);
           }}
         />
         <NumberInput
@@ -151,11 +152,7 @@ export default function SceneView() {
           max={1000}
           value={lastX}
           onChange={(value) => {
-            if (!cc.director || !cc.director.getRunningScene()) return;
-            const parentNode = cc.director.getRunningScene().children[0];
-            parentNode.x = value
-            setLastSceneX(value)
-            setLastX(value)
+            updateParentNode('x', value, setLastX, setLastSceneX);
           }}
         />
         <NumberInput
@@ -164,11 +161,7 @@ export default function SceneView() {
           max={1000}
           value={lastY}
           onChange={(value) => {
-            if (!cc.director || !cc.director.getRunningScene()) return;
-            const parentNode = cc.director.getRunningScene().children[0];
-            parentNode.y = value
-            setLastSceneY(value)
-            setLastY(value)
+            updateParentNode('y', value, setLastY, setLastSceneY);
           }}
         />
       </div>
@@ -179,7 +172,7 @@ export default function SceneView() {
         onMouseDown={onMouseDown}
         onMouseMove={onMouseMove}
         onWheel={handleWheel}
-        className='select-none w-full h-full'
+        className='w-full h-full relative'
       >
         <canvas id='gameCanvas' className='pointer-events-none' />
         <ArrowControl position={position} />

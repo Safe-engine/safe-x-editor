@@ -12,7 +12,6 @@ import {
 } from 'states/app.constant';
 import { useDispatch, useSelector } from 'states/app.context';
 import { selectComponentTree, selectRootFolder, selectSelectedEditingClassNamePath, selectSelectedFilePath } from 'states/app.selectors';
-import TagTreeRender from './TagTreeRender';
 import { TreeItem } from './TreeItem';
 
 export default function NodeTree() {
@@ -101,9 +100,6 @@ export default function NodeTree() {
 
   function renderTreeViewItem(item) {
     // console.log(item)
-    if (!item.tag) {
-      return <TagTreeRender editing={item.editing} name={item.name} />;
-    }
     if (item.tag === 'Image') {
       return <span className='flex text-blue-800 font-medium'>
         <img src={`file://${rootPath}/public${item.props.src}`} alt='' className='h-4 mr-2' />
