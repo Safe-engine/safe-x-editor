@@ -1,0 +1,49 @@
+{
+  "name": "safex-editor",
+  "displayName": "safex-editor",
+  "description": "edit for safex components",
+  "author": "antn9x",
+  "publisher": "antn9x",
+  "version": "0.0.1",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Microsoft/vscode-extension-samples"
+  },
+  "engines": {
+    "vscode": "^1.100.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "safexEditor.openSafex",
+        "title": "Edit safex component"
+      }
+    ],
+    "menus": {
+      "explorer/context": [
+        {
+          "command": "safexEditor.openSafex",
+          "when": "resourceExtname == .json",
+          "group": "navigation"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "deploy": "vsce package",
+    "vscode:prepublish": "yarn run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/node": "20.x",
+    "@types/vscode": "^1.100.0",
+    "typescript": "^5.8.3"
+  },
+  "dependencies": {}
+}

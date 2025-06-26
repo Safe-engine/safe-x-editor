@@ -2,22 +2,10 @@
   "name": "safe-x-editor",
   "version": "1.0.0",
   "description": "react parcel socket io web editor",
-  "targets": {
-    "frontend": {
-      "publicUrl": "./",
-      "distDir": "build",
-      "context": "electron-renderer",
-      "source": "src/editor.html"
-    }
-  },
   "scripts": {
-    "package-win": "electron-builder build --win --publish never",
-    "package": "electron-builder build --mac --publish never",
-    "dev": "npx webpack --config ./webpack.config.dev.js --watch",
-    "build-main": "npx webpack --config ./webpack.config.prod.js",
-    "test": "tsx --tsconfig ./main/tsconfig.json ./main/test/file.spec.ts",
-    "build": "parcel build",
-    "start": "parcel -p 8585"
+    "test": "bun --tsconfig ./main/tsconfig.json ./main/test/file.spec.ts",
+    "build": "parcel build src/editor.html",
+    "dev": "parcel -p 8585 src/editor.html"
   },
   "keywords": [
     "react parcel socket io web editor"
@@ -34,10 +22,8 @@
   },
   "devDependencies": {
     "@colin-luo/tree": "^4.3.0",
-    "@electron/remote": "^2.1.1",
     "@headlessui/react": "^1.7.17",
     "@parcel/config-default": "^2.9.3",
-    "@types/electron": "1.6.12",
     "@types/estraverse": "^5.1.1",
     "@types/fs-extra": "^11.0.4",
     "@types/lodash": "4.17.18",
@@ -52,22 +38,14 @@
     "change-case": "^4.1.2",
     "clsx": "^2.1.0",
     "cocos-html5-ts": "1.1.8",
-    "copy-webpack-plugin": "^12.0.2",
     "directory-tree": "^3.5.1",
-    "electron": "^36.5.0",
-    "electron-builder": "^23.0.3",
-    "electron-devtools-installer": "^4.0.0",
-    "electron-is-dev": "^2.0.0",
     "eslint": "9.29.0",
     "eslint-config-prettier": "10.1.5",
     "eslint-plugin-prettier": "5.5.0",
     "estraverse": "^5.3.0",
     "fs-extra": "11.3.0",
     "glob": "11.0.3",
-    "handlebars": "^4.7.8",
-    "image-size": "^1.1.1",
     "immer": "^10.0.3",
-    "is-directory": "^0.3.1",
     "leva": "^0.10.0",
     "lodash": "^4.17.21",
     "node-dir": "^0.1.17",
@@ -77,12 +55,10 @@
     "parcel-resolver-ts-base-url": "^1.3.1",
     "path-browserify": "^1.0.0",
     "pluralize": "^8.0.0",
-    "portscanner": "^2.2.0",
     "postcss": "8.4.33",
     "postcss-custom-properties": "^13.3.4",
     "postcss-import": "16.1.1",
     "postcss-url": "^10.1.3",
-    "process": "^0.11.10",
     "react": "19.1.0",
     "react-arborist": "^3.4.3",
     "react-dom": "19.1.0",
@@ -91,12 +67,6 @@
     "reselect": "^5.0.1",
     "tailwind-styled-components": "^2.2.0",
     "tailwindcss": "^3.3.5",
-    "ts-loader": "9.5.2",
-    "tsconfig-paths-webpack-plugin": "4.2.0",
-    "tsx": "4.20.3",
-    "typescript": "5.8.3",
-    "webpack": "5.99.9",
-    "webpack-cli": "^5.1.4",
-    "webpack-electron-reload": "^1.0.1"
+    "typescript": "5.8.3"
   }
 }
