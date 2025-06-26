@@ -5,7 +5,8 @@ import { AppAction } from './app.action';
 import {
   ADD_NODE, DELETE_NODE,
   DUPLICATE_NODE, GET_FILES, GET_FILES_SUCCESS,
-  LOAD_COMPONENT, LOAD_COMPONENT_SUCCESS, SELECT_EDITING_TAG_NODE, SELECT_EDITING_TEXT, TOGGLE_FOLDER, UPDATE_EDITING_COMPONENT, UPDATE_PROP_TYPE, UPDATE_TEXT_TAG
+  LOAD_COMPONENT, LOAD_COMPONENT_SUCCESS, SELECT_EDITING_TAG_NODE,
+  TOGGLE_FOLDER, UPDATE_EDITING_COMPONENT, UPDATE_PROP_TYPE
 } from './app.constant';
 
 export const initialState = {
@@ -51,10 +52,10 @@ const reducer = (state: AppState = initialState, action: AppAction) => produce(s
 
     case LOAD_COMPONENT_SUCCESS:
       // eslint-disable-next-line react/forbid-foreign-prop-types
-      const { treeData, props } = action.data;
-      draft.componentTree = [treeData];
-      draft.componentPropTypes = treeData.props;
-      draft.editingClassNamePath = treeData.id;
+      const { treeData, name } = action.data;
+      draft.componentTree = treeData.tag === 'SceneComponent' ? treeData.children : [treeData];
+      draft.componentPropTypes = draft.componentTree[0].props;
+      draft.editingClassNamePath = draft.componentTree[0].id;
       break;
 
     case ADD_NODE: {
@@ -100,28 +101,6 @@ const reducer = (state: AppState = initialState, action: AppAction) => produce(s
     case UPDATE_PROP_TYPE: {
       const { name, propsData } = action;
       draft.componentPropTypes[name] = { ...draft.componentPropTypes[name], ...propsData };
-      break;
-    }
-
-    case SELECT_EDITING_TEXT: {
-      const { path } = action;
-      if (draft.editingPath === path) { return; }
-      let tree = new Tree(draft.componentTree, 'id', 'children');
-      const lastNode = tree.getNode(draft.editingPath);
-      if (lastNode) {
-        lastNode.editing = false;
-      }
-      draft.editingPath = path;
-      const node = tree.getNode(draft.editingPath);
-      node.editing = true;
-      break;
-    }
-
-    case UPDATE_TEXT_TAG: {
-      const { text } = action;
-      const tree = new Tree(draft.componentTree, 'id', 'children');
-      const node = tree.getNode(draft.editingPath);
-      node.name = text;
       break;
     }
 

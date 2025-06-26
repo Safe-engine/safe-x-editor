@@ -2,7 +2,7 @@ import NumberInput from 'base/NumberInput';
 import { getLastSceneScale, getLastSceneX, getLastSceneY, setLastSceneScale, setLastSceneX, setLastSceneY } from 'data/AppData';
 import { parseVec2, Vec2 } from 'helper/node';
 import { parseInt } from 'lodash';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { updateEditingComponent } from 'states/app.action';
 import { useDispatch, useSelector } from 'states/app.context';
 import { selectAssets, selectComponentTree, selectDesignResolution, selectRootFolder, selectSelectedEditingClassNamePath, selectSelectedFilePath, selectSelectedNode } from 'states/app.selectors';
@@ -14,18 +14,21 @@ function getCurrentNode(editingClassNamePath: string, parentNode: any) {
   const childrenIndex = editingClassNamePath.split('.')[0].split('-').map(parseInt);
   childrenIndex.shift();
   let currentNode = parentNode;
-  childrenIndex.forEach((child, i) => {
-    const index = i === 0 ? child + 1 : child;
-    if (currentNode.children[index]) currentNode = currentNode.children[index];
+  childrenIndex.forEach((index) => {
+    if (currentNode.children[index])
+      currentNode = currentNode.children[index];
   });
   return currentNode;
 }
 
 export default function SceneView() {
+  const dispatch = useDispatch();
   const [position, setPosition] = useState({ x: 200, y: 200 })
   const [isEditing, setIsEditing] = useState(false);
   const [positionStart, setPositionStart] = useState({ x: 0, y: 0 });
-  const dispatch = useDispatch();
+  const [lastX, setLastX] = useState(getLastSceneX())
+  const [lastY, setLastY] = useState(getLastSceneY())
+  const [scale, setScale] = useState(getLastSceneScale())
   const selectedEditingComponent = useSelector(selectComponentTree);
   const designResolution = useSelector(selectDesignResolution);
   const selectedNode = useSelector(selectSelectedNode);
@@ -88,19 +91,41 @@ export default function SceneView() {
 
   function onMouseMove(event: React.MouseEvent<HTMLDivElement>) {
     const rect = divRef.current?.getBoundingClientRect();
-    if (!rect) return;
+    if (!rect || !isEditing) return;
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
     setPosition({ x, y });
-    if (!selectedEditingComponent || !isEditing || !selectedNode.props) return;
-    const parentNode = cc.director.getRunningScene().children[0];
-    const currentNode = getCurrentNode(editingClassNamePath, parentNode);
-    const { x: nx = 0, y: ny = 0 } = currentNode.getPosition();
+    const drawLayer = cc.director.getRunningScene().children[0];
     const dx = (event.clientX - positionStart.x) * 2.4;
     const dy = (event.clientY - positionStart.y) * -2.4;
-    currentNode.setPosition(nx + dx, ny + dy);
     setPositionStart({ x: event.clientX, y: event.clientY });
+    if (!selectedEditingComponent || !selectedNode.props) {
+      const { x: nx = 0, y: ny = 0 } = drawLayer.getPosition();
+      const lastX = Math.round(nx + dx)
+      const lastY = Math.round(ny + dy)
+      drawLayer.setPosition(lastX, lastY);
+      setLastSceneX(lastX)
+      setLastSceneY(lastY)
+      setLastX(lastX)
+      setLastY(lastY)
+      return;
+    }
+    const currentNode = getCurrentNode(editingClassNamePath, drawLayer);
+    const { x: nx = 0, y: ny = 0 } = currentNode.getPosition();
+    currentNode.setPosition(nx + dx, ny + dy);
   }
+
+  const handleWheel = useCallback((e) => {
+    // console.log("Delta Y:", e.deltaY);
+    if (!cc.director || !cc.director.getRunningScene()) return;
+    const parentNode = cc.director.getRunningScene().children[0];
+    const value = scale + (e.deltaY > 0 ? -0.05 : 0.05)
+    // console.log('Scale', scale, value, parentNode)
+    if (value < 0.1 || value > 2) return
+    parentNode.scale = value
+    setLastSceneScale(value)
+    setScale(value)
+  }, [scale]);
 
   return (
     <div className='w-full h-full'>
@@ -108,7 +133,7 @@ export default function SceneView() {
         <NumberInput
           step={0.05}
           label="Scale"
-          defaultValue={getLastSceneScale()}
+          value={scale}
           min={0.1}
           max={2}
           onChange={(value) => {
@@ -117,30 +142,33 @@ export default function SceneView() {
             console.log('Scale', value, parentNode)
             parentNode.scale = value
             setLastSceneScale(value)
+            setScale(value)
           }}
         />
         <NumberInput
           label="X"
           min={-1000}
           max={1000}
-          defaultValue={getLastSceneX()}
+          value={lastX}
           onChange={(value) => {
             if (!cc.director || !cc.director.getRunningScene()) return;
             const parentNode = cc.director.getRunningScene().children[0];
             parentNode.x = value
             setLastSceneX(value)
+            setLastX(value)
           }}
         />
         <NumberInput
           label="Y"
           min={-1000}
           max={1000}
-          defaultValue={getLastSceneY()}
+          value={lastY}
           onChange={(value) => {
             if (!cc.director || !cc.director.getRunningScene()) return;
             const parentNode = cc.director.getRunningScene().children[0];
             parentNode.y = value
             setLastSceneY(value)
+            setLastY(value)
           }}
         />
       </div>
@@ -150,6 +178,7 @@ export default function SceneView() {
         onMouseUp={onMouseUp}
         onMouseDown={onMouseDown}
         onMouseMove={onMouseMove}
+        onWheel={handleWheel}
         className='select-none w-full h-full'
       >
         <canvas id='gameCanvas' className='pointer-events-none' />
