@@ -1,6 +1,8 @@
 import {
+  getFloatForKey,
   getIntForKey,
   getStringForKey,
+  setFloatForKey,
   setIntForKey,
   setStringForKey
 } from './LocalDataManager';
@@ -64,8 +66,8 @@ export const getLastViFile = () => getStringForKey('LAST_Vi_FILE', '');
 export const setLastViFile = (value: string) =>
   setStringForKey('LAST_Vi_FILE', value);
 
-export const getLastSceneScale = () => getIntForKey('LastSceneScale', 1)
-export const setLastSceneScale = (value: number) => setIntForKey('LastSceneScale', value)
+export const getLastSceneScale = () => getFloatForKey('LastSceneScale', 1)
+export const setLastSceneScale = (value: number) => setFloatForKey('LastSceneScale', value)
 
 export const getLastSceneX = () => getIntForKey('LastSceneX', 100)
 export const setLastSceneX = (value: number) => setIntForKey('LastSceneX', value)

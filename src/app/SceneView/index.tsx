@@ -103,7 +103,7 @@ export default function SceneView() {
   }
 
   return (
-    <div className='select-none w-full h-full'>
+    <div className='w-full h-full'>
       <div className='flex space-x-1 p-1'>
         <NumberInput
           step={0.05}
@@ -152,9 +152,9 @@ export default function SceneView() {
         onMouseMove={onMouseMove}
         className='select-none w-full h-full'
       >
-        <canvas id='gameCanvas' />
+        <canvas id='gameCanvas' className='pointer-events-none' />
+        <ArrowControl position={position} />
       </div>
-      <ArrowControl position={position} />
     </div>
   );
 }

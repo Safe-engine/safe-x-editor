@@ -59,7 +59,7 @@ const NumberInput = ({
         <input
           className={clsx(
             'px-1',
-            isShowButton ? 'w-16 text-center' : 'w-12',
+            isShowButton ? 'w-16 text-center' : 'w-16',
           )}
           type="number"
           step={step}
