@@ -1,6 +1,5 @@
 import AddNewStateDialog from 'components/AddNewStateDialog';
 import ConfirmDeleteDialog from 'components/ConfirmDeleteDialog';
-import CreateActionModal from 'components/CreateActionModal';
 import CreateComponentModal from 'components/CreateComponentModal';
 import ReNameComponentDialog from 'components/ReNameComponentDialog';
 import pathUtils from 'path-browserify';
@@ -94,11 +93,6 @@ export default function PropertiesPanel() {
         </div>
       </div>
 
-      <CreateActionModal
-        isOpen={isOpen}
-        setOpen={setOpen}
-        createPath={createPath}
-      />
       <CreateComponentModal
         isOpen={openCreateComponent}
         setOpen={setOpenCreateComponent}

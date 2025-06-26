@@ -1,22 +1,20 @@
 import { ipcMain } from '@electron/remote'
 import { TreeNode } from 'app/AssetsPanel/TreeNode'
 import clsx from 'clsx'
-import { getLastRootFolder } from 'data/AppData'
+import { getLastLoadedFile, getLastRootFolder, setLastLoadedFile } from 'data/AppData'
 import pathUtils from 'path-browserify'
-import { useEffect, useState } from 'react'
-import { Tree } from 'react-arborist'
+import { useEffect, useRef, useState } from 'react'
+import { Tree, TreeApi } from 'react-arborist'
 import { ADD_NEW_STATE, CREATE_ACTION, DELETE_COMPONENT, GET_FOLDER_FILES, NEW_COMPONENT, RE_NAME_COMPONENT } from 'shared/constant.message'
-import { addNode, genPropTypes, getFiles, updatePropType } from 'states/app.action'
+import { getFiles } from 'states/app.action'
 import { LOAD_COMPONENT, TOGGLE_FOLDER } from 'states/app.constant'
 import { useDispatch, useSelector } from 'states/app.context'
-import { selectFilesData, selectPropTypes, selectSelectedFilePath } from 'states/app.selectors'
+import { selectFilesData } from 'states/app.selectors'
 import { AssetTypeBlock } from '../../components/common'
 
 export default function AssetsPanel() {
   const dispatch = useDispatch();
-  const [selectedIndex, setSelectedIndex] = useState(0);
-  const filePath = useSelector(selectSelectedFilePath);
-  const componentPropTypes = useSelector(selectPropTypes);
+  const treeRef = useRef<TreeApi<any>>(null)
   const [isOpen, setOpen] = useState(false);
   const [openConfirmDeleteComponent, setOpenConfirmDeleteComponent] = useState(false);
   const [openRenameComponent, setOpenRenameComponent] = useState(false);
@@ -24,19 +22,8 @@ export default function AssetsPanel() {
   const treeData = useSelector(selectFilesData);
   const [openCreateComponent, setOpenCreateComponent] = useState(false);
   const [isOpenNewState, setOpenNewState] = useState(false);
-  const [isChangeState, setIsChangeState] = useState(false);
-  const [isAutoSave, setIsAutoSave] = useState(false);
   const [selectedTab, setSelectedTab] = useState('components');
 
-  function itemTitleRender(tab) {
-    return <span>{tab.title}</span>;
-  }
-
-  function onSelectionChanged(args) {
-    if (args.name === 'selectedIndex') {
-      setSelectedIndex(args.value);
-    }
-  }
   useEffect(() => {
     function getFilesCB(data) {
       console.log('GET_FOLDER_FILES', data)
@@ -53,16 +40,18 @@ export default function AssetsPanel() {
   }, [])
 
   useEffect(() => {
-    // FIXME: remove on done
-    if (treeData[1]) {
+    const lastFile = getLastLoadedFile()
+    if (treeData[1] && lastFile) {
       console.log('treeData Files', treeData)
-      onItemClick({ data: treeData[1].children[4] })
+      const node = treeRef.current.get(lastFile)
+      treeRef.current.select(node)
     }
   }, [treeData])
 
   function onItemClick(node) {
     console.log('onItemClick', node);
     const { id: key, path, isDirectory } = node.data;
+    setLastLoadedFile(path)
     if (isDirectory) {
       dispatch({
         type: TOGGLE_FOLDER,
@@ -114,44 +103,12 @@ export default function AssetsPanel() {
     return name;
   }
 
-  function onDragEnd(e) {
-    // console.log('comp', e.fromComponent.element())
-    if (e.fromComponent === e.toComponent && e.fromIndex === e.toIndex) {
-      return;
-    }
-    const nodeElementFrom = e.fromComponent.element().querySelectorAll('.dx-treeview-node')[e.fromIndex];
-    const fromNode = nodeElementFrom.getAttribute('data-item-id');
-    const nodeElementTo = e.toComponent.element().querySelectorAll('.dx-treeview-node')[e.toIndex];
-    const toNode = nodeElementTo.getAttribute('data-item-id');
-    let imported = pathUtils.relative(pathUtils.dirname(filePath), fromNode)
-      .replace(/\.[^/.]+$/, '');
-    let name = getComponentName(fromNode);
-    let nameTo = getComponentName(filePath);
-    if (imported === nameTo) {
-      imported = undefined;
-    } else if (!imported.startsWith('.')) {
-      imported = `./${imported}`;
-    }
-    imported = `import ${name} from '${imported}';`;
-    // console.log('fromNode', fromNode, toNode, nameTo, imported)
-    dispatch(addNode({ tag: name, imported, expanded: true }, toNode));
-  }
-
-  function onClickGenPropTypes() {
-    setIsChangeState(false);
-    dispatch(genPropTypes(componentPropTypes, filePath));
-  }
-
-  function onChangePropData(name, propsData) {
-    dispatch(updatePropType(name, propsData));
-  }
-
   function changeSelected(tab) {
     return function () {
       setSelectedTab(tab)
     }
   }
-  // Necessary because we will have to use Greet as a component later.
+
   return (
     <div className=''>
       <div className='flex w-[280px] space-x-1'>
@@ -169,9 +126,10 @@ export default function AssetsPanel() {
       <hr />
       <div className='flex h-screen'>
         <Tree
+          ref={treeRef}
           data={treeData}
           onSelect={(nodes) => {
-            console.log('nodes', nodes);
+            // console.log('nodes', nodes);
             if (nodes[0])
               onItemClick(nodes[0])
           }}

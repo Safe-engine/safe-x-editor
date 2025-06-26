@@ -45,13 +45,9 @@ export const getLastReducersFile = () =>
 export const setLastReducersFile = (value: string) =>
   setStringForKey(LAST_REDUCERS_FILE, value);
 
-export const getLastLogicFile = () => getStringForKey('LAST_Logic_FILE', '');
-export const setLastLogicFile = (value: string) =>
-  setStringForKey('LAST_Logic_FILE', value);
-
-export const getLastSagaFile = () => getStringForKey('LAST_Saga_FILE', '');
-export const setLastSagaFile = (value: string) =>
-  setStringForKey('LAST_Saga_FILE', value);
+export const getLastLoadedFile = () => getStringForKey('LAST_LOADED_FILE', '');
+export const setLastLoadedFile = (value: string) =>
+  setStringForKey('LAST_LOADED_FILE', value);
 
 export const getLastSelectorsFile = () =>
   getStringForKey('LAST_Selectors_FILE', '');

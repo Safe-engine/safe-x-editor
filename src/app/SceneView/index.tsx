@@ -59,7 +59,10 @@ export default function SceneView() {
   }, [designResolution]);
 
   useEffect(() => {
-    loadSceneView(selectedEditingComponent, { rootFolder, ...assets });
+    const timeout = setTimeout(() => {
+      loadSceneView(selectedEditingComponent, { rootFolder, ...assets });
+    }, 150);
+    return () => clearTimeout(timeout);
   }, [filePath]);
 
   useEffect(() => {

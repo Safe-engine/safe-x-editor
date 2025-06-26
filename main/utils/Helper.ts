@@ -11,9 +11,7 @@ export const getTreeData = (treeData: any[]) => {
       name: currentNode.name,
       path: currentNode.path,
       isDirectory: currentNode.type === 'directory',
-      expanded: currentNode.type === 'directory',
       children: getTreeData(currentNode.children),
-      icon: currentNode.type === 'directory' ? '' : 'favicon.ico',
       width: currentNode.width,
       height: currentNode.height,
     }
@@ -41,7 +39,6 @@ function filterTreeFunction(currentNode: DirectoryTree) {
   if (filterType === 'images') {
     return true;
   }
-  // !FIXME: check is react component?
   const content = fs.readFileSync(path);
   if (content.indexOf('extends ComponentX') !== -1 || content.indexOf('extends SceneComponent') !== -1) {
     return true;
