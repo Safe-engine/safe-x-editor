@@ -10,9 +10,10 @@ import ArrowControl from './ArrowControl';
 import { onStart } from './cocos';
 import { loadSceneView } from './loader';
 
-function getCurrentNode(editingClassNamePath: string, parentNode: any) {
+function getCurrentNode(editingClassNamePath: string, parentNode: any, isSceneNode: boolean) {
   const childrenIndex = editingClassNamePath.split('.')[0].split('-').map(parseInt);
-  childrenIndex.shift();
+  if (isSceneNode)
+    childrenIndex.shift();
   let currentNode = parentNode;
   childrenIndex.forEach((child, i) => {
     const index = i === 0 ? child + 1 : child;
@@ -64,7 +65,7 @@ export default function SceneView() {
   useEffect(() => {
     if (!cc.director || !cc.director.getRunningScene() || !selectedNode.props) return;
     const parentNode = cc.director.getRunningScene().children[0];
-    const currentNode = getCurrentNode(editingClassNamePath, parentNode);
+    const currentNode = getCurrentNode(editingClassNamePath, parentNode, selectedEditingComponent[0]?.tag === 'SceneComponent');
     const { x, y } = parseVec2(selectedNode.props.node.position);
     currentNode.setPosition(x, y);
   }, [editingClassNamePath, selectedNode]);
@@ -73,7 +74,7 @@ export default function SceneView() {
     setIsEditing(false);
     if (!cc.director || !cc.director.getRunningScene() || !selectedNode.props) return;
     const parentNode = cc.director.getRunningScene().children[0];
-    const currentNode = getCurrentNode(editingClassNamePath, parentNode);
+    const currentNode = getCurrentNode(editingClassNamePath, parentNode, selectedEditingComponent[0]?.tag === 'SceneComponent');
     dispatch(updateEditingComponent('props', {
       node: {
         ...selectedNode.props.node,
@@ -92,7 +93,7 @@ export default function SceneView() {
 
   function onMouseMove(event: React.MouseEvent<HTMLDivElement>) {
     const rect = divRef.current?.getBoundingClientRect();
-    if (!rect || !isEditing) return;
+    if (!rect || !selectedEditingComponent || !isEditing) return;
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
     setPosition({ x, y });
@@ -100,8 +101,8 @@ export default function SceneView() {
     const dx = (event.clientX - positionStart.x) / scale * 1.5;
     const dy = (event.clientY - positionStart.y) / -scale * 1.5;
     setPositionStart({ x: event.clientX, y: event.clientY });
-    // console.log('selectedEditingComponent', scale)
-    if (!selectedEditingComponent || !selectedNode.props) {
+    // console.log('selectedEditingComponent', selectedEditingComponent, selectedNode)
+    if (!selectedNode.props) {
       const { x: nx = 0, y: ny = 0 } = drawLayer.getPosition();
       const lastX = Math.round(nx + dx);
       const lastY = Math.round(ny + dy);
@@ -109,7 +110,7 @@ export default function SceneView() {
       updateParentNode('y', lastY, setLastY, setLastSceneY);
       return;
     }
-    const currentNode = getCurrentNode(editingClassNamePath, drawLayer);
+    const currentNode = getCurrentNode(editingClassNamePath, drawLayer, selectedEditingComponent[0]?.tag === 'SceneComponent');
     const { x: nx = 0, y: ny = 0 } = currentNode.getPosition();
     currentNode.setPosition(nx + dx, ny + dy);
   }

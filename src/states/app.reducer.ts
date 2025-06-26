@@ -51,11 +51,11 @@ const reducer = (state: AppState = initialState, action: AppAction) => produce(s
       break;
 
     case LOAD_COMPONENT_SUCCESS:
-      // eslint-disable-next-line react/forbid-foreign-prop-types
       const { treeData, name } = action.data;
       draft.componentTree = [treeData];
-      // draft.componentPropTypes = draft.componentTree[0].props;
-      // draft.editingClassNamePath = draft.componentTree[0].id;
+      draft.componentPropTypes = draft.componentTree[0].props;
+      draft.editingClassNamePath = '';
+      draft.selectedNode = {}
       break;
 
     case ADD_NODE: {
@@ -120,8 +120,10 @@ const reducer = (state: AppState = initialState, action: AppAction) => produce(s
       const { component, updated } = action;
       const tree = new Tree(draft.componentTree, 'id', 'children');
       const node = tree.getNode(draft.editingClassNamePath);
-      node[component] = { ...node[component], ...updated };
-      draft.selectedNode = node
+      if (node) {
+        node[component] = { ...node[component], ...updated };
+        draft.selectedNode = node
+      }
       break;
     }
   }

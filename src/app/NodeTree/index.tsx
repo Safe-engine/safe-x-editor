@@ -128,7 +128,7 @@ export default function NodeTree() {
       <hr />
       <Tree
         className='p-1'
-        data={treeData}
+        data={treeData[0]?.tag === 'SceneComponent' ? treeData[0].children : treeData}
         onSelect={(nodes) => {
           console.log('node tree', nodes);
           if (nodes[0])

@@ -1,3 +1,5 @@
+import { getLastSceneScale, getLastSceneX, getLastSceneY } from "data/AppData"
+
 export const onStart = (designResolution) => function () {
   console.log('Start', designResolution)
   const { width, height } = designResolution
@@ -22,7 +24,7 @@ export const onStart = (designResolution) => function () {
   );
   drawLayer.addChild(border);       // Thêm border vào layer
   newScene.addChild(drawLayer)
-  drawLayer.setPosition(-100, -60); // Đặt vị trí của layer
-  drawLayer.scale = 0.33; // Giảm kích thước của layer xuống
+  drawLayer.setPosition(getLastSceneX(), getLastSceneY()); // Đặt vị trí của layer
+  drawLayer.scale = getLastSceneScale(); // Giảm kích thước của layer xuống
   cc.director.runScene(newScene)
 }
