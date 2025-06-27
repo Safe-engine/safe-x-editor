@@ -1,7 +1,9 @@
 
 import { parse } from '@typescript-eslint/typescript-estree';
 import fs from 'fs';
-import { convertComponentData } from '../utils/ParseData';
+import { convertComponentData, genReactComponentString, getJSXBlock } from '../utils/ParseData';
+import { spliceString } from '../utils/StringHelper';
+import { lintFile } from './TerminalService';
 
 export const loadComponent = async ({ path }) => {
   console.log('loadComponent', path);
@@ -59,21 +61,21 @@ export const loadComponent = async ({ path }) => {
 //   return true;
 // }
 
-// export const updateComponentTag = ({ nodesData, filePath }) => {
-//   console.log('updateComponentTag', nodesData, filePath);
-//   const { component, imports } = genReactComponentString(nodesData);
-//   const input = fs.readFileSync(filePath, { encoding: 'utf8' });
-//   const parsed = parse(input, { jsx: true, range: true });
-//   const [start, end] = getJSXBlock(parsed).range;
-//   // const logOutput = writeFileSync(pathUtil.join(genFolder,'component.html.parsed.)
-//   fs.writeFileSync(
-//     filePath,
-//     spliceString(input, start, end - start, component)
-//   );
-//   lintFile(filePath)
-//   const content = fs.readFileSync(filePath, { encoding: 'utf-8' });
-//   if (!imports.length) return true;
-//   const filtered = imports.filter((imp) => !content.includes(imp));
-//   fs.writeFileSync(filePath, `${filtered.join('\n')}\n${content}`);
-//   return true;
-// };
+export const updateComponentTag = ({ nodesData, filePath }) => {
+  console.log('updateComponentTag', nodesData, filePath);
+  const { component, imports } = genReactComponentString(nodesData);
+  const input = fs.readFileSync(filePath, { encoding: 'utf8' });
+  const parsed = parse(input, { jsx: true, range: true });
+  const [start, end] = getJSXBlock(parsed).range;
+  // const logOutput = writeFileSync(pathUtil.join(genFolder,'component.html.parsed.)
+  fs.writeFileSync(
+    filePath,
+    spliceString(input, start, end - start, component)
+  );
+  lintFile(filePath)
+  const content = fs.readFileSync(filePath, { encoding: 'utf-8' });
+  if (!imports.length) return true;
+  const filtered = imports.filter((imp) => !content.includes(imp));
+  fs.writeFileSync(filePath, `${filtered.join('\n')}\n${content}`);
+  return true;
+};

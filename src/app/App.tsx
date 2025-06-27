@@ -1,8 +1,8 @@
 import { Allotment } from 'allotment'
 import { useContext, useEffect, useMemo } from 'react'
-import { loadComponent } from '../states/app.action'
+import { getFiles, loadComponent } from '../states/app.action'
 import { AppContext, useDispatch } from '../states/app.context'
-import { selectDesignResolution } from '../states/app.selectors'
+import { selectAssets, selectDesignResolution } from '../states/app.selectors'
 import NodeTree from './NodeTree'
 import PropertiesPanel from './PropertiesPanel'
 import SceneView from './SceneView'
@@ -12,22 +12,17 @@ export function App() {
   const dispatch = useDispatch();
   const { useSelector } = useContext(AppContext);
   const designResolution = useSelector(selectDesignResolution);
+  const assetsData = useSelector(selectAssets);
+  useEffect(() => {
+    console.log('rootPath path', (window as any).rootPath)
+    dispatch(getFiles((window as any).rootPath))
+  }, [])
+
   useEffect(() => {
     console.log('file path', (window as any).filePath)
     dispatch(loadComponent((window as any).filePath))
-    window.addEventListener('message', event => {
-      const message = event.data; // The JSON data our extension sent
-      console.log('message', message)
-      switch (message.command) {
-        case 'loadComponent':
-          dispatch(loadComponent(message.data))
-          break;
-      }
-    });
-  }, [])
+  }, [assetsData])
 
-  // if (!designResolution) return
-  // const { width, height } = designResolution
   const width = useMemo(() => designResolution.width, [designResolution])
   const height = useMemo(() => designResolution.height, [designResolution])
 

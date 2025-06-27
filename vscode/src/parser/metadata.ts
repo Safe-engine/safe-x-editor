@@ -1,5 +1,4 @@
 import ESTraverse from "estraverse";
-import { writeFileSync } from "fs";
 import { globSync } from "glob";
 import { join } from "path";
 import { parseFile } from "../transform/index";
@@ -68,6 +67,6 @@ export async function getClassesMetaData(srcDir: string, idDebug = false) {
       fallback: 'iteration'
     });
   }
-  const logOutput = join(genFolder, 'components.global.json');
-  writeFileSync(logOutput, JSON.stringify(GlobalData.componentsMap, null, 2));
+  // const logOutput = join(genFolder, 'components.global.json');
+  // writeFileSync(logOutput, JSON.stringify(GlobalData.componentsMap, null, 2));
 }

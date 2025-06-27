@@ -3,6 +3,16 @@ import { DirectoryTree } from 'directory-tree';
 import fs from 'fs';
 import pathUtil from 'path';
 
+export interface TreeViewData {
+  id?: string;
+  key: string;
+  name: string;
+  icon?: string;
+  isDirectory: boolean;
+  expanded: boolean;
+  items?: TreeViewData[];
+}
+
 export const getTreeData = (treeData: any[]) => {
   const tree = new Tree(treeData, 'path', 'children');
   const ret: any = tree.mapNodes((currentNode): any => (

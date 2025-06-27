@@ -22,11 +22,6 @@ export const selectError = createSelector(
   (appState) => appState.error
 );
 
-export const selectFilesData = createSelector(
-  selectApp,
-  (appState) => appState.filesData
-);
-
 export const selectSelectedFilePath = createSelector(
   selectApp,
   (appState) => appState.filePath

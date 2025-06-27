@@ -6,13 +6,12 @@ import {
   ADD_NODE, DELETE_NODE,
   DUPLICATE_NODE, GET_FILES, GET_FILES_SUCCESS,
   LOAD_COMPONENT, LOAD_COMPONENT_SUCCESS, SELECT_EDITING_TAG_NODE,
-  TOGGLE_FOLDER, UPDATE_EDITING_COMPONENT, UPDATE_PROP_TYPE
+  UPDATE_EDITING_COMPONENT, UPDATE_PROP_TYPE
 } from './app.constant';
 
 export const initialState = {
   loading: false,
   error: false,
-  filesData: [],
   rootFolder: '',
   filePath: '',
   editingPath: '',
@@ -39,8 +38,7 @@ const reducer = (state: AppState = initialState, action: AppAction) => produce(s
       break;
 
     case GET_FILES_SUCCESS:
-      const { components, assets, designedResolution } = action.data
-      draft.filesData = components[0].children;
+      const { assets, designedResolution } = action.data
       draft.assets = assets;
       draft.settings.designedResolution = designedResolution;
       break;
@@ -86,15 +84,6 @@ const reducer = (state: AppState = initialState, action: AppAction) => produce(s
       const { path } = action;
       let tree = new Tree(draft.componentTree, 'id', 'children');
       tree.remove(path);
-      break;
-    }
-
-    case TOGGLE_FOLDER: {
-      const { key } = action;
-      let tree = new Tree(draft.filesData, 'path', 'children');
-      const node = tree.getNode(key);
-      // console.log(key, node, tree)
-      node.expanded = !node.expanded;
       break;
     }
 
