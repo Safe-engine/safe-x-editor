@@ -15,17 +15,18 @@ export default function NodeTree() {
 
   useEffect(() => {
     if (treeData && treeData[0]) {
-      // console.log('treeData', treeData, filePath)
-      // if (getIsAutoSaveGenComp()) {
-      //   onClickGenComponent();
-      // }
-      function genComponentCB() {
-        dispatch(genComponent(treeData[0], filePath));
-      }
-      // ipcMain.on(GEN_COMPONENT_REQUEST, genComponentCB);
-      // return () => {
-      //   ipcMain.removeListener(GEN_COMPONENT_REQUEST, genComponentCB)
-      // }
+      window.addEventListener('keydown', function (event) {
+        const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+        const isSaveShortcut = (
+          (isMac && event.metaKey && event.key === 's') ||
+          (!isMac && event.ctrlKey && event.key === 's')
+        );
+        if (isSaveShortcut) {
+          event.preventDefault();
+          console.log('Detected Ctrl+S or Command+S');
+          dispatch(genComponent(treeData[0], filePath));
+        }
+      });
     }
   }, [treeData, filePath]);
 

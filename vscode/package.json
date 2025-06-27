@@ -18,6 +18,15 @@
   "activationEvents": [],
   "main": "./out/extension.js",
   "contributes": {
+    "configuration": {
+      "properties": {
+        "safexEditor.nodeVersion": {
+          "type": "string",
+          "default": "v23.10.0",
+          "description": "Path or version of Node.js to use"
+        }
+      }
+    },
     "commands": [
       {
         "command": "safexEditor.openSafex",
