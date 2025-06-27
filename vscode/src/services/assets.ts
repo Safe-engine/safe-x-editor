@@ -1,8 +1,8 @@
-import { parseFile } from "@@/transform";
 import ESTraverse from "estraverse";
 import { readFileSync } from 'fs';
 import { existsSync } from 'fs-extra';
 import { join } from 'path';
+import { parseFile } from "../transform";
 
 export function parseAssets(parsed) {
   const ret = [];

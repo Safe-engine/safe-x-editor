@@ -1,22 +1,14 @@
-import { safexTemplateDir, sceneTemplate } from '@@/helper/constant';
-import { getResolutionSettings } from '@@/helper/settings';
-import { readFileContent, renderMustacheFile } from '@@/helper/string.util';
-import { GlobalData } from '@@/parser/global';
-import { getClassesMetaData } from '@@/parser/metadata';
-import {
-  filterTree,
-  getTreeData
-} from '@@/utils/Helper';
-import { getJSXBlock, getListTagUsed } from '@@/utils/ParseData';
-import { spliceString } from '@@/utils/StringHelper';
-import { parse } from '@typescript-eslint/typescript-estree';
-import DirectoryTree from 'directory-tree';
+
+import { dir } from 'console';
 import { existsSync, readFileSync, writeFileSync } from 'fs';
-import { copySync } from 'fs-extra';
-import dir from 'node-dir';
-import { join } from 'path';
-import rimraf from 'rimraf';
-import { startEditorScene } from './TerminalService';
+import { join, parse } from 'path';
+import { getResolutionSettings } from '../helper/settings';
+import { readFileContent } from '../helper/string.util';
+import { GlobalData } from '../parser/global';
+import { getClassesMetaData } from '../parser/metadata';
+import { filterTree, getTreeData } from '../utils/Helper';
+import { getJSXBlock, getListTagUsed } from '../utils/ParseData';
+import { spliceString } from '../utils/StringHelper';
 import { parseAssetsSrcFile } from './assets';
 
 export const getFilesInFolder = ({ src, exclude = [] }) => {
@@ -71,18 +63,6 @@ export const dirPathPromise = (componentPath) =>
       resole(paths);
     });
   });
-
-function setupEditorFiles(src: string) {
-  const desDir = join(src, 'src', '.safex')
-  copySync(join(safexTemplateDir, 'editor.ts'), join(desDir, 'editor.ts'))
-  copySync(join(safexTemplateDir, 'editor.html'), join(desDir, 'editor.html'))
-  copySync(join(safexTemplateDir, 'Boot.tsx'), join(desDir, 'Boot.tsx'))
-  const editorSceneFile = join(desDir, 'EditingScene.tsx')
-  const template = readFileContent(sceneTemplate);
-  const content = renderMustacheFile(template, {})
-  writeFileSync(editorSceneFile, content)
-  startEditorScene()
-}
 
 export function updateEditorJSX(jsxString: string) {
   const editorSceneFile = join(GlobalData.rootProject, 'src', '.safex', 'EditingScene.tsx')

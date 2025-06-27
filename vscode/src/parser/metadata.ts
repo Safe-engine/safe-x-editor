@@ -1,12 +1,11 @@
 import ESTraverse from "estraverse";
+import { writeFileSync } from "fs";
 import { globSync } from "glob";
 import { join } from "path";
 import { parseFile } from "../transform/index";
+import { parseValue } from "./ast";
 import { GlobalData } from "./global";
 import { getTypeAnnotation } from "./helper";
-import { writeFileSync } from "fs";
-import { genFolder } from "@@/services/ComponentService";
-import { parseValue } from "./ast";
 
 export async function getClassesMetaData(srcDir: string, idDebug = false) {
   const allComps = globSync(`**/*.tsx`, { cwd: srcDir })

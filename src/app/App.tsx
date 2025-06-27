@@ -1,6 +1,7 @@
 import { Allotment } from 'allotment'
 import { useContext, useEffect, useMemo } from 'react'
-import { AppContext } from '../states/app.context'
+import { loadComponent } from '../states/app.action'
+import { AppContext, useDispatch } from '../states/app.context'
 import { selectDesignResolution } from '../states/app.selectors'
 import NodeTree from './NodeTree'
 import PropertiesPanel from './PropertiesPanel'
@@ -8,10 +9,21 @@ import SceneView from './SceneView'
 import './globals.css'
 
 export function App() {
+  const dispatch = useDispatch();
   const { useSelector } = useContext(AppContext);
   const designResolution = useSelector(selectDesignResolution);
   useEffect(() => {
-    // currentMonitor().then(setMonitor)
+    console.log('file path', (window as any).filePath)
+    dispatch(loadComponent((window as any).filePath))
+    window.addEventListener('message', event => {
+      const message = event.data; // The JSON data our extension sent
+      console.log('message', message)
+      switch (message.command) {
+        case 'loadComponent':
+          dispatch(loadComponent(message.data))
+          break;
+      }
+    });
   }, [])
 
   // if (!designResolution) return

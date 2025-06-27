@@ -1,5 +1,5 @@
-import { spliceString } from '@@/utils/StringHelper';
 import fs from 'fs';
+import { spliceString } from '../utils/StringHelper';
 
 function writeToLastObjectString(file, value) {
   const content = fs.readFileSync(file, { encoding: 'utf8' });

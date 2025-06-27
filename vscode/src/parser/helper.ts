@@ -1,4 +1,4 @@
-import { renderMustacheFile } from "@@/helper/string.util";
+import { renderMustacheFile } from "../helper/string.util";
 import { parseValue } from "./ast";
 import { renderComMapCpp, typesMap } from "./constants";
 import { GlobalData } from "./global";

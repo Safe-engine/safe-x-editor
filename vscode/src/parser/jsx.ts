@@ -1,11 +1,9 @@
 import { camelCase, upperFirst } from "lodash";
 import { renderMustacheFile } from "../helper/string.util";
 import { createSetter } from "../helper/utils";
-import { GlobalData } from "./global";
+import { collidersCompList, noRenderList } from "../utils/constants";
 import { parseValue } from "./ast";
-import { collidersCompList, noRenderList } from "@@/utils/constants";
-
-
+import { GlobalData } from "./global";
 
 function isNoRender(name) {
   return [...GlobalData.customNoRenderComponents, ...noRenderList].includes(name);

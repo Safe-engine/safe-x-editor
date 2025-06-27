@@ -1,4 +1,3 @@
-import { parseValue } from '@@/parser/ast';
 import { traverse } from 'estraverse';
 import { uniq } from 'lodash';
 import endsWith from 'lodash/endsWith';
@@ -7,6 +6,7 @@ import get from 'lodash/get';
 import isEmpty from 'lodash/isEmpty';
 import startsWith from 'lodash/startsWith';
 import { basename } from 'path';
+import { parseValue } from '../parser/ast';
 import { noRenderList } from './constants';
 
 export function fallback(node) {

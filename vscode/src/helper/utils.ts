@@ -1,5 +1,5 @@
-import { renderComMapCpp } from '@@/parser/constants';
 import { camelCase, upperFirst } from 'lodash';
+import { renderComMapCpp } from '../parser/constants';
 
 export function pascalCase(str) {
   return upperFirst(camelCase(str))

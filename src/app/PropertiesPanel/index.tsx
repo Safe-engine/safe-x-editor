@@ -1,6 +1,5 @@
 import pathUtils from 'path-browserify';
 import { useContext, useRef, useState } from 'react';
-import AddNewStateDialog from '../../components/AddNewStateDialog';
 import ConfirmDeleteDialog from '../../components/ConfirmDeleteDialog';
 import CreateComponentModal from '../../components/CreateComponentModal';
 import ReNameComponentDialog from '../../components/ReNameComponentDialog';
@@ -107,11 +106,6 @@ export default function PropertiesPanel() {
         isOpen={openRenameComponent}
         setOpen={setOpenRenameComponent}
         componentPath={createPath}
-      />
-      <AddNewStateDialog
-        isOpen={isOpenNewState}
-        setOpen={setOpenNewState}
-        createPath={createPath}
       />
     </div>
   );

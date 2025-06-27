@@ -45,5 +45,10 @@
     "@types/vscode": "^1.100.0",
     "typescript": "^5.8.3"
   },
-  "dependencies": {}
+  "dependencies": {
+    "@colin-luo/tree": "^4.3.0",
+    "@typescript-eslint/typescript-estree": "^8.35.0",
+    "directory-tree": "^3.5.2",
+    "handlebars": "^4.7.8"
+  }
 }

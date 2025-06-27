@@ -1,7 +1,7 @@
-import { parseFile } from "@@/transform";
 import ESTraverse from "estraverse";
 import { existsSync } from 'fs';
 import { join } from 'path';
+import { parseFile } from "../transform";
 
 export function getResolutionSettings(folderPath: string) {
   const settingsFile = join(folderPath, 'src', 'settings.ts');

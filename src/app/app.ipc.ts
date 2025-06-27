@@ -27,6 +27,6 @@ export function sendRequest(request: IpcRequest) {
     };
     window.addEventListener('message', handler);
 
-    vscode.postMessage({ key, rest, messageId });
+    vscode.postMessage({ key, payload: rest, messageId });
   });
 }

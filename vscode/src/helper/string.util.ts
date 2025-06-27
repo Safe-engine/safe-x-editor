@@ -1,7 +1,7 @@
-import { camelCase, capitalize, snakeCase } from 'lodash';
 import fs from 'fs-extra';
-import path from 'path';
 import Handlebars from 'handlebars';
+import { camelCase, capitalize, snakeCase } from 'lodash';
+import path from 'path';
 
 export function constantCase(str) {
   return snakeCase(str).toUpperCase()
