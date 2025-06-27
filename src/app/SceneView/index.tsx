@@ -1,11 +1,11 @@
-import NumberInput from 'base/NumberInput';
-import { getLastSceneScale, getLastSceneX, getLastSceneY, setLastSceneScale, setLastSceneX, setLastSceneY } from 'data/AppData';
-import { parseVec2, Vec2 } from 'helper/node';
 import { parseInt } from 'lodash';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { updateEditingComponent } from 'states/app.action';
-import { useDispatch, useSelector } from 'states/app.context';
-import { selectAssets, selectComponentTree, selectDesignResolution, selectRootFolder, selectSelectedEditingClassNamePath, selectSelectedFilePath, selectSelectedNode } from 'states/app.selectors';
+import NumberInput from '../../base/NumberInput';
+import { getLastSceneScale, getLastSceneX, getLastSceneY, setLastSceneScale, setLastSceneX, setLastSceneY } from '../../data/AppData';
+import { parseVec2, Vec2 } from '../../helper/node';
+import { updateEditingComponent } from '../../states/app.action';
+import { useDispatch, useSelector } from '../../states/app.context';
+import { selectAssets, selectComponentTree, selectDesignResolution, selectRootFolder, selectSelectedEditingClassNamePath, selectSelectedFilePath, selectSelectedNode } from '../../states/app.selectors';
 import ArrowControl from './ArrowControl';
 import { onStart } from './cocos';
 import { loadSceneView } from './loader';

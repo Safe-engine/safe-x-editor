@@ -1,11 +1,5 @@
-import {
-  ADD_DIV, ADD_TEXT_NODE,
-  DELETE_NODE, DUPLICATE_NODE
-} from "states/app.constant";
-import {
-  ADD_NEW_STATE, CREATE_ACTION, DELETE_COMPONENT,
-  DUPLICATE_COMPONENT, NEW_COMPONENT, RE_NAME_COMPONENT
-} from "shared/constant.message";
+import { ADD_NEW_STATE, CREATE_ACTION, DELETE_COMPONENT, DUPLICATE_COMPONENT, NEW_COMPONENT, RE_NAME_COMPONENT } from "../shared/constant.message";
+import { ADD_DIV, ADD_TEXT_NODE, DELETE_NODE, DUPLICATE_NODE } from "../states/app.constant";
 
 export const contextMenuItems = [
   { text: ADD_DIV, },

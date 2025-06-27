@@ -4,8 +4,10 @@
   "description": "react parcel socket io web editor",
   "scripts": {
     "test": "bun --tsconfig ./main/tsconfig.json ./main/test/file.spec.ts",
-    "build": "parcel build src/editor.html",
-    "dev": "parcel -p 8585 src/editor.html"
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "eslint .",
+    "preview": "vite preview"
   },
   "keywords": [
     "react parcel socket io web editor"
@@ -13,13 +15,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {},
-  "parcelCleanPaths": [
-    "dist"
-  ],
-  "staticFiles": {
-    "staticPath": "public",
-    "watcherGlob": "**"
-  },
   "devDependencies": {
     "@colin-luo/tree": "^4.3.0",
     "@headlessui/react": "^1.7.17",
@@ -49,10 +44,9 @@
     "leva": "^0.10.0",
     "lodash": "^4.17.21",
     "node-dir": "^0.1.17",
-    "parcel": "^2.9.3",
-    "parcel-plugin-clean-easy": "^1.0.2",
-    "parcel-reporter-static-files-copy": "^1.5.2",
-    "parcel-resolver-ts-base-url": "^1.3.1",
+    "@vitejs/plugin-react": "^4.4.1",
+    "vite": "^6.3.5",
+    "vite-plugin-singlefile": "^2.2.0",
     "path-browserify": "^1.0.0",
     "pluralize": "^8.0.0",
     "postcss": "8.4.33",

@@ -1,6 +1,6 @@
-import React, { Fragment } from 'react';
 import { Popover, Transition } from '@headlessui/react';
-import { colorsList, darknessList } from 'helper/constants';
+import { Fragment } from 'react';
+import { colorsList, darknessList } from '../helper/constants';
 
 type ColorPickerProps = {
   dataKey?: string;

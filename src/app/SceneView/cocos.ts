@@ -1,4 +1,4 @@
-import { getLastSceneScale, getLastSceneX, getLastSceneY } from "data/AppData"
+import { getLastSceneScale, getLastSceneX, getLastSceneY } from "../../data/AppData"
 
 export const onStart = (designResolution) => function () {
   console.log('Start', designResolution)

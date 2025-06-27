@@ -1,4 +1,4 @@
-import { parseVec2 } from "helper/node";
+import { parseVec2 } from "../../helper/node";
 
 function loadSprite(filePath: string): Promise<cc.Sprite> {
   return new Promise((resolve, reject) => {

@@ -1,4 +1,4 @@
-import { CHECK_FILE_EXIST, CREATE_ACTION, DELETE_COMPONENT } from 'shared/constant.message';
+import { CHECK_FILE_EXIST, CREATE_ACTION, DELETE_COMPONENT } from '../shared/constant.message';
 import {
   ADD_NODE,
   CHANGE_COMPONENT_NAME,

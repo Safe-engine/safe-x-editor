@@ -1,16 +1,14 @@
-
-import Checkbox from 'base/Checkbox';
-import FormControlLabel from 'base/FormControlLabel';
-import Radio from 'base/Radio';
-import RadioGroup from 'base/RadioGroup';
-import TextField from 'base/TextField';
-import DialogWrap from 'components/DialogWrap';
-import { executeFileCommandAction } from 'states/app.action';
-import { AppContext } from 'states/app.context';
-import { selectRootFolder } from 'states/app.selectors';
-import { handleChange, handleCheck } from 'helper/utils';
-import React, { useContext, useEffect, useState } from 'react';
-import { NEW_COMPONENT, NEW_PAGE } from 'shared/constant.message';
+import { RadioGroup } from "@headlessui/react";
+import { useContext, useEffect, useState } from "react";
+import Checkbox from "../base/Checkbox";
+import FormControlLabel from "../base/FormControlLabel";
+import TextField from "../base/TextField";
+import { handleChange, handleCheck } from "../helper/utils";
+import { NEW_COMPONENT, NEW_PAGE } from "../shared/constant.message";
+import { executeFileCommandAction } from "../states/app.action";
+import { AppContext } from "../states/app.context";
+import { selectRootFolder } from "../states/app.selectors";
+import DialogWrap from "./DialogWrap";
 
 const CreateComponentModal = ({ isOpen, setOpen, createPath }) => {
   const { appDispatch: dispatch, useSelector } = useContext(AppContext);
@@ -183,9 +181,9 @@ const CreateComponentModal = ({ isOpen, setOpen, createPath }) => {
           <RadioGroup
             aria-label="style"
             name="style1"
-            options={['css', 'scss', 'tailwind']}
+            // options={['css', 'scss', 'tailwind']}
             value={styleType}
-            setValue={setStyleType}
+            // setValue={setStyleType}
           />
         </div>
         <br />

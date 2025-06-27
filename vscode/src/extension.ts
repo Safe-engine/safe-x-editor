@@ -14,18 +14,19 @@ export function activate(context: vscode.ExtensionContext) {
           { enableScripts: true }
         );
 
-        panel.webview.html = getEditorWebview(context, uri.fsPath);
-
+        panel.webview.html = getEditorWebview(context);
+        panel.webview.postMessage({
+          data: uri.fsPath,
+        });
         panel.webview.onDidReceiveMessage(
-          async (msg) => {
-            if (msg.command === 'export') {
-              const selected: string[] = msg.layers;
-              console.log('Selected layers:', selected);
-              vscode.window.showInformationMessage(
-                `✅ Edited scene`
-              );
-              panel.dispose();
-            }
+          async (message) => {
+            const { command, payload, messageId } = message;
+            let responseData;
+            // handler
+            panel.webview.postMessage({
+              messageId,
+              data: responseData,
+            });
           },
           undefined,
           context.subscriptions

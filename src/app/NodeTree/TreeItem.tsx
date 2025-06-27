@@ -1,12 +1,12 @@
-import { Box, Center, HStack } from "base/Stack";
 import clsx from "clsx";
 import { get } from "lodash";
 import { useState } from "react";
 import { NodeRendererProps } from "react-arborist";
 import { AiFillFolderOpen } from "react-icons/ai";
 import { RiBox3Line } from "react-icons/ri";
-import { useSelector } from "states/app.context";
-import { selectSelectedEditingClassNamePath } from "states/app.selectors";
+import { Box, Center, HStack } from "../../base/Stack";
+import { useSelector } from "../../states/app.context";
+import { selectSelectedEditingClassNamePath } from "../../states/app.selectors";
 
 function renderIcon(data: any) {
   if (data.isDirectory) {

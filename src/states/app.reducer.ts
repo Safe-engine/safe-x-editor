@@ -1,6 +1,6 @@
 import Tree from '@colin-luo/tree';
-import { fixKeys } from 'helper/utils';
 import { produce } from 'immer';
+import { fixKeys } from '../helper/utils';
 import { AppAction } from './app.action';
 import {
   ADD_NODE, DELETE_NODE,

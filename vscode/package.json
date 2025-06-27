@@ -28,7 +28,7 @@
       "explorer/context": [
         {
           "command": "safexEditor.openSafex",
-          "when": "resourceExtname == .json",
+          "when": "resourceExtname == .tsx",
           "group": "navigation"
         }
       ]

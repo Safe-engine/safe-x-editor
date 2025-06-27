@@ -1,7 +1,7 @@
+import { useMemo } from 'react';
 import SelectBox from '../base/SelectBox';
-import React, { useMemo } from 'react';
-import { addNoneItem } from 'helper/utils';
-import { NONE_ITEM } from 'helper/constants';
+import { NONE_ITEM } from '../helper/constants';
+import { addNoneItem } from '../helper/utils';
 
 type ColorSelectorProps = {
   title?: string;

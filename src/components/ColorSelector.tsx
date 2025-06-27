@@ -1,6 +1,5 @@
 import SelectBox from '../base/SelectBox';
-import React, { } from 'react';
-import { colorsList, darknessList } from 'helper/constants';
+import { colorsList, darknessList } from '../helper/constants';
 
 type ColorSelectorProps = {
   value?: string;

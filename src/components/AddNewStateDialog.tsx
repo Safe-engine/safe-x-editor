@@ -1,13 +1,12 @@
-
-import DialogWrap from 'components/DialogWrap';
-import React, { useContext, useState } from 'react';
-import { ADD_NEW_STATE } from 'shared/constant.message';
-import { AppContext } from 'states/app.context';
-import { selectRootFolder } from 'states/app.selectors';
-import { executeFileCommandAction } from 'states/app.action';
-import TextField from 'base/TextField';
-import FormControlLabel from 'base/FormControlLabel';
-import Checkbox from 'base/Checkbox';
+import { useContext, useState } from "react";
+import Checkbox from "../base/Checkbox";
+import FormControlLabel from "../base/FormControlLabel";
+import TextField from "../base/TextField";
+import { ADD_NEW_STATE } from "../shared/constant.message";
+import { executeFileCommandAction } from "../states/app.action";
+import { AppContext } from "../states/app.context";
+import { selectRootFolder } from "../states/app.selectors";
+import DialogWrap from "./DialogWrap";
 
 const AddNewStateDialog = ({ isOpen, setOpen, createPath }) => {
   const { appDispatch: dispatch, useSelector } = useContext(AppContext);

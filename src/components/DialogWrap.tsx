@@ -1,8 +1,8 @@
-import Button from 'base/Button';
-import Modal from 'base/Modal';
 import clsx from 'clsx';
-import React, { MouseEventHandler, ReactNode } from 'react';
+import { MouseEventHandler, ReactNode } from 'react';
 import tw from 'tailwind-styled-components';
+import Button from '../base/Button';
+import Modal from '../base/Modal';
 
 const ModalHeader = tw.div`uppercase text-2xl`
 const ModalBody = tw.div`block text-lg`

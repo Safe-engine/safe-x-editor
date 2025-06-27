@@ -1,12 +1,12 @@
-import AddNewStateDialog from 'components/AddNewStateDialog';
-import ConfirmDeleteDialog from 'components/ConfirmDeleteDialog';
-import CreateComponentModal from 'components/CreateComponentModal';
-import ReNameComponentDialog from 'components/ReNameComponentDialog';
 import pathUtils from 'path-browserify';
 import { useContext, useRef, useState } from 'react';
-import { addNode, genPropTypes, updatePropType } from 'states/app.action';
-import { AppContext } from 'states/app.context';
-import { selectPropTypes, selectRootFolder, selectSelectedFilePath } from 'states/app.selectors';
+import AddNewStateDialog from '../../components/AddNewStateDialog';
+import ConfirmDeleteDialog from '../../components/ConfirmDeleteDialog';
+import CreateComponentModal from '../../components/CreateComponentModal';
+import ReNameComponentDialog from '../../components/ReNameComponentDialog';
+import { addNode, genPropTypes, updatePropType } from '../../states/app.action';
+import { AppContext } from '../../states/app.context';
+import { selectPropTypes, selectRootFolder, selectSelectedFilePath } from '../../states/app.selectors';
 import NodeProps from './NodeProps';
 
 export default function PropertiesPanel() {

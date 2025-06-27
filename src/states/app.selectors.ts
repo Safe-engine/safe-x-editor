@@ -3,7 +3,7 @@
  */
 import Tree from '@colin-luo/tree';
 import { createSelector } from 'reselect';
-import { AppState, initialState } from 'states/app.reducer';
+import { AppState, initialState } from './app.reducer';
 
 const selectApp = (state: AppState) => state || initialState;
 

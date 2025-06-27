@@ -1,17 +1,9 @@
-import { ipcMain } from '@electron/remote';
 import { useEffect, useState } from 'react';
 import { Tree } from 'react-arborist';
-import { GEN_COMPONENT_REQUEST } from 'shared/constant.message';
-import {
-  addNode, deleteNode,
-  duplicateNode, genComponent, selectEditingTagNode, selectEditingText
-} from 'states/app.action';
-import {
-  ADD_DIV, ADD_TEXT_NODE,
-  DELETE_NODE, DUPLICATE_NODE
-} from 'states/app.constant';
-import { useDispatch, useSelector } from 'states/app.context';
-import { selectComponentTree, selectRootFolder, selectSelectedFilePath } from 'states/app.selectors';
+import { addNode, deleteNode, duplicateNode, genComponent, selectEditingTagNode, selectEditingText } from '../../states/app.action';
+import { ADD_DIV, ADD_TEXT_NODE, DELETE_NODE, DUPLICATE_NODE } from '../../states/app.constant';
+import { useDispatch, useSelector } from '../../states/app.context';
+import { selectComponentTree, selectRootFolder, selectSelectedFilePath } from '../../states/app.selectors';
 import { TreeItem } from './TreeItem';
 
 export default function NodeTree() {
@@ -30,10 +22,10 @@ export default function NodeTree() {
       function genComponentCB() {
         dispatch(genComponent(treeData[0], filePath));
       }
-      ipcMain.on(GEN_COMPONENT_REQUEST, genComponentCB);
-      return () => {
-        ipcMain.removeListener(GEN_COMPONENT_REQUEST, genComponentCB)
-      }
+      // ipcMain.on(GEN_COMPONENT_REQUEST, genComponentCB);
+      // return () => {
+      //   ipcMain.removeListener(GEN_COMPONENT_REQUEST, genComponentCB)
+      // }
     }
   }, [treeData, filePath]);
 

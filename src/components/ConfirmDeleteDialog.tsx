@@ -1,9 +1,9 @@
-import React, { useContext } from 'react';
-import DialogWrap from 'components/DialogWrap';
-import { DELETE_COMPONENT } from 'shared/constant.message';
-import { AppContext } from 'states/app.context';
-import { selectRootFolder } from 'states/app.selectors';
-import { executeFileCommandAction } from 'states/app.action';
+import { useContext } from 'react';
+import { DELETE_COMPONENT } from '../shared/constant.message';
+import { executeFileCommandAction } from '../states/app.action';
+import { AppContext } from '../states/app.context';
+import { selectRootFolder } from '../states/app.selectors';
+import DialogWrap from './DialogWrap';
 
 const ConfirmDeleteDialog = ({ isOpen, setOpen, componentPath }) => {
   const { appDispatch: dispatch, useSelector } = useContext(AppContext);

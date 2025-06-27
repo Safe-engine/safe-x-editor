@@ -1,9 +1,9 @@
-import { parseVec2, Vec2 } from 'helper/node';
 import { Leva, useControls } from 'leva';
 import { memo, useEffect } from 'react';
-import { updateEditingComponent } from 'states/app.action';
-import { useDispatch, useSelector } from 'states/app.context';
-import { selectSelectedNode } from 'states/app.selectors';
+import { parseVec2, Vec2 } from '../../helper/node';
+import { updateEditingComponent } from '../../states/app.action';
+import { useDispatch, useSelector } from '../../states/app.context';
+import { selectSelectedNode } from '../../states/app.selectors';
 
 function NodeProps() {
   const dispatch = useDispatch();

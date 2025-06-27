@@ -1,7 +1,7 @@
 import clsx from 'clsx';
-import { handleChangeNumber } from "helper/utils";
 import lodash from 'lodash';
 import { FaMinus, FaPlus } from "react-icons/fa";
+import { handleChangeNumber } from '../helper/utils';
 
 type Props = {
   label: string,

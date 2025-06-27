@@ -1,10 +1,10 @@
-import React, { useContext, useState } from 'react';
-import DialogWrap from 'components/DialogWrap';
-import { RE_NAME_COMPONENT } from 'shared/constant.message';
-import { AppContext } from 'states/app.context';
-import { selectRootFolder } from 'states/app.selectors';
-import { executeFileCommandAction } from 'states/app.action';
-import TextField from 'base/TextField';
+import { useContext, useState } from "react";
+import TextField from "../base/TextField";
+import { RE_NAME_COMPONENT } from "../shared/constant.message";
+import { executeFileCommandAction } from "../states/app.action";
+import { AppContext } from "../states/app.context";
+import { selectRootFolder } from "../states/app.selectors";
+import DialogWrap from "./DialogWrap";
 
 const ReNameComponentDialog = ({ isOpen, setOpen, componentPath }) => {
   const { appDispatch: dispatch, useSelector } = useContext(AppContext);

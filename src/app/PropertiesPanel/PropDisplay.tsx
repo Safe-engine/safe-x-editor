@@ -1,7 +1,5 @@
-import Checkbox from 'base/Checkbox';
-import SelectBox from 'base/SelectBox';
-import { propTypesList } from 'helper/constants';
-import React from 'react';
+import SelectBox from "../../base/SelectBox";
+import { propTypesList } from "../../helper/constants";
 
 type Props = {
   onChangePropData: Function;
