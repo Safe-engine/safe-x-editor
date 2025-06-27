@@ -2,9 +2,10 @@ import ESTraverse from "estraverse";
 import { readFileSync } from 'fs';
 import { existsSync } from 'fs-extra';
 import { join } from 'path';
+import { Uri, WebviewPanel, workspace } from "vscode";
 import { parseFile } from "../transform";
 
-export function parseAssets(parsed) {
+export function parseAssets(parsed, panel: WebviewPanel) {
   const ret = [];
   ESTraverse.traverse(parsed, {
     enter: function (node, parent) {
@@ -13,13 +14,12 @@ export function parseAssets(parsed) {
           // console.log(node);
           // console.log(node.init.properties)
           const { name } = node.id;
-          // const values = node.init.properties.map((v: any) => ({
-          //   key: v.key.name,
-          //   value: v.value.value
-          // }));
+          const relativePath = node.init.value as string
+          const base = workspace.workspaceFolders[0].uri
+          const fileUri = Uri.joinPath(base, 'res', relativePath);
           ret.push({
             key: name,
-            value: node.init.value
+            value: panel.webview.asWebviewUri(fileUri).toString()
           });
         }
       }
@@ -35,8 +35,8 @@ export function getAnimations(root: string, value: string): string[] {
   return Object.keys(json.animations);
 }
 
-export function parseAssetsSrcFile(filePathAssets: string) {
+export function parseAssetsSrcFile(filePathAssets: string, panel: WebviewPanel) {
   if (!existsSync(filePathAssets)) return [];
   const ast = parseFile(filePathAssets);
-  return parseAssets(ast) as any;
+  return parseAssets(ast, panel) as any;
 }
