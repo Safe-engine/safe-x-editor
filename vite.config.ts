@@ -1,8 +1,13 @@
 import react from '@vitejs/plugin-react'
+import { resolve } from 'path'
 import { defineConfig } from 'vite'
 import { viteSingleFile } from "vite-plugin-singlefile"
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), viteSingleFile()],
+  build: {
+    outDir: resolve(__dirname, 'vscode', 'media'),
+    emptyOutDir: true,
+  },
+  plugins: [react(), viteSingleFile({ deleteInlinedFiles: true })],
 })
