@@ -5,6 +5,14 @@ export function parseVec2(position = 'Vec2(0,0)') {
   return { x, y };
 }
 
-export function Vec2({x = 0, y = 0}) {
+export function Vec2({ x = 0, y = 0 }) {
   return `Vec2(${x},${y})`;
+}
+
+export function parseIntFromValue(value) {
+  return parseInt(parseStringFromValue(value))
+}
+
+export function parseStringFromValue(value) {
+  return value.replace('{', '').replace('}', '')
 }
