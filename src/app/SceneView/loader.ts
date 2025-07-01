@@ -1,4 +1,4 @@
-import { parseVec2 } from "helper/node";
+import { parseIntFromValue, parseStringFromValue, parseVec2 } from "helper/node";
 
 function loadSprite(filePath: string): Promise<cc.Sprite> {
   return new Promise((resolve, reject) => {
@@ -38,7 +38,7 @@ async function parseChildren(root, parentNode, data) {
   const { x, y } = parseVec2(node?.position);
   if (tag === 'SpriteRender') {
     const { spriteFrame } = props;
-    const frameName = spriteFrame.replace('{', '').replace('}', '');
+    const frameName = parseStringFromValue(spriteFrame);
     const texture = assetsTextureList.find(item => item.key === frameName);
     if (texture) {
       const filePath = `${rootFolder}/res/${texture.value}`;
@@ -54,16 +54,17 @@ async function parseChildren(root, parentNode, data) {
     if (parentNode)
       parentNode.addChild(renderNode);
   } else if (tag === 'LabelComp') {
-    const { string, font = '', size = 64 } = props;
-    let foundFont = fontAssets.find(item => item.key === font.replace('{', '').replace('}', ''));
+    const { string, font = '', size } = props;
+    let foundFont = fontAssets.find(item => item.key === parseStringFromValue(font));
     if (!foundFont) {
       foundFont = fontAssets.find(item => item.key === 'defaultFont');
     }
     const filePath = `${rootFolder}/res/${foundFont.value}`;
     const fontName = cc.path.basename(filePath, '.ttf')
     await loadFont(filePath);
-    const label = new ccui.Text(string, fontName, size)
-    // console.log('LabelComp:', x, y, filePath);
+    const fontSize = size ? parseIntFromValue(size) : 64
+    const label = new ccui.Text(string, fontName, fontSize)
+    console.log('LabelComp:', fontSize, filePath);
     label.setTextVerticalAlignment(cc.VERTICAL_TEXT_ALIGNMENT_BOTTOM)
     label.setPosition(x, y);
     parentNode.addChild(label);
