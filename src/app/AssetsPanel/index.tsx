@@ -42,8 +42,9 @@ export default function AssetsPanel() {
   useEffect(() => {
     const lastFile = getLastLoadedFile()
     if (treeData[1] && lastFile) {
-      console.log('treeData Files', treeData)
+      console.log('treeData Files', lastFile)
       const node = treeRef.current.get(lastFile)
+      // console.log('getLastLoadedFile node', node)
       treeRef.current.select(node)
     }
   }, [treeData])
@@ -51,13 +52,13 @@ export default function AssetsPanel() {
   function onItemClick(node) {
     console.log('onItemClick', node);
     const { id: key, path, isDirectory } = node.data;
-    setLastLoadedFile(path)
     if (isDirectory) {
       dispatch({
         type: TOGGLE_FOLDER,
         key,
       });
     } else {
+      setLastLoadedFile(path)
       dispatch({
         type: LOAD_COMPONENT,
         path

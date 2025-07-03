@@ -154,7 +154,7 @@ const genPropsLine = (props: { [key: string]: any }) => {
         if (val.position === 'Vec2(0,0)' || val.position === 'Vec2(0, 0)') return ''
         if (val.xy === '[0,0]' || val.xy === '[0, 0]') return ''
         return `node={{${Object.entries(val).map(([key, val]) => {
-          if(key==='xy')   return `${key}: [${val}]`
+          if(key==='xy')   return `${key}: [${(val as number[]).map(Math.round)}]`
           return `${key}: ${val}`}).join(', ')}}}`
       }
       if (swapperWith(val, '{', '}') || /^{.*}$/.test(val)) {
