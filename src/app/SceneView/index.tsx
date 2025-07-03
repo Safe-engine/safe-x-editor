@@ -1,6 +1,6 @@
 import NumberInput from 'base/NumberInput';
 import { getLastSceneScale, getLastSceneX, getLastSceneY, setLastSceneScale, setLastSceneX, setLastSceneY } from 'data/AppData';
-import { parseVec2, Vec2 } from 'helper/node';
+import { getNodePosition, Vec2 } from 'helper/node';
 import { parseInt } from 'lodash';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { updateEditingComponent } from 'states/app.action';
@@ -69,7 +69,7 @@ export default function SceneView() {
     if (!cc.director || !cc.director.getRunningScene() || !selectedNode.props) return;
     const parentNode = cc.director.getRunningScene().children[0];
     const currentNode = getCurrentNode(editingClassNamePath, parentNode, selectedEditingComponent[0]?.tag === 'SceneComponent');
-    const { x, y } = parseVec2(selectedNode.props.node.position);
+    const { x, y } = getNodePosition(selectedNode.props.node);
     currentNode.setPosition(x, y);
   }, [editingClassNamePath, selectedNode]);
 
@@ -78,15 +78,24 @@ export default function SceneView() {
     if (!cc.director || !cc.director.getRunningScene() || !selectedNode.props) return;
     const parentNode = cc.director.getRunningScene().children[0];
     const currentNode = getCurrentNode(editingClassNamePath, parentNode, selectedEditingComponent[0]?.tag === 'SceneComponent');
-    dispatch(updateEditingComponent('props', {
-      node: {
-        ...selectedNode.props.node,
-        position: Vec2({
-          x: currentNode.x,
-          y: currentNode.y,
-        })
-      }
-    }));
+    if (selectedNode.props.node.position) {
+      dispatch(updateEditingComponent('props', {
+        node: {
+          ...selectedNode.props.node,
+          position: Vec2({
+            x: currentNode.x,
+            y: currentNode.y,
+          })
+        }
+      }));
+    } else {
+      dispatch(updateEditingComponent('props', {
+        node: {
+          ...selectedNode.props.node,
+          xy: [currentNode.x, currentNode.y]
+        }
+      }));
+    }
   }
 
   function onMouseDown(event: React.MouseEvent<HTMLDivElement>) {

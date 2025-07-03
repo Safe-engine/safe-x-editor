@@ -34,10 +34,17 @@ const getAttributeProps = (openingElement, fileOrigin) => {
     const [start, end] = att.range;
     const [key, value] = fileOrigin.substring(start, end).split('=');
     if (key === 'node') {
-      console.log(att);
+      // console.log(att);
       const { properties } = att.value.expression
       props[key] = {}
       properties.forEach(p => {
+        if (p.key.name === 'xy') {
+          // console.log('parseNodeAttribute xy', p)
+          const { elements } = p.value
+          const [x, y] = elements.map(parseValue)
+          props[key].xy = [x, y];
+          return
+        }
         props[key][p.key.name] = parseValue(p.value);
       })
     } else {
@@ -145,7 +152,10 @@ const genPropsLine = (props: { [key: string]: any }) => {
       if (!val) { return ''; }
       if (key === 'node') {
         if (val.position === 'Vec2(0,0)' || val.position === 'Vec2(0, 0)') return ''
-        return `node={{${Object.entries(val).map(([key, val]) => `${key}: ${val}`).join(', ')}}}`
+        if (val.xy === '[0,0]' || val.xy === '[0, 0]') return ''
+        return `node={{${Object.entries(val).map(([key, val]) => {
+          if(key==='xy')   return `${key}: [${val}]`
+          return `${key}: ${val}`}).join(', ')}}}`
       }
       if (swapperWith(val, '{', '}') || /^{.*}$/.test(val)) {
         return `${key}=${val}`;

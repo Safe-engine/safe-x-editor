@@ -1,11 +1,9 @@
+import { collidersCompList, noRenderList } from "@@/utils/constants";
 import { camelCase, upperFirst } from "lodash";
 import { renderMustacheFile } from "../helper/string.util";
 import { createSetter } from "../helper/utils";
-import { GlobalData } from "./global";
 import { parseValue } from "./ast";
-import { collidersCompList, noRenderList } from "@@/utils/constants";
-
-
+import { GlobalData } from "./global";
 
 function isNoRender(name) {
   return [...GlobalData.customNoRenderComponents, ...noRenderList].includes(name);
@@ -18,7 +16,7 @@ function getComponentName(name: string) {
   return `${camelCase(name)}Comp${++nameCount[name]}`
 }
 
-function parseAttribute(value, componentVar, prop) {
+function parseNodeAttribute(value, componentVar, prop) {
   if (value.type === 'JSXExpressionContainer' && value.expression.type === 'ObjectExpression') {
     const { properties } = value.expression
     return properties.map(p => {
@@ -96,7 +94,7 @@ export function praseJSXElement(jsx) {
           refs += `\n${getComVar}->set${upperFirst(cbName)}(${cbStr});`
         }
       } else if (attName === 'node') {
-        ret += parseAttribute(value, getComVar, attName)
+        ret += parseNodeAttribute(value, getComVar, attName)
       } else {
         const template = GlobalData.templatesMap[componentName]
         // console.log(componentName)
