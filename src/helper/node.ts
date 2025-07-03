@@ -9,6 +9,19 @@ export function Vec2({ x = 0, y = 0 }) {
   return `Vec2(${x},${y})`;
 }
 
+export function getNodePosition(node) {
+  if (!node) return { x: 0, y: 0 };
+  const { position, xy } = node;
+  if (position) {
+    const { x, y } = parseVec2(position);
+    return { x, y };
+  } else if (xy) {
+    const [x, y] = xy.map(parseInt);
+    return { x, y };
+  }
+  return { x: 0, y: 0 };
+}
+
 export function parseIntFromValue(value) {
   return parseInt(parseStringFromValue(value))
 }

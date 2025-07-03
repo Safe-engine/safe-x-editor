@@ -1,4 +1,4 @@
-import { parseIntFromValue, parseStringFromValue, parseVec2 } from "../../helper/node";
+import { getNodePosition, parseIntFromValue, parseStringFromValue } from "../../helper/node";
 
 function loadSprite(filePath: string): Promise<cc.Sprite> {
   return new Promise((resolve, reject) => {
@@ -35,7 +35,7 @@ async function parseChildren(root, parentNode, data) {
   // console.log('parseChildren:', tag, props);
   let renderNode: cc.Node;
   const { node } = props;
-  const { x, y } = parseVec2(node?.position);
+  const { x, y } = getNodePosition(node);
   if (tag === 'SpriteRender') {
     const { spriteFrame } = props;
     const frameName = parseStringFromValue(spriteFrame);

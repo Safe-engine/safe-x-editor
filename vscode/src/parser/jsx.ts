@@ -16,7 +16,7 @@ function getComponentName(name: string) {
   return `${camelCase(name)}Comp${++nameCount[name]}`
 }
 
-function parseAttribute(value, componentVar, prop) {
+function parseNodeAttribute(value, componentVar, prop) {
   if (value.type === 'JSXExpressionContainer' && value.expression.type === 'ObjectExpression') {
     const { properties } = value.expression
     return properties.map(p => {
@@ -94,7 +94,7 @@ export function praseJSXElement(jsx) {
           refs += `\n${getComVar}->set${upperFirst(cbName)}(${cbStr});`
         }
       } else if (attName === 'node') {
-        ret += parseAttribute(value, getComVar, attName)
+        ret += parseNodeAttribute(value, getComVar, attName)
       } else {
         const template = GlobalData.templatesMap[componentName]
         // console.log(componentName)
