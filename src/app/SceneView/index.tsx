@@ -78,7 +78,7 @@ export default function SceneView() {
     if (!cc.director || !cc.director.getRunningScene() || !selectedNode.props) return;
     const parentNode = cc.director.getRunningScene().children[0];
     const currentNode = getCurrentNode(editingClassNamePath, parentNode, selectedEditingComponent[0]?.tag === 'SceneComponent');
-    if (selectedNode.props.node.position) {
+    if (selectedNode.props.node?.position) {
       dispatch(updateEditingComponent('props', {
         node: {
           ...selectedNode.props.node,
