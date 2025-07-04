@@ -36,6 +36,7 @@ async function parseChildren(root, parentNode, data) {
   let renderNode: cc.Node;
   const { node } = props;
   const { x, y } = getNodePosition(node);
+  const { scaleX = 1, scaleY = 1, scale = 1, rotation = 0 } = node || {};
   if (tag === 'SpriteRender') {
     const { spriteFrame } = props;
     const frameName = parseStringFromValue(spriteFrame);
@@ -71,6 +72,18 @@ async function parseChildren(root, parentNode, data) {
     renderNode = label
   } else if (tag === 'SceneComponent') {
     renderNode = parentNode
+  }
+  if (scale !== 1) {
+    renderNode.scale = scale;
+  }
+  if (scaleX !== 1) {
+    renderNode.scaleX = scaleX;
+  }
+  if (scaleY !== 1) {
+    renderNode.scaleY = scaleY;
+  }
+  if (rotation !== 0) {
+    renderNode.rotation = rotation;
   }
   // console.log('renderNode:', renderNode);
   for (let index = 0; index < children.length; index++) {

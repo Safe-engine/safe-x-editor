@@ -71,6 +71,19 @@ export default function SceneView() {
     const currentNode = getCurrentNode(editingClassNamePath, parentNode, selectedEditingComponent[0]?.tag === 'SceneComponent');
     const { x, y } = getNodePosition(selectedNode.props.node);
     currentNode.setPosition(x, y);
+    const { scaleX = 1, scaleY = 1, scale = 1, rotation = 0 } = selectedNode.props.node || {};
+    if (scale !== 1) {
+      currentNode.scale = scale;
+    }
+    if (scaleX !== 1) {
+      currentNode.scaleX = scaleX;
+    }
+    if (scaleY !== 1) {
+      currentNode.scaleY = scaleY;
+    }
+    if (rotation !== 0) {
+      currentNode.rotation = rotation;
+    }
   }, [editingClassNamePath, selectedNode]);
 
   function onMouseUp() {

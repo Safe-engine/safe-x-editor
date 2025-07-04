@@ -45,6 +45,34 @@ function NodeProps() {
           }));
         }
       },
+    },
+    scale: {
+      value: 1,
+      label: 'Scale',
+      step: 0.1,
+      onChange: (value: { x: number; y: number }) => {
+        if (!selectedNode.props) return
+        const { node = {} } = selectedNode.props
+        dispatch(updateEditingComponent('props', {
+          node: {
+            ...node, scale: value
+          }
+        }));
+      }
+    },
+    rotation: {
+      value: 1,
+      label: 'Rotation',
+      step: 0.1,
+      onChange: (value: { x: number; y: number }) => {
+        if (!selectedNode.props) return
+        const { node = {} } = selectedNode.props
+        dispatch(updateEditingComponent('props', {
+          node: {
+            ...node, rotation: value
+          }
+        }));
+      }
     }
   }))
 
@@ -54,6 +82,13 @@ function NodeProps() {
     const { x, y } = getNodePosition(node);
     // console.log('selectedNode', 'position', x, y);
     set({ position: { x, y } })
+    const { scaleX = 1, scaleY = 1, scale = 1, rotation = 0 } = selectedNode.props.node || {};
+    if (scale !== 1) {
+      set({ scale });
+    }
+    if (rotation !== 0) {
+      set({ rotation });
+    }
   }, [selectedNode])
 
   return (<div className='p-1'>
