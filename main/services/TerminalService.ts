@@ -1,7 +1,6 @@
 import { GlobalData } from "@@/parser/global";
 import { spawnSync } from "child_process";
 import { log } from "console";
-import portscanner from "portscanner";
 
 export function lintFile(filePath: string) {
   const relativePath = filePath.replace(GlobalData.rootProject, '.')
@@ -23,20 +22,21 @@ export function lintFile(filePath: string) {
   }
 }
 
-export function startEditorScene() {
-  const port = 10234;
-  portscanner.checkPortStatus(port, '127.0.0.1', function (error, status) {
-    // Status is 'open' if currently in use or 'closed' if available
-    console.log(error, status)
-    if (status === 'closed') {
-      // const cmd = `npx parcel ./src/.safex/editor.html -p ${port}`
-      const cmd = `npm run dev`
-      log('#not fixed:', cmd, GlobalData.rootProject)
-      // const res = spawnSync('npm.cmd', ['run', 'dev'], {
-      //   cwd: GlobalData.rootProject,
-      //   stdio: 'inherit'
-      // })
-      // if (res) log(res)
-    }
+export function syncResConst() {
+  const cmd = 'bun'
+  const args = ['./node_modules/safex-sync-res/src/index.ts']
+
+  log(`Running: ${cmd} ${args.join(' ')}`, GlobalData.rootProject)
+
+  const res = spawnSync(cmd, args, {
+    cwd: GlobalData.rootProject,
+    stdio: 'inherit',
+    shell: false,
   })
+
+  if (res.error) {
+    log('Lỗi khi chạy eslint:', res.error)
+  } else if (res.status !== 0) {
+    log(`eslint exited with code ${res.status}`)
+  }
 }

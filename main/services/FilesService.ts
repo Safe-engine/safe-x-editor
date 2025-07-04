@@ -16,7 +16,7 @@ import { copySync } from 'fs-extra';
 import dir from 'node-dir';
 import { join } from 'path';
 import rimraf from 'rimraf';
-import { startEditorScene } from './TerminalService';
+import { syncResConst } from './TerminalService';
 import { parseAssetsSrcFile } from './assets';
 
 export const getFilesInFolder = ({ src, exclude = [] }) => {
@@ -29,6 +29,7 @@ export const getFilesInFolder = ({ src, exclude = [] }) => {
     throw Error('Not Safex project.');
   }
   GlobalData.rootProject = src
+  syncResConst()
   getClassesMetaData(src)
   // setupEditorFiles(src)
   const jsxOption: DirectoryTree.DirectoryTreeOptions = {
@@ -81,7 +82,6 @@ function setupEditorFiles(src: string) {
   const template = readFileContent(sceneTemplate);
   const content = renderMustacheFile(template, {})
   writeFileSync(editorSceneFile, content)
-  startEditorScene()
 }
 
 export function updateEditorJSX(jsxString: string) {
