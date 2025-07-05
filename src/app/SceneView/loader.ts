@@ -72,6 +72,7 @@ async function parseChildren(root, parentNode, data) {
   } else if (tag === 'SceneComponent') {
     renderNode = parentNode
   }
+  if (!renderNode) return
   if (scale !== 1) {
     renderNode.scale = scale;
   }
