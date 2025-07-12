@@ -3,8 +3,7 @@ import { getLastSceneScale, getLastSceneX, getLastSceneY, setLastSceneScale, set
 import { getNodePosition, Vec2 } from 'helper/node';
 import { parseInt } from 'lodash';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { updateEditingComponent } from 'states/app.action';
-import { useDispatch, useSelector } from 'states/app.context';
+import { useActions, useSelector } from 'states/app.context';
 import { selectAssets, selectComponentTree, selectDesignResolution, selectRootFolder, selectSelectedEditingClassNamePath, selectSelectedFilePath, selectSelectedNode } from 'states/app.selectors';
 import ArrowControl from './ArrowControl';
 import { onStart } from './cocos';
@@ -24,7 +23,7 @@ function getCurrentNode(editingClassNamePath: string, parentNode: any, isSceneNo
 }
 
 export default function SceneView() {
-  const dispatch = useDispatch();
+  const { updateEditingComponent } = useActions();
   const [position, setPosition] = useState({ x: 200, y: 200 });
   const [isEditing, setIsEditing] = useState(false);
   const [positionStart, setPositionStart] = useState({ x: 0, y: 0 });
@@ -91,8 +90,9 @@ export default function SceneView() {
     if (!cc.director || !cc.director.getRunningScene() || !selectedNode.props) return;
     const parentNode = cc.director.getRunningScene().children[0];
     const currentNode = getCurrentNode(editingClassNamePath, parentNode, selectedEditingComponent[0]?.tag === 'SceneComponent');
+    console.log('currentNode', currentNode)
     if (selectedNode.props.node?.position) {
-      dispatch(updateEditingComponent('props', {
+      updateEditingComponent('props', {
         node: {
           ...selectedNode.props.node,
           position: Vec2({
@@ -100,14 +100,14 @@ export default function SceneView() {
             y: currentNode.y,
           })
         }
-      }));
+      });
     } else {
-      dispatch(updateEditingComponent('props', {
+      updateEditingComponent('props', {
         node: {
           ...selectedNode.props.node,
           xy: [currentNode.x, currentNode.y]
         }
-      }));
+      });
     }
   }
 

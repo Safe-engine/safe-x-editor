@@ -6,14 +6,12 @@ import pathUtils from 'path-browserify'
 import { useEffect, useRef, useState } from 'react'
 import { Tree, TreeApi } from 'react-arborist'
 import { ADD_NEW_STATE, CREATE_ACTION, DELETE_COMPONENT, GET_FOLDER_FILES, NEW_COMPONENT, RE_NAME_COMPONENT } from 'shared/constant.message'
-import { getFiles } from 'states/app.action'
-import { LOAD_COMPONENT, TOGGLE_FOLDER } from 'states/app.constant'
-import { useDispatch, useSelector } from 'states/app.context'
+import { useActions, useSelector } from 'states/app.context'
 import { selectFilesData } from 'states/app.selectors'
 import { AssetTypeBlock } from '../../components/common'
 
 export default function AssetsPanel() {
-  const dispatch = useDispatch();
+  const { getFiles, loadComponent } = useActions();
   const treeRef = useRef<TreeApi<any>>(null)
   const [isOpen, setOpen] = useState(false);
   const [openConfirmDeleteComponent, setOpenConfirmDeleteComponent] = useState(false);
@@ -27,7 +25,7 @@ export default function AssetsPanel() {
   useEffect(() => {
     function getFilesCB(data) {
       console.log('GET_FOLDER_FILES', data)
-      dispatch(getFiles(data));
+      getFiles(data);
     }
     ipcMain.on(GET_FOLDER_FILES, getFilesCB);
     const lastProject = getLastRootFolder()
@@ -53,16 +51,13 @@ export default function AssetsPanel() {
     console.log('onItemClick', node);
     const { id: key, path, isDirectory } = node.data;
     if (isDirectory) {
-      dispatch({
-        type: TOGGLE_FOLDER,
-        key,
-      });
+      // dispatch({
+      //   type: TOGGLE_FOLDER,
+      //   key,
+      // });
     } else {
       setLastLoadedFile(path)
-      dispatch({
-        type: LOAD_COMPONENT,
-        path
-      });
+      loadComponent(path);
     }
   }
 

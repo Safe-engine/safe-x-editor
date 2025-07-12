@@ -4,7 +4,7 @@ import CreateComponentModal from 'components/CreateComponentModal';
 import ReNameComponentDialog from 'components/ReNameComponentDialog';
 import pathUtils from 'path-browserify';
 import { useContext, useRef, useState } from 'react';
-import { addNode, genPropTypes, updatePropType } from 'states/app.action';
+import { addNode } from 'states/app.action';
 import { AppContext } from 'states/app.context';
 import { selectPropTypes, selectRootFolder, selectSelectedFilePath } from 'states/app.selectors';
 import NodeProps from './NodeProps';
@@ -56,15 +56,6 @@ export default function PropertiesPanel() {
     imported = `import ${name} from '${imported}';`;
     // console.log('fromNode', fromNode, toNode, nameTo, imported)
     dispatch(addNode({ tag: name, imported, expanded: true }, toNode));
-  }
-
-  function onClickGenPropTypes() {
-    setIsChangeState(false);
-    dispatch(genPropTypes(componentPropTypes, filePath));
-  }
-
-  function onChangePropData(name, propsData) {
-    dispatch(updatePropType(name, propsData));
   }
 
   return (

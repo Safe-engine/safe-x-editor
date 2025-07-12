@@ -1,21 +1,15 @@
 import { ipcMain } from '@electron/remote';
+import { sendRequest } from 'app/app.ipc';
 import { useEffect, useState } from 'react';
 import { Tree } from 'react-arborist';
+import toast from 'react-hot-toast';
 import { GEN_COMPONENT_REQUEST } from 'shared/constant.message';
-import {
-  addNode, deleteNode,
-  duplicateNode, genComponent, selectEditingTagNode, selectEditingText
-} from 'states/app.action';
-import {
-  ADD_DIV, ADD_TEXT_NODE,
-  DELETE_NODE, DUPLICATE_NODE
-} from 'states/app.constant';
-import { useDispatch, useSelector } from 'states/app.context';
+import { useActions, useSelector } from 'states/app.context';
 import { selectComponentTree, selectRootFolder, selectSelectedFilePath } from 'states/app.selectors';
 import { TreeItem } from './TreeItem';
 
 export default function NodeTree() {
-  const dispatch = useDispatch();
+  const { selectEditingTagNode } = useActions();
   const treeData = useSelector(selectComponentTree);
   const filePath = useSelector(selectSelectedFilePath);
   const rootPath = useSelector(selectRootFolder);
@@ -27,8 +21,12 @@ export default function NodeTree() {
       // if (getIsAutoSaveGenComp()) {
       //   onClickGenComponent();
       // }
-      function genComponentCB() {
-        dispatch(genComponent(treeData[0], filePath));
+      async function genComponentCB() {
+        const data: any = await sendRequest({
+          key: GEN_COMPONENT_REQUEST,
+          nodesData: treeData[0], filePath
+        });
+        toast.success('Gen React Component Success');
       }
       ipcMain.on(GEN_COMPONENT_REQUEST, genComponentCB);
       return () => {
@@ -40,34 +38,32 @@ export default function NodeTree() {
   function onItemClick(node) {
     console.log('onItemClick node', node.data)
     const { id: key, tag } = node.data;
-    if (!tag) {
-      dispatch(selectEditingText(key));
-    } else {
-      dispatch(selectEditingTagNode(key));
+    if (tag) {
+      selectEditingTagNode(key);
     }
   }
 
-  function contextMenuItemClick(e) {
-    // console.log(selectedTreeItem);
-    if (!selectedTreeItem.id) { return; }
-    switch (e.itemData.text) {
-      case ADD_DIV: {
-        dispatch(addNode({ tag: 'div', name: 'div', expanded: true }, selectedTreeItem.key));
-        break;
-      }
-      case ADD_TEXT_NODE:
-        dispatch(addNode({ name: 'text' }, selectedTreeItem.key));
-        break;
-      case DUPLICATE_NODE:
-        dispatch(duplicateNode(selectedTreeItem));
-        break;
-      case DELETE_NODE:
-        dispatch(deleteNode(selectedTreeItem));
-        break;
-      default:
-        break;
-    }
-  }
+  // function contextMenuItemClick(e) {
+  //   // console.log(selectedTreeItem);
+  //   if (!selectedTreeItem.id) { return; }
+  //   switch (e.itemData.text) {
+  //     case ADD_DIV: {
+  //       dispatch(addNode({ tag: 'div', name: 'div', expanded: true }, selectedTreeItem.key));
+  //       break;
+  //     }
+  //     case ADD_TEXT_NODE:
+  //       dispatch(addNode({ name: 'text' }, selectedTreeItem.key));
+  //       break;
+  //     case DUPLICATE_NODE:
+  //       dispatch(duplicateNode(selectedTreeItem));
+  //       break;
+  //     case DELETE_NODE:
+  //       dispatch(deleteNode(selectedTreeItem));
+  //       break;
+  //     default:
+  //       break;
+  //   }
+  // }
 
   return (
     <div className='h-screen' >
