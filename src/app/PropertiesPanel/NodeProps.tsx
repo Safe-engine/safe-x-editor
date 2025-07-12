@@ -1,12 +1,11 @@
 import { Leva, useControls } from 'leva';
 import { memo, useEffect } from 'react';
 import { getNodePosition, Vec2 } from '../../helper/node';
-import { updateEditingComponent } from '../../states/app.action';
-import { useDispatch, useSelector } from '../../states/app.context';
+import { useActions, useSelector } from '../../states/app.context';
 import { selectSelectedNode } from '../../states/app.selectors';
 
 function NodeProps() {
-  const dispatch = useDispatch();
+  const {updateEditingComponent} = useActions();
   const selectedNode = useSelector(selectSelectedNode);
   // console.log('selectedEditingComponent', selectedEditingComponent)
   // if (!selectedNode.props) return
@@ -31,18 +30,18 @@ function NodeProps() {
         const { node = {} } = selectedNode.props
         // console.log('onChangeProp', 'position', value);
         if (node?.position) {
-          dispatch(updateEditingComponent('props', {
+          updateEditingComponent('props', {
             node: {
               ...node, position: Vec2(value)
             }
-          }));
+          });
         } else {
           const { x, y } = value
-          dispatch(updateEditingComponent('props', {
+          updateEditingComponent('props', {
             node: {
               ...node, xy: [x, y]
             }
-          }));
+          });
         }
       },
     },
@@ -53,11 +52,11 @@ function NodeProps() {
       onChange: (value: { x: number; y: number }) => {
         if (!selectedNode.props) return
         const { node = {} } = selectedNode.props
-        dispatch(updateEditingComponent('props', {
+        updateEditingComponent('props', {
           node: {
             ...node, scale: value
           }
-        }));
+        });
       }
     },
     rotation: {
@@ -67,11 +66,11 @@ function NodeProps() {
       onChange: (value: { x: number; y: number }) => {
         if (!selectedNode.props) return
         const { node = {} } = selectedNode.props
-        dispatch(updateEditingComponent('props', {
+        updateEditingComponent('props', {
           node: {
             ...node, rotation: value
           }
-        }));
+        });
       }
     }
   }))

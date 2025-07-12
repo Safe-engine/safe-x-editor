@@ -1,4 +1,5 @@
 import { createContext, Dispatch, useContext } from 'react';
+import { createActions } from './actions';
 import { AppAction } from './app.action';
 import { AppState, initialState } from './app.reducer';
 
@@ -24,4 +25,9 @@ export function useSelector<D>(sel: (state?: AppState) => D) {
 export function useDispatch() {
   const { appDispatch } = useContext(AppContext);
   return appDispatch
+}
+
+export function useActions() {
+  const { appDispatch } = useContext(AppContext);
+  return createActions(appDispatch)
 }
