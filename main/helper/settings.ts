@@ -17,14 +17,15 @@ export function getResolutionSettings(folderPath: string) {
   ESTraverse.traverse(parsed, {
     enter: function (node: any) {
       // console.log(' traverse:', node);
-      if (node.type === 'Property' && node.key.name === 'designedResolution') {
-        // console.log('Found designedResolution:', node);
-        if (node.value.type === 'ObjectExpression') {
-          const widthProp = node.value.properties.find(prop => prop.key.name === 'width');
-          const heightProp = node.value.properties.find(prop => prop.key.name === 'height');
+      if (node.type === 'VariableDeclarator' && node.id.name === 'designedResolution') {
+        // console.log(' traverse:', node.init);
+        if (node.init.type === 'ObjectExpression') {
+          const widthProp = node.init.properties.find(prop => prop.key.name === 'width');
+          const heightProp = node.init.properties.find(prop => prop.key.name === 'height');
           if (widthProp && heightProp) {
             width = widthProp.value.value;
             height = heightProp.value.value;
+            console.log('Found width, height:', width, height);
           }
         }
         this.break(); // Stop traversing further once we find the designedResolution
@@ -32,7 +33,6 @@ export function getResolutionSettings(folderPath: string) {
     },
     fallback: 'iteration',
   });
-  console.log('Found  width, height:', width, height);
   return {
     width,
     height,
