@@ -53,7 +53,7 @@ export default function SceneView() {
         id: "gameCanvas",
         renderMode: 1
       }, onStart(designResolution));
-    }, 50);
+    }, 250);
     return () => clearTimeout(timeout);
   }, [designResolution]);
 
