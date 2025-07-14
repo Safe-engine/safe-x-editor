@@ -11,7 +11,7 @@ import { selectFilesData } from 'states/app.selectors'
 import { AssetTypeBlock } from '../../components/common'
 
 export default function AssetsPanel() {
-  const { getFiles, loadComponent } = useActions();
+  const { getFiles, loadComponent, toggleFolder } = useActions();
   const treeRef = useRef<TreeApi<any>>(null)
   const [isOpen, setOpen] = useState(false);
   const [openConfirmDeleteComponent, setOpenConfirmDeleteComponent] = useState(false);
@@ -51,10 +51,7 @@ export default function AssetsPanel() {
     console.log('onItemClick', node);
     const { id: key, path, isDirectory } = node.data;
     if (isDirectory) {
-      // dispatch({
-      //   type: TOGGLE_FOLDER,
-      //   key,
-      // });
+      toggleFolder(key)
     } else {
       setLastLoadedFile(path)
       loadComponent(path);
