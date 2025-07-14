@@ -1,11 +1,10 @@
 import { createContext, Dispatch, useContext } from 'react';
 import { createActions } from './actions';
-import { AppAction } from './app.action';
 import { AppState, initialState } from './app.reducer';
 
 interface ContextProps {
   appState: AppState,
-  appDispatch: Dispatch<AppAction>,
+  appDispatch: Dispatch<any>,
   useSelector<D>(cb?: (state?: AppState) => D): D,
 };
 

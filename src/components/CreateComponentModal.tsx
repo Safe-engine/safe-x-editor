@@ -1,16 +1,13 @@
 
 import Checkbox from 'base/Checkbox';
 import FormControlLabel from 'base/FormControlLabel';
-import Radio from 'base/Radio';
 import RadioGroup from 'base/RadioGroup';
 import TextField from 'base/TextField';
 import DialogWrap from 'components/DialogWrap';
-import { executeFileCommandAction } from 'states/app.action';
+import { handleChange, handleCheck } from 'helper/utils';
+import { useContext, useEffect, useState } from 'react';
 import { AppContext } from 'states/app.context';
 import { selectRootFolder } from 'states/app.selectors';
-import { handleChange, handleCheck } from 'helper/utils';
-import React, { useContext, useEffect, useState } from 'react';
-import { NEW_COMPONENT, NEW_PAGE } from 'shared/constant.message';
 
 const CreateComponentModal = ({ isOpen, setOpen, createPath }) => {
   const { appDispatch: dispatch, useSelector } = useContext(AppContext);
@@ -58,9 +55,9 @@ const CreateComponentModal = ({ isOpen, setOpen, createPath }) => {
     };
     if (isCreatePage) {
       data.path = rootFolder;
-      dispatch(executeFileCommandAction(NEW_PAGE, data, rootFolder));
+      // dispatch(executeFileCommandAction(NEW_PAGE, data, rootFolder));
     } else {
-      dispatch(executeFileCommandAction(NEW_COMPONENT, data, rootFolder));
+      // dispatch(executeFileCommandAction(NEW_COMPONENT, data, rootFolder));
     }
   };
 

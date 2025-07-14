@@ -1,13 +1,11 @@
 
+import Checkbox from 'base/Checkbox';
+import FormControlLabel from 'base/FormControlLabel';
+import TextField from 'base/TextField';
 import DialogWrap from 'components/DialogWrap';
-import React, { useContext, useState } from 'react';
-import { ADD_NEW_STATE } from 'shared/constant.message';
+import { useContext, useState } from 'react';
 import { AppContext } from 'states/app.context';
 import { selectRootFolder } from 'states/app.selectors';
-import { executeFileCommandAction } from 'states/app.action';
-import TextField from 'base/TextField';
-import FormControlLabel from 'base/FormControlLabel';
-import Checkbox from 'base/Checkbox';
 
 const AddNewStateDialog = ({ isOpen, setOpen, createPath }) => {
   const { appDispatch: dispatch, useSelector } = useContext(AppContext);
@@ -32,7 +30,7 @@ const AddNewStateDialog = ({ isOpen, setOpen, createPath }) => {
       defaultValue,
       isUseEffect,
     };
-    dispatch(executeFileCommandAction(ADD_NEW_STATE, data, rootFolder));
+    // dispatch(executeFileCommandAction(ADD_NEW_STATE, data, rootFolder));
   };
 
   return (
