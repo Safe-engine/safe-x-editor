@@ -1,9 +1,5 @@
 import Tree from "@colin-luo/tree";
-import { sendRequest } from "app/app.ipc";
-import { setLastRootFolder } from "data/AppData";
 import { Dispatch } from "react";
-import toast from "react-hot-toast";
-import { GET_FOLDER_FILES, LOAD_COMPONENT_REQUEST } from "shared/constant.message";
 import { AppState } from "./app.reducer";
 
 const actions = {
@@ -57,32 +53,7 @@ export function getAction(draft: AppState, name: string) {
   return actions[name].bind(draft);
 }
 
-type Actions = typeof actions;
-export function createMiddleware(dispatch: Dispatch<any>) {
-  const { getFilesSuccess, loadComponentSuccess } = createActions(dispatch)
-  const middlewares: Partial<Actions> = {
-    async getFiles(src: string) {
-      const data: any = await sendRequest({
-        key: GET_FOLDER_FILES,
-        src
-      });
-      if (data.error) {
-        toast.error(data.message);
-        return;
-      }
-      setLastRootFolder(src);
-      getFilesSuccess(data);
-    },
-    async loadComponent(path: string) {
-      const data: any = await sendRequest({
-        key: LOAD_COMPONENT_REQUEST,
-        path
-      });
-      loadComponentSuccess(data);
-    },
-  }
-  return middlewares
-}
+export type Actions = typeof actions;
 
 export function createActions(appDispatch: Dispatch<any>) {
   const obj = new Proxy({}, {
