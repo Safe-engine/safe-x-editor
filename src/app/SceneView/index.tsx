@@ -4,7 +4,7 @@ import NumberInput from '../../base/NumberInput';
 import { getLastSceneScale, getLastSceneX, getLastSceneY, setLastSceneScale, setLastSceneX, setLastSceneY } from '../../data/AppData';
 import { getNodePosition, Vec2 } from '../../helper/node';
 import { useActions, useSelector } from '../../states/app.context';
-import { selectAssets, selectComponentTree, selectDesignResolution, selectRootFolder, selectSelectedEditingClassNamePath, selectSelectedFilePath, selectSelectedNode } from '../../states/app.selectors';
+import { selectAssets, selectComponentTree, selectDesignResolution, selectRootFolder, selectSelectedEditingClassNamePath, selectSelectedEditingPath, selectSelectedNode } from '../../states/app.selectors';
 import ArrowControl from './ArrowControl';
 import { onStart } from './cocos';
 import { loadSceneView } from './loader';
@@ -33,7 +33,7 @@ export default function SceneView() {
   const selectedEditingComponent = useSelector(selectComponentTree);
   const designResolution = useSelector(selectDesignResolution);
   const selectedNode = useSelector(selectSelectedNode);
-  const filePath = useSelector(selectSelectedFilePath);
+  const filePath = useSelector(selectSelectedEditingPath);
   const rootFolder = useSelector(selectRootFolder);
   const assets = useSelector(selectAssets);
   const divRef = useRef<HTMLDivElement>(null);
@@ -53,14 +53,15 @@ export default function SceneView() {
         id: "gameCanvas",
         renderMode: 1
       }, onStart(designResolution));
-    }, 250);
+    }, 50);
     return () => clearTimeout(timeout);
   }, [designResolution]);
 
   useEffect(() => {
+    console.log('filePath', filePath)
     const timeout = setTimeout(() => {
       loadSceneView(selectedEditingComponent, { rootFolder, ...assets });
-    }, 450);
+    }, 250);
     return () => clearTimeout(timeout);
   }, [filePath]);
 

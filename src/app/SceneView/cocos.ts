@@ -1,7 +1,7 @@
 import { getLastSceneScale, getLastSceneX, getLastSceneY } from "../../data/AppData"
 
 export const onStart = (designResolution) => function () {
-  console.log('Start', designResolution)
+  console.log('Start create game scene', designResolution)
   const { width, height } = designResolution
   const policy = width > height ? cc.ResolutionPolicy.FIXED_HEIGHT : cc.ResolutionPolicy.FIXED_WIDTH
   cc.view.setDesignResolutionSize(width, height, policy)
