@@ -25,12 +25,6 @@ export type AppState = typeof initialState;
 const reducer = (state: AppState = initialState, action: any) => produce(state, draft => {
   console.log('reducer', action);
   getAction(draft, action.type)(...action.data);
-
-  //   case UPDATE_PROP_TYPE: {
-  //     const { name, propsData } = action;
-  //     draft.componentPropTypes[name] = { ...draft.componentPropTypes[name], ...propsData };
-  //     break;
-  //   }
 });
 
 export default reducer;

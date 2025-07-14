@@ -3,7 +3,6 @@ import { useContext, useState } from 'react';
 import ConfirmDeleteDialog from '../../components/ConfirmDeleteDialog';
 import CreateComponentModal from '../../components/CreateComponentModal';
 import ReNameComponentDialog from '../../components/ReNameComponentDialog';
-import { addNode } from '../../states/app.action';
 import { AppContext } from '../../states/app.context';
 import { selectSelectedFilePath } from '../../states/app.selectors';
 import NodeProps from './NodeProps';
@@ -47,7 +46,7 @@ export default function PropertiesPanel() {
     }
     imported = `import ${name} from '${imported}';`;
     // console.log('fromNode', fromNode, toNode, nameTo, imported)
-    dispatch(addNode({ tag: name, imported, expanded: true }, toNode));
+    // dispatch(addNode({ tag: name, imported, expanded: true }, toNode));
   }
 
   return (

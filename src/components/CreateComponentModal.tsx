@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { RadioGroup } from "@headlessui/react";
 import { useContext, useEffect, useState } from "react";
 import Checkbox from "../base/Checkbox";
@@ -9,6 +10,18 @@ import { executeFileCommandAction } from "../states/app.action";
 import { AppContext } from "../states/app.context";
 import { selectRootFolder } from "../states/app.selectors";
 import DialogWrap from "./DialogWrap";
+=======
+
+import Checkbox from 'base/Checkbox';
+import FormControlLabel from 'base/FormControlLabel';
+import RadioGroup from 'base/RadioGroup';
+import TextField from 'base/TextField';
+import DialogWrap from 'components/DialogWrap';
+import { handleChange, handleCheck } from 'helper/utils';
+import { useContext, useEffect, useState } from 'react';
+import { AppContext } from 'states/app.context';
+import { selectRootFolder } from 'states/app.selectors';
+>>>>>>> d99c634 (refactor state)
 
 const CreateComponentModal = ({ isOpen, setOpen, createPath }) => {
   const { appDispatch: dispatch, useSelector } = useContext(AppContext);
@@ -56,9 +69,9 @@ const CreateComponentModal = ({ isOpen, setOpen, createPath }) => {
     };
     if (isCreatePage) {
       data.path = rootFolder;
-      dispatch(executeFileCommandAction(NEW_PAGE, data, rootFolder));
+      // dispatch(executeFileCommandAction(NEW_PAGE, data, rootFolder));
     } else {
-      dispatch(executeFileCommandAction(NEW_COMPONENT, data, rootFolder));
+      // dispatch(executeFileCommandAction(NEW_COMPONENT, data, rootFolder));
     }
   };
 

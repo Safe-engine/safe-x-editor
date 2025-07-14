@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { useContext, useState } from "react";
 import TextField from "../base/TextField";
 import { RE_NAME_COMPONENT } from "../shared/constant.message";
@@ -5,6 +6,13 @@ import { executeFileCommandAction } from "../states/app.action";
 import { AppContext } from "../states/app.context";
 import { selectRootFolder } from "../states/app.selectors";
 import DialogWrap from "./DialogWrap";
+=======
+import TextField from 'base/TextField';
+import DialogWrap from 'components/DialogWrap';
+import { useContext, useState } from 'react';
+import { AppContext } from 'states/app.context';
+import { selectRootFolder } from 'states/app.selectors';
+>>>>>>> d99c634 (refactor state)
 
 const ReNameComponentDialog = ({ isOpen, setOpen, componentPath }) => {
   const { appDispatch: dispatch, useSelector } = useContext(AppContext);
@@ -12,8 +20,7 @@ const ReNameComponentDialog = ({ isOpen, setOpen, componentPath }) => {
   const [newName, setNewName] = useState('');
 
   function onClickConfirmAction() {
-    dispatch(executeFileCommandAction(RE_NAME_COMPONENT,
-      { newName, componentPath }, rootFolder));
+    // dispatch(executeFileCommandAction(RE_NAME_COMPONENT, { newName, componentPath }, rootFolder));
     setOpen(false);
   }
 
