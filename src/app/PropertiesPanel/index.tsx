@@ -1,28 +1,21 @@
 import pathUtils from 'path-browserify';
-import { useContext, useRef, useState } from 'react';
+import { useContext, useState } from 'react';
 import ConfirmDeleteDialog from '../../components/ConfirmDeleteDialog';
 import CreateComponentModal from '../../components/CreateComponentModal';
 import ReNameComponentDialog from '../../components/ReNameComponentDialog';
 import { addNode } from '../../states/app.action';
 import { AppContext } from '../../states/app.context';
-import { selectPropTypes, selectRootFolder, selectSelectedFilePath } from '../../states/app.selectors';
+import { selectSelectedFilePath } from '../../states/app.selectors';
 import NodeProps from './NodeProps';
 
 export default function PropertiesPanel() {
   const { appDispatch: dispatch, useSelector } = useContext(AppContext);
-  const treeViewProjectRef = useRef(null);
-  const contextMenuRef = useRef(null);
-  const root = useSelector(selectRootFolder);
   const filePath = useSelector(selectSelectedFilePath);
-  const componentPropTypes = useSelector(selectPropTypes);
-  const [isOpen, setOpen] = useState(false);
   const [openConfirmDeleteComponent, setOpenConfirmDeleteComponent] = useState(false);
   const [openRenameComponent, setOpenRenameComponent] = useState(false);
   const [createPath, setCreatePath] = useState('');
-  // const filesData = useSelector(makeSelectFilesData());
   const [openCreateComponent, setOpenCreateComponent] = useState(false);
   const [isOpenNewState, setOpenNewState] = useState(false);
-  const [isChangeState, setIsChangeState] = useState(false);
 
   function getComponentName(path) {
     let name = pathUtils.basename(path)

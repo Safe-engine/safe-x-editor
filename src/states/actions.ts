@@ -6,50 +6,57 @@ import toast from "react-hot-toast";
 import { GET_FOLDER_FILES, LOAD_COMPONENT_REQUEST } from "shared/constant.message";
 import { AppState } from "./app.reducer";
 
-export function register(draft: AppState) {
-  const actions = {
-    getFiles(src: string) {
-      draft.rootFolder = src;
-    },
-    getFilesSuccess(data) {
-      const { components, assets, designedResolution } = data
-      draft.filesData = components[0].children;
-      draft.assets = assets;
-      draft.settings.designedResolution = designedResolution;
-    },
-    loadComponent(path: string) {
-      if (draft.filePath !== path)
-        draft.filePath = path;
-    },
-    loadComponentSuccess(data) {
-      const { treeData, name } = data;
-      draft.componentTree = [treeData];
-      draft.componentPropTypes = draft.componentTree[0].props;
-      draft.editingClassNamePath = '';
-      draft.selectedNode = {};
-    },
-    selectEditingTagNode(path: string) {
-      draft.editingClassNamePath = path;
-      const tree = new Tree(draft.componentTree, 'id', 'children');
-      const node = tree.getNode(draft.editingClassNamePath);
-      if (node && node.props) {
-        draft.componentPropTypes = node.props;
-        draft.selectedNode = node
-      }
-    },
-    updateEditingComponent(component: string, updated: any) {
-      const tree = new Tree(draft.componentTree, 'id', 'children');
-      const node = tree.getNode(draft.editingClassNamePath);
-      if (node) {
-        node[component] = { ...node[component], ...updated };
-        draft.selectedNode = node
-      }
+const actions = {
+  getFiles(src: string) {
+    (this as AppState).rootFolder = src;
+  },
+  getFilesSuccess(data) {
+    const { components, assets, designedResolution } = data;
+    (this as AppState).filesData = components[0].children;
+    (this as AppState).assets = assets;
+    (this as AppState).settings.designedResolution = designedResolution;
+  },
+  loadComponent(path: string) {
+    if ((this as AppState).filePath !== path)
+      (this as AppState).filePath = path;
+  },
+  loadComponentSuccess(data) {
+    const { treeData, name } = data;
+    (this as AppState).componentTree = [treeData];
+    (this as AppState).componentPropTypes = (this as AppState).componentTree[0].props;
+    (this as AppState).editingClassNamePath = '';
+    (this as AppState).selectedNode = {};
+  },
+  selectEditingTagNode(path: string) {
+    (this as AppState).editingClassNamePath = path;
+    const tree = new Tree((this as AppState).componentTree, 'id', 'children');
+    const node = tree.getNode((this as AppState).editingClassNamePath);
+    if (node && node.props) {
+      (this as AppState).componentPropTypes = node.props;
+      (this as AppState).selectedNode = node
     }
-  };
-  return actions;
+  },
+  updateEditingComponent(component: string, updated: any) {
+    const tree = new Tree((this as AppState).componentTree, 'id', 'children');
+    const node = tree.getNode((this as AppState).editingClassNamePath);
+    if (node) {
+      node[component] = { ...node[component], ...updated };
+      (this as AppState).selectedNode = node
+    }
+  },
+  toggleFolder(key: string) {
+    let tree = new Tree((this as AppState).filesData, 'path', 'children');
+    const node = tree.getNode(key);
+    // console.log(key, node, tree)
+    node.expanded = !node.expanded;
+  }
+};
+
+export function getAction(draft: AppState, name: string) {
+  return actions[name].bind(draft);
 }
 
-type Actions = ReturnType<typeof register>;
+type Actions = typeof actions;
 export function createMiddleware(dispatch: Dispatch<any>) {
   const { getFilesSuccess, loadComponentSuccess } = createActions(dispatch)
   const middlewares: Partial<Actions> = {

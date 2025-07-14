@@ -1,5 +1,5 @@
 import { produce } from 'immer';
-import { register } from './actions';
+import { getAction } from './actions';
 
 export const initialState = {
   loading: false,
@@ -24,22 +24,13 @@ export type AppState = typeof initialState;
 
 const reducer = (state: AppState = initialState, action: any) => produce(state, draft => {
   console.log('reducer', action);
-  register(draft)[action.type](...action.data);
-  // switch (action.type) {
-  //   case ADD_NODE: {
-  //     const { path, newNode } = action;
-  //     newNode.id = new Date().getTime();
-  //     let tree = new Tree(draft.componentTree, 'id', 'children');
-  //     const node = tree.getNode(path);
-  //     if (!node.expanded) { break; }
-  //     if (!node.items) {
-  //       node.items = [newNode];
-  //     } else {
-  //       node.items.push(newNode);
-  //     }
+  getAction(draft, action.type)(...action.data);
+
+  //   case UPDATE_PROP_TYPE: {
+  //     const { name, propsData } = action;
+  //     draft.componentPropTypes[name] = { ...draft.componentPropTypes[name], ...propsData };
   //     break;
   //   }
-
 });
 
 export default reducer;
