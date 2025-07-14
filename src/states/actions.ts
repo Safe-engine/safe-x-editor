@@ -26,6 +26,7 @@ const actions = {
     (this as AppState).componentPropTypes = (this as AppState).componentTree[0].props;
     (this as AppState).editingClassNamePath = '';
     (this as AppState).selectedNode = {};
+    (this as AppState).editingPath = name;
   },
   selectEditingTagNode(path: string) {
     (this as AppState).editingClassNamePath = path;
@@ -87,7 +88,7 @@ export function createActions(appDispatch: Dispatch<any>) {
   const obj = new Proxy({}, {
     get: (_, prop: string) => {
       return (...args: any) => {
-        console.log('dispatch action', prop, args);
+        // console.log('dispatch action', prop, args);
         appDispatch({
           type: prop,
           data: args,

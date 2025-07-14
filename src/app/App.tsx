@@ -1,7 +1,7 @@
 import { Allotment } from 'allotment'
-import { useContext, useEffect, useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 
-import { AppContext } from 'states/app.context'
+import { useSelector } from 'states/app.context'
 import { selectDesignResolution } from 'states/app.selectors'
 import AssetsPanel from './AssetsPanel'
 import NodeTree from './NodeTree'
@@ -10,7 +10,6 @@ import SceneView from './SceneView'
 import './globals.css'
 
 export function App() {
-  const { useSelector } = useContext(AppContext);
   const designResolution = useSelector(selectDesignResolution);
   useEffect(() => {
     // currentMonitor().then(setMonitor)
