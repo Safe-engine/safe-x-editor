@@ -52,6 +52,16 @@ export const selectSelectedEditingClassNamePath = createSelector(
   (appState) => appState.editingClassNamePath
 );
 
+export const selectSelectedPaths = createSelector(
+  selectApp,
+  (appState) => appState.selectedPaths
+);
+
+export const selectSelectedNodes = createSelector(
+  selectApp,
+  (appState) => appState.selectedNodes
+)
+
 export const selectEditingComponent = createSelector(
   selectComponentTree,
   selectSelectedEditingClassNamePath,

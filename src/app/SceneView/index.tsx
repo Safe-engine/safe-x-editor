@@ -4,7 +4,7 @@ import NumberInput from '../../base/NumberInput';
 import { getLastSceneScale, getLastSceneX, getLastSceneY, setLastSceneScale, setLastSceneX, setLastSceneY } from '../../data/AppData';
 import { getNodePosition, Vec2 } from '../../helper/node';
 import { useActions, useSelector } from '../../states/app.context';
-import { selectAssets, selectComponentTree, selectDesignResolution, selectRootFolder, selectSelectedEditingClassNamePath, selectSelectedEditingPath, selectSelectedNode } from '../../states/app.selectors';
+import { selectAssets, selectComponentTree, selectDesignResolution, selectRootFolder, selectSelectedEditingPath, selectSelectedNodes, selectSelectedPaths } from '../../states/app.selectors';
 import ArrowControl from './ArrowControl';
 import { onStart } from './cocos';
 import { loadSceneView } from './loader';
@@ -23,7 +23,7 @@ function getCurrentNode(editingClassNamePath: string, parentNode: any, isSceneNo
 }
 
 export default function SceneView() {
-  const { updateEditingComponent } = useActions();
+  const { updateMultinodes } = useActions();
   const [position, setPosition] = useState({ x: 200, y: 200 });
   const [isEditing, setIsEditing] = useState(false);
   const [positionStart, setPositionStart] = useState({ x: 0, y: 0 });
@@ -32,12 +32,12 @@ export default function SceneView() {
   const [scale, setScale] = useState(getLastSceneScale());
   const selectedEditingComponent = useSelector(selectComponentTree);
   const designResolution = useSelector(selectDesignResolution);
-  const selectedNode = useSelector(selectSelectedNode);
   const filePath = useSelector(selectSelectedEditingPath);
   const rootFolder = useSelector(selectRootFolder);
   const assets = useSelector(selectAssets);
   const divRef = useRef<HTMLDivElement>(null);
-  const editingClassNamePath = useSelector(selectSelectedEditingClassNamePath);
+  const selectedPaths = useSelector(selectSelectedPaths);
+  const selectedNodes = useSelector(selectSelectedNodes)
 
   useEffect(() => {
     if (!designResolution.width) return;
@@ -66,50 +66,67 @@ export default function SceneView() {
   }, [filePath]);
 
   useEffect(() => {
-    if (!cc.director || !cc.director.getRunningScene() || !selectedNode.props) return;
+    console.log(selectedPaths)
+    if (!cc.director || !cc.director.getRunningScene()) return;
     const parentNode = cc.director.getRunningScene().children[0];
-    const currentNode = getCurrentNode(editingClassNamePath, parentNode, selectedEditingComponent[0]?.tag === 'SceneComponent');
-    const { x, y } = getNodePosition(selectedNode.props.node);
-    currentNode.setPosition(x, y);
-    const { scaleX = 1, scaleY = 1, scale = 1, rotation = 0 } = selectedNode.props.node || {};
-    if (scale !== 1) {
-      currentNode.scale = scale;
-    }
-    if (scaleX !== 1) {
-      currentNode.scaleX = scaleX;
-    }
-    if (scaleY !== 1) {
-      currentNode.scaleY = scaleY;
-    }
-    if (rotation !== 0) {
-      currentNode.rotation = rotation;
-    }
-  }, [editingClassNamePath, selectedNode]);
+    selectedPaths.forEach((path, index) => {
+      const selectedNode = selectedNodes[index]
+      if (!selectedNode.props) return
+      const currentNode = getCurrentNode(path, parentNode, selectedEditingComponent[0]?.tag === 'SceneComponent');
+      const { x, y } = getNodePosition(selectedNode.props.node);
+      currentNode.setPosition(x, y);
+      const { scaleX = 1, scaleY = 1, scale = 1, rotation = 0 } = selectedNode.props.node || {};
+      if (scale !== 1) {
+        currentNode.scale = scale;
+      }
+      if (scaleX !== 1) {
+        currentNode.scaleX = scaleX;
+      }
+      if (scaleY !== 1) {
+        currentNode.scaleY = scaleY;
+      }
+      if (rotation !== 0) {
+        currentNode.rotation = rotation;
+      }
+    })
+  }, [selectedPaths, selectedNodes]);
 
   function onMouseUp() {
     setIsEditing(false);
-    if (!cc.director || !cc.director.getRunningScene() || !selectedNode.props) return;
+    if (!cc.director || !cc.director.getRunningScene()) return;
     const parentNode = cc.director.getRunningScene().children[0];
-    const currentNode = getCurrentNode(editingClassNamePath, parentNode, selectedEditingComponent[0]?.tag === 'SceneComponent');
-    console.log('currentNode', currentNode)
-    if (selectedNode.props.node?.position) {
-      updateEditingComponent('props', {
-        node: {
-          ...selectedNode.props.node,
-          position: Vec2({
-            x: currentNode.x,
-            y: currentNode.y,
-          })
+    const params = selectedPaths.map((path, index) => {
+      const selectedNode = selectedNodes[index]
+      if (!selectedNode.props) return {}
+
+      const currentNode = getCurrentNode(path, parentNode, selectedEditingComponent[0]?.tag === 'SceneComponent');
+      console.log('currentNode', currentNode)
+      if (selectedNode.props.node?.position) {
+        return {
+          component: 'props',
+          updated: {
+            node: {
+              ...selectedNode.props.node,
+              position: Vec2({
+                x: currentNode.x,
+                y: currentNode.y,
+              })
+            }
+          }
         }
-      });
-    } else {
-      updateEditingComponent('props', {
-        node: {
-          ...selectedNode.props.node,
-          xy: [currentNode.x, currentNode.y]
+      } else {
+        return {
+          component: 'props',
+          updated: {
+            node: {
+              ...selectedNode.props.node,
+              xy: [currentNode.x, currentNode.y]
+            }
+          }
         }
-      });
-    }
+      }
+    })
+    updateMultinodes(params)
   }
 
   function onMouseDown(event: React.MouseEvent<HTMLDivElement>) {
@@ -128,17 +145,20 @@ export default function SceneView() {
     const dy = (event.clientY - positionStart.y) / -scale * 1.5;
     setPositionStart({ x: event.clientX, y: event.clientY });
     // console.log('selectedEditingComponent', selectedEditingComponent, selectedNode)
-    if (!selectedNode.props) {
-      const { x: nx = 0, y: ny = 0 } = drawLayer.getPosition();
-      const lastX = Math.round(nx + dx);
-      const lastY = Math.round(ny + dy);
-      updateParentNode('x', lastX, setLastX, setLastSceneX);
-      updateParentNode('y', lastY, setLastY, setLastSceneY);
-      return;
-    }
-    const currentNode = getCurrentNode(editingClassNamePath, drawLayer, selectedEditingComponent[0]?.tag === 'SceneComponent');
-    const { x: nx = 0, y: ny = 0 } = currentNode.getPosition();
-    currentNode.setPosition(nx + dx, ny + dy);
+    selectedPaths.forEach((path, index) => {
+      const selectedNode = selectedNodes[index]
+      if (!selectedNode.props) {
+        const { x: nx = 0, y: ny = 0 } = drawLayer.getPosition();
+        const lastX = Math.round(nx + dx);
+        const lastY = Math.round(ny + dy);
+        updateParentNode('x', lastX, setLastX, setLastSceneX);
+        updateParentNode('y', lastY, setLastY, setLastSceneY);
+        return;
+      }
+      const currentNode = getCurrentNode(path, drawLayer, selectedEditingComponent[0]?.tag === 'SceneComponent');
+      const { x: nx = 0, y: ny = 0 } = currentNode.getPosition();
+      currentNode.setPosition(nx + dx, ny + dy);
+    })
   }
 
   const handleWheel = useCallback((e: React.WheelEvent<HTMLDivElement>) => {
