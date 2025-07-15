@@ -9,7 +9,7 @@ import { selectComponentTree, selectRootFolder, selectSelectedFilePath } from 's
 import { TreeItem } from './TreeItem';
 
 export default function NodeTree() {
-  const { selectEditingTagNode } = useActions();
+  const { selectEditingTagNode, selecteEditMultinodes } = useActions();
   const treeData = useSelector(selectComponentTree);
   const filePath = useSelector(selectSelectedFilePath);
   const rootPath = useSelector(selectRootFolder);
@@ -65,6 +65,14 @@ export default function NodeTree() {
   //   }
   // }
 
+  const onSelectNodes = (nodes) => {
+    console.log(nodes)
+    selecteEditMultinodes(nodes.map(n => n.data.id));
+    // if (nodes[0] && nodes[0].data.tag) {
+    //   selectEditingTagNode(nodes[0].data.id);
+    // }
+  }
+
   return (
     <div className='h-screen' >
       <div className='drive-header dx-treeview-item p-1'>
@@ -77,11 +85,9 @@ export default function NodeTree() {
       <Tree
         className='p-1'
         data={treeData[0]?.tag === 'SceneComponent' ? treeData[0].children : treeData}
-        onSelect={(nodes) => {
-          console.log('node tree', nodes);
-          if (nodes[0])
-            onItemClick(nodes[0])
-        }}
+        onSelect={
+          onSelectNodes
+          }
         onRename={(node) => {
           console.log('onRename', node);
         }}

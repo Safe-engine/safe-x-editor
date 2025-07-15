@@ -47,6 +47,25 @@ const actions = {
     // console.log(key, node, tree)
     node.expanded = !node.expanded
   },
+  selecteEditMultinodes(paths: string[]) {
+    ;(this as AppState).selectedPaths = paths
+    const tree = new Tree((this as AppState).componentTree, 'id', 'children')
+
+    ;(this as AppState).selectedNodes = paths.map((p) => tree.getNode(p))
+  },
+  updateMultinodes(params: Array<{ component?: string; updated?: any }>) {
+    const tree = new Tree((this as AppState).componentTree, 'id', 'children')
+    params.forEach((param, index) => {
+      const { component, updated } = param
+      if (!component) return
+      const path = (this as AppState).selectedPaths[index]
+      const node = tree.getNode(path)
+      if (node) {
+        node[component] = { ...node[component], ...updated }
+        ;(this as AppState).selectedNodes[index] = node
+      }
+    })
+  },
 }
 
 export function getAction(draft: AppState, name: string) {
