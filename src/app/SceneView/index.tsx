@@ -145,17 +145,17 @@ export default function SceneView() {
     const dx = (event.clientX - positionStart.x) / scale * 1.5;
     const dy = (event.clientY - positionStart.y) / -scale * 1.5;
     setPositionStart({ x: event.clientX, y: event.clientY });
-    // console.log('selectedEditingComponent', selectedEditingComponent, selectedNode)
-    selectedPaths.forEach((path, index) => {
-      const selectedNode = selectedNodes[index]
-      if (!selectedNode.props) {
-        const { x: nx = 0, y: ny = 0 } = drawLayer.getPosition();
-        const lastX = Math.round(nx + dx);
-        const lastY = Math.round(ny + dy);
-        updateParentNode('x', lastX, setLastX, setLastSceneX);
-        updateParentNode('y', lastY, setLastY, setLastSceneY);
-        return;
-      }
+    // console.log('selectedEditingComponent', selectedEditingComponent, selectedPaths)
+    if (!selectedPaths.length) {
+      const { x: nx = 0, y: ny = 0 } = drawLayer.getPosition();
+      const lastX = Math.round(nx + dx);
+      const lastY = Math.round(ny + dy);
+      updateParentNode('x', lastX, setLastX, setLastSceneX);
+      updateParentNode('y', lastY, setLastY, setLastSceneY);
+      return;
+    }
+    selectedPaths.forEach((path) => {
+      // const selectedNode = selectedNodes[index]
       const currentNode = getCurrentNode(path, drawLayer, selectedEditingComponent[0]?.tag === 'SceneComponent');
       const { x: nx = 0, y: ny = 0 } = currentNode.getPosition();
       currentNode.setPosition(nx + dx, ny + dy);
