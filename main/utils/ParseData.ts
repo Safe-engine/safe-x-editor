@@ -70,21 +70,23 @@ const parseTreeData = (root, fileOrigin = '', childrenIndex = [], index = 0) => 
     if (expression.type === 'JSXEmptyExpression')
       return
     if (expression.type === 'CallExpression') {
-      if ('MemberExpression' === expression.callee.type) return
+      // console.log('expression', expression)
+      // if ('MemberExpression' === expression.callee.type) return
       const startIndex = get(expression, 'arguments[0].params[0].right.value', 0)
       const startIndexSymbol = get(expression, 'arguments[0].params[0].left.name', 'i')
+      const count = get(expression, 'callee.object.arguments[0].value', 0);
       let res: any = {};
       const body = get(expression, 'arguments[0].body')
       if (body.type === 'JSXElement') {
         res = parseTreeData(body, fileOrigin, thisIndexes, index)
-        res.props.for = { startIndex, startIndexSymbol }
+        res.loop = { startIndex, startIndexSymbol, count }
       }
       if (body.type === 'CallExpression') {
         const startIndex2 = get(body, 'arguments[0].params[0].right.value', 0)
         const startIndexSymbol2 = get(body, 'arguments[0].params[0].left.name', 'i')
         const body2 = get(body, 'arguments[0].body')
         res = parseTreeData(body2, fileOrigin, thisIndexes, index)
-        res.props.grid = { startIndex, startIndexSymbol, startIndex2, startIndexSymbol2 }
+        res.grid = { startIndex, startIndexSymbol, startIndex2, startIndexSymbol2 }
       }
       return res
     }
@@ -154,8 +156,9 @@ const genPropsLine = (props: { [key: string]: any }) => {
         if (val.position === 'Vec2(0,0)' || val.position === 'Vec2(0, 0)') return ''
         if (val.xy === '[0,0]' || val.xy === '[0, 0]') return ''
         return `node={{${Object.entries(val).map(([key, val]) => {
-          if(key==='xy') return `${key}: [${(val as number[]).map(Math.round)}]`
-          return `${key}: ${val}`}).join(', ')}}}`
+          if (key === 'xy') return `${key}: [${(val as number[]).map(Math.round)}]`
+          return `${key}: ${val}`
+        }).join(', ')}}}`
       }
       if (swapperWith(val, '{', '}') || /^{.*}$/.test(val)) {
         return `${key}=${val}`;

@@ -41,13 +41,22 @@ function loadFont(filePath: string): Promise<void> {
   })
 }
 
-async function parseChildren(root, parentNode, data: ProjectData) {
-  const { tag, props = {}, children = [] } = root
+async function parseChildren(root, parentNode, data: ProjectData, evalInit = '') {
+  const { tag, props = {}, children = [], loop } = root
   const { rootFolder, assetsTextureList, fontAssets, spriteFramesAssets, componentsCache } = data
   // console.log('parseChildren:', tag, props);
-  let renderNode: cc.Node
+  let renderNode = new cc.Node()
+  if (loop) {
+    const { startIndex, startIndexSymbol, count } = loop
+    parentNode.addChild(renderNode)
+    for (let index = 0; index < count; index++) {
+      const evalInit = `${startIndexSymbol}=${index + startIndex};`
+      parseChildren({ tag, props, children }, renderNode, data, evalInit)
+    }
+    return
+  }
   const { node } = props
-  const { x, y } = getNodePosition(node)
+  const { x, y } = getNodePosition(node, evalInit)
   const { scaleX = 1, scaleY = 1, scale = 1, rotation = 0 } = node || {}
   if (tag === 'SpriteRender') {
     const { spriteFrame } = props
@@ -86,7 +95,7 @@ async function parseChildren(root, parentNode, data: ProjectData) {
   } else {
     // console.log(componentsCache, tag)
     if (componentsCache[tag]) {
-      renderNode = await parseChildren(componentsCache[tag], parentNode, data)
+      renderNode = await parseChildren(componentsCache[tag], parentNode, data, evalInit)
     }
   }
   if (!renderNode) return
@@ -105,7 +114,7 @@ async function parseChildren(root, parentNode, data: ProjectData) {
   // console.log('renderNode:', renderNode);
   for (let index = 0; index < children.length; index++) {
     const element = children[index]
-    await parseChildren(element, renderNode, data)
+    await parseChildren(element, renderNode, data, evalInit)
   }
   return renderNode
 }
