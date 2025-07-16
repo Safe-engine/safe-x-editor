@@ -4,7 +4,7 @@ import NumberInput from '../../base/NumberInput';
 import { getLastSceneScale, getLastSceneX, getLastSceneY, setLastSceneScale, setLastSceneX, setLastSceneY } from '../../data/AppData';
 import { getNodePosition, Vec2 } from '../../helper/node';
 import { useActions, useSelector } from '../../states/app.context';
-import { selectAssets, selectComponentTree, selectDesignResolution, selectRootFolder, selectSelectedEditingPath, selectSelectedNodes, selectSelectedPaths } from '../../states/app.selectors';
+import { selectAssets, selectComponentsCache, selectComponentTree, selectDesignResolution, selectRootFolder, selectSelectedEditingPath, selectSelectedNodes, selectSelectedPaths } from '../../states/app.selectors';
 import ArrowControl from './ArrowControl';
 import { onStart } from './cocos';
 import { loadSceneView } from './loader';
@@ -35,6 +35,7 @@ export default function SceneView() {
   const filePath = useSelector(selectSelectedEditingPath);
   const rootFolder = useSelector(selectRootFolder);
   const assets = useSelector(selectAssets);
+  const componentsCache = useSelector(selectComponentsCache);
   const divRef = useRef<HTMLDivElement>(null);
   const selectedPaths = useSelector(selectSelectedPaths);
   const selectedNodes = useSelector(selectSelectedNodes)
@@ -60,7 +61,7 @@ export default function SceneView() {
   useEffect(() => {
     console.log('filePath', filePath)
     const timeout = setTimeout(() => {
-      loadSceneView(selectedEditingComponent, { rootFolder, ...assets });
+      loadSceneView(selectedEditingComponent, { rootFolder, ...assets, componentsCache });
     }, 250);
     return () => clearTimeout(timeout);
   }, [filePath]);

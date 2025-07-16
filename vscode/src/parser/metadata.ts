@@ -1,20 +1,26 @@
+import { parse } from "@typescript-eslint/typescript-estree";
 import ESTraverse from "estraverse";
+import { readFileSync } from "fs";
 import { globSync } from "glob";
 import { join } from "path";
-import { parseFile } from "../transform/index";
+import { convertComponentData } from "../utils/ParseData";
 import { parseValue } from "./ast";
 import { GlobalData } from "./global";
 import { getTypeAnnotation } from "./helper";
 
 export async function getClassesMetaData(srcDir: string, idDebug = false) {
   const allComps = globSync(`**/*.tsx`, { cwd: srcDir })
+  const res = {}
   for (let index = 0; index < allComps.length; index++) {
     const file = allComps[index];
     if (idDebug) {
       console.log('getClassesMetaData', file)
     }
     const filePath = join(srcDir, file)
-    const parsed: any = parseFile(filePath)
+    const input = readFileSync(filePath, { encoding: 'utf8' });
+    const parsed: any = parse(input, { jsx: true, range: true });
+    const { name, treeData } = await convertComponentData(parsed, filePath, input)
+    res[name] = treeData;
     ESTraverse.traverse(parsed, {
       enter: function (node, parent) {
         if (node.type === 'ExportDefaultDeclaration') {
