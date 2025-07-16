@@ -1,5 +1,17 @@
 import { getNodePosition, parseIntFromValue, parseStringFromValue } from 'helper/node'
 
+interface AssetData {
+  key: string
+  value: string
+}
+interface ProjectData {
+  rootFolder: string
+  assetsTextureList: AssetData[]
+  fontAssets: AssetData[]
+  spriteFramesAssets: AssetData[]
+  componentsCache: { [key: string]: any }
+}
+
 function loadSprite(filePath: string): Promise<cc.Sprite> {
   return new Promise((resolve, reject) => {
     // console.log('loadSprite:', filePath);
@@ -29,9 +41,9 @@ function loadFont(filePath: string): Promise<void> {
   })
 }
 
-async function parseChildren(root, parentNode, data) {
+async function parseChildren(root, parentNode, data: ProjectData) {
   const { tag, props = {}, children = [] } = root
-  const { rootFolder, assetsTextureList, fontAssets, spriteFramesAssets } = data
+  const { rootFolder, assetsTextureList, fontAssets, spriteFramesAssets, componentsCache } = data
   // console.log('parseChildren:', tag, props);
   let renderNode: cc.Node
   const { node } = props
@@ -47,7 +59,7 @@ async function parseChildren(root, parentNode, data) {
       renderNode = sprite
     } else {
       const spriteFrame = spriteFramesAssets.find((item) => item.key === frameName)
-      const frame = cc.spriteFrameCache.getSpriteFrame(spriteFrame)
+      const frame = cc.spriteFrameCache.getSpriteFrame(spriteFrame.value)
       renderNode = new cc.Sprite(frame)
     }
     renderNode.setPosition(x, y)
@@ -71,6 +83,11 @@ async function parseChildren(root, parentNode, data) {
     renderNode = label
   } else if (tag === 'SceneComponent') {
     renderNode = parentNode
+  } else {
+    // console.log(componentsCache, tag)
+    if (componentsCache[tag]) {
+      renderNode = await parseChildren(componentsCache[tag], parentNode, data)
+    }
   }
   if (!renderNode) return
   if (scale !== 1) {
@@ -90,9 +107,10 @@ async function parseChildren(root, parentNode, data) {
     const element = children[index]
     await parseChildren(element, renderNode, data)
   }
+  return renderNode
 }
 
-export async function loadSceneView(selectedEditingComponent = [], data) {
+export async function loadSceneView(selectedEditingComponent = [], data: ProjectData) {
   const [root] = selectedEditingComponent
   if (!cc.director || !cc.director.getRunningScene() || !root) return
   const parentNode = cc.director.getRunningScene().children[0]

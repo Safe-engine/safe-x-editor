@@ -10,6 +10,7 @@ export const initialState = {
   editingPath: '',
   editingClassNamePath: '',
   componentTree: [],
+  componentsCache: [],
   assets: {
     fontAssets: [],
     assetsTextureList: [],
