@@ -8,7 +8,7 @@ export function parseVec2(position = 'Vec2(0,0)', evalInit) {
 }
 
 export function Vec2({ x = 0, y = 0 }) {
-  return `Vec2(${x},${y})`;
+  return `Vec2(${Math.round(x)},${Math.round(y)})`;
 }
 
 export function getNodePosition(node, evalInit = '') {

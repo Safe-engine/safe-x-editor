@@ -81,7 +81,7 @@ async function parseChildren(root, parentNode, data: ProjectData, evalInit = '')
     }
     const filePath = cc.path.join(rootFolder, 'res', `${foundFont.value}`)
     const fontName = cc.path.basename(filePath, '.ttf')
-    await loadFont(filePath)
+    await loadFont(foundFont.value)
     const fontSize = size ? parseIntFromValue(size) : 64
     const label = new ccui.Text(string, fontName, fontSize)
     console.log('LabelComp:', fontSize, filePath)
