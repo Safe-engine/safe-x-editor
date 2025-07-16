@@ -23,7 +23,7 @@ function getCurrentNode(editingClassNamePath: string, parentNode: any, isSceneNo
 }
 
 export default function SceneView() {
-  const { updateMultinodes } = useActions();
+  const { updateMultiNodes } = useActions();
   const [position, setPosition] = useState({ x: 200, y: 200 });
   const [isEditing, setIsEditing] = useState(false);
   const [positionStart, setPositionStart] = useState({ x: 0, y: 0 });
@@ -127,7 +127,7 @@ export default function SceneView() {
         }
       }
     })
-    updateMultinodes(params)
+    updateMultiNodes(params)
   }
 
   function onMouseDown(event: React.MouseEvent<HTMLDivElement>) {
