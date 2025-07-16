@@ -1,4 +1,5 @@
 import { spawnSync } from "child_process";
+import { log } from "console";
 import { join } from "path";
 import { window, workspace } from "vscode";
 import { GlobalData } from "../parser/global";
@@ -45,5 +46,24 @@ export function lintFile(filePath: string) {
     window.showInformationMessage(`Saved scene ${filePath}`);
   } else {
     window.showErrorMessage(`ESLint failed with code ${result.status}`);
+  }
+}
+
+export function syncResConst() {
+  const cmd = 'bun'
+  const args = ['./node_modules/safex-sync-res/src/index.ts']
+
+  log(`Running: ${cmd} ${args.join(' ')}`, GlobalData.rootProject)
+
+  const res = spawnSync(cmd, args, {
+    cwd: GlobalData.rootProject,
+    stdio: 'inherit',
+    shell: false,
+  })
+
+  if (res.error) {
+    log('Lỗi khi chạy eslint:', res.error)
+  } else if (res.status !== 0) {
+    log(`eslint exited with code ${res.status}`)
   }
 }
