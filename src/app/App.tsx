@@ -1,7 +1,6 @@
 import { Allotment } from 'allotment'
-import { useContext, useEffect, useMemo } from 'react'
-import { getFiles, loadComponent } from '../states/app.action'
-import { AppContext, useDispatch } from '../states/app.context'
+import { useEffect, useMemo } from 'react'
+import { useActions, useSelector } from '../states/app.context'
 import { selectAssets, selectDesignResolution } from '../states/app.selectors'
 import NodeTree from './NodeTree'
 import PropertiesPanel from './PropertiesPanel'
@@ -9,18 +8,17 @@ import SceneView from './SceneView'
 import './globals.css'
 
 export function App() {
-  const dispatch = useDispatch();
-  const { useSelector } = useContext(AppContext);
+  const { getFiles, loadComponent } = useActions()
   const designResolution = useSelector(selectDesignResolution);
   const assetsData = useSelector(selectAssets);
   useEffect(() => {
     console.log('rootPath path', (window as any).rootPath)
-    dispatch(getFiles((window as any).rootPath))
+    getFiles((window as any).rootPath)
   }, [])
 
   useEffect(() => {
     console.log('file path', (window as any).filePath)
-    dispatch(loadComponent((window as any).filePath))
+    loadComponent((window as any).filePath)
   }, [assetsData])
 
   const width = useMemo(() => designResolution.width, [designResolution])

@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Tree } from 'react-arborist';
-import { genComponent } from '../../states/app.action';
+import toast from 'react-hot-toast';
+import { GEN_COMPONENT_REQUEST } from '../../shared/constant.message';
 import { useActions, useSelector } from '../../states/app.context';
 import { selectComponentTree, selectRootFolder, selectSelectedFilePath } from '../../states/app.selectors';
+import { sendRequest } from '../app.ipc';
 import { TreeItem } from './TreeItem';
 
 export default function NodeTree() {
@@ -14,6 +16,13 @@ export default function NodeTree() {
 
   useEffect(() => {
     if (treeData && treeData[0]) {
+      async function genComponentCB() {
+        const data: any = await sendRequest({
+          key: GEN_COMPONENT_REQUEST,
+          nodesData: treeData[0], filePath
+        });
+        toast.success('Gen React Component Success');
+      }
       window.addEventListener('keydown', function (event) {
         const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
         const isSaveShortcut = (
@@ -23,7 +32,7 @@ export default function NodeTree() {
         if (isSaveShortcut) {
           event.preventDefault();
           console.log('Detected Ctrl+S or Command+S');
-          dispatch(genComponent(treeData[0], filePath));
+          genComponentCB()
         }
       });
     }
@@ -81,7 +90,7 @@ export default function NodeTree() {
         data={treeData[0]?.tag === 'SceneComponent' ? treeData[0].children : treeData}
         onSelect={
           onSelectNodes
-          }
+        }
         onRename={(node) => {
           console.log('onRename', node);
         }}

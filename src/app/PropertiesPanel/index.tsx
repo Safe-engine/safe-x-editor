@@ -1,8 +1,5 @@
 import pathUtils from 'path-browserify';
 import { useContext, useState } from 'react';
-import ConfirmDeleteDialog from '../../components/ConfirmDeleteDialog';
-import CreateComponentModal from '../../components/CreateComponentModal';
-import ReNameComponentDialog from '../../components/ReNameComponentDialog';
 import { AppContext } from '../../states/app.context';
 import { selectSelectedFilePath } from '../../states/app.selectors';
 import NodeProps from './NodeProps';
@@ -74,22 +71,6 @@ export default function PropertiesPanel() {
           </div> */}
         </div>
       </div>
-
-      <CreateComponentModal
-        isOpen={openCreateComponent}
-        setOpen={setOpenCreateComponent}
-        createPath={createPath}
-      />
-      <ConfirmDeleteDialog
-        isOpen={openConfirmDeleteComponent}
-        setOpen={setOpenConfirmDeleteComponent}
-        componentPath={createPath}
-      />
-      <ReNameComponentDialog
-        isOpen={openRenameComponent}
-        setOpen={setOpenRenameComponent}
-        componentPath={createPath}
-      />
     </div>
   );
 }

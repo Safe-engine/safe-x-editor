@@ -1,4 +1,4 @@
-import Tree from '@colin-luo/tree'
+import { default as Tree } from '@colin-luo/tree'
 import { Dispatch } from 'react'
 import { AppState } from './app.reducer'
 
@@ -8,8 +8,8 @@ export function getAction(draft: AppState) {
       draft.rootFolder = src.replace(/\\/g, '/')
     },
     getFilesSuccess(data) {
-      const { componentsTree, componentsCache, assets, designedResolution } = data
-      draft.filesData = componentsTree[0].children
+      const { componentsCache, assets, designedResolution } = data
+      // draft.filesData = componentsTree[0].children
       draft.assets = assets
       draft.componentsCache = componentsCache
       draft.settings.designedResolution = designedResolution
@@ -44,10 +44,10 @@ export function getAction(draft: AppState) {
       }
     },
     toggleFolder(key: string) {
-      let tree = new Tree(draft.filesData, 'path', 'children')
-      const node = tree.getNode(key)
-      // console.log(key, node, tree)
-      node.expanded = !node.expanded
+      // let tree = new Tree(draft.filesData, 'path', 'children')
+      // const node = tree.getNode(key)
+      console.log(key, 'toggleFolder')
+      // node.expanded = !node.expanded
     },
     selectEditMultiNodes(paths: string[]) {
       draft.selectedPaths = paths

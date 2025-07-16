@@ -1,5 +1,4 @@
 import { memo, useContext } from 'react';
-import { updateTextTag } from '../../states/app.action';
 import { AppContext } from '../../states/app.context';
 
 function ComponentProp({ props, name }) {
@@ -7,7 +6,7 @@ function ComponentProp({ props, name }) {
   // const text = useSelector(selectEditingText);
 
   function onChangeText(event) {
-    dispatch(updateTextTag(event.target.value));
+    // dispatch(updateTextTag(event.target.value));
   }
 
   return (<div>{name}
