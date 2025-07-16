@@ -126,7 +126,7 @@ export async function loadSceneView(selectedEditingComponent = [], data: Project
     const child = parentNode.children[i]
     child.removeFromParent()
   }
-  // console.log('loadSceneView:', selectedEditingComponent, parentNode)
+  console.log('loadSceneView:', selectedEditingComponent, parentNode)
   for (let index = 0; index < selectedEditingComponent.length; index++) {
     const element = selectedEditingComponent[index]
     await parseChildren(element, parentNode, data)

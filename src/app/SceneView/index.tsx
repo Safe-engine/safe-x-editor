@@ -63,6 +63,14 @@ export default function SceneView() {
     const timeout = setTimeout(() => {
       loadSceneView(selectedEditingComponent, { rootFolder, ...assets, componentsCache });
     }, 250);
+    window.addEventListener('message', event => {
+      const message = event.data;
+      if (message.type === 'refresh') {
+        const timeout = setTimeout(() => {
+          loadSceneView(selectedEditingComponent, { rootFolder, ...assets, componentsCache });
+        }, 250);
+      }
+    });
     return () => clearTimeout(timeout);
   }, [filePath]);
 
