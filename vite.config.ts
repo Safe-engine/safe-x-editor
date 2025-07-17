@@ -8,6 +8,12 @@ export default defineConfig({
   build: {
     outDir: resolve(__dirname, 'vscode', 'media'),
     emptyOutDir: true,
+    sourcemap: false,
+    rollupOptions: {
+      output: {
+        manualChunks: undefined, // Không tách nhiều file nhỏ
+      },
+    },
   },
   plugins: [react(), viteSingleFile({ deleteInlinedFiles: true })],
 })

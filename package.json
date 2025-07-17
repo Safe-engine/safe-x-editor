@@ -5,7 +5,7 @@
   "scripts": {
     "test": "bun --tsconfig ./main/tsconfig.json ./main/test/file.spec.ts",
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && vite build --watch",
     "lint": "eslint .",
     "preview": "vite preview"
   },
