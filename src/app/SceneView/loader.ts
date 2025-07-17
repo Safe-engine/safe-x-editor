@@ -1,4 +1,5 @@
 import { getNodePosition, parseIntFromValue, parseStringFromValue } from "../../helper/node";
+import { getDrawNode } from "./cocos";
 
 interface AssetData {
   key: string
@@ -121,7 +122,7 @@ async function parseChildren(root, parentNode, data: ProjectData, evalInit = '')
 export async function loadSceneView(selectedEditingComponent = [], data: ProjectData) {
   const [root] = selectedEditingComponent
   if (!cc.director || !cc.director.getRunningScene() || !root) return
-  const parentNode = cc.director.getRunningScene().children[0]
+  const parentNode = getDrawNode()
   for (let i = 1; i < parentNode.childrenCount; i++) {
     const child = parentNode.children[i]
     child.removeFromParent()

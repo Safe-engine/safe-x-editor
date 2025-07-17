@@ -8,7 +8,7 @@ export const onStart = (designResolution) => function () {
   const newScene = new cc.Scene()
   const gray = cc.color(75, 85, 99, 255); // Màu xám (cool gray)
   const drawLayer = new cc.LayerColor(gray)
-  drawLayer.setName('drawLayer')
+  drawLayer.setTag(1)
   // Tạo một DrawNode để vẽ khung viền
   const border = new cc.DrawNode();
   const pink = cc.color(227, 11, 93, 255); // Màu hồng (hot pink)
@@ -27,4 +27,8 @@ export const onStart = (designResolution) => function () {
   drawLayer.setPosition(getLastSceneX(), getLastSceneY()); // Đặt vị trí của layer
   drawLayer.scale = getLastSceneScale(); // Giảm kích thước của layer xuống
   cc.director.runScene(newScene)
+}
+
+export function getDrawNode() {
+  return cc.director.getRunningScene().getChildByTag(1)
 }

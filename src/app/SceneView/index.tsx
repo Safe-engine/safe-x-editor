@@ -6,7 +6,7 @@ import { getNodePosition, Vec2 } from '../../helper/node';
 import { useActions, useSelector } from '../../states/app.context';
 import { selectAssets, selectComponentsCache, selectComponentTree, selectDesignResolution, selectRootFolder, selectSelectedEditingPath, selectSelectedNodes, selectSelectedPaths } from '../../states/app.selectors';
 import ArrowControl from './ArrowControl';
-import { onStart } from './cocos';
+import { getDrawNode, onStart } from './cocos';
 import { loadSceneView } from './loader';
 
 function getCurrentNode(editingClassNamePath: string, parentNode: any, isSceneNode: boolean) {
@@ -39,6 +39,11 @@ export default function SceneView() {
   const divRef = useRef<HTMLDivElement>(null);
   const selectedPaths = useSelector(selectSelectedPaths);
   const selectedNodes = useSelector(selectSelectedNodes)
+  const selectedEditingComponentRef = useRef(selectedEditingComponent);
+
+  useEffect(() => {
+    selectedEditingComponentRef.current = selectedEditingComponent;
+  }, [selectedEditingComponent]);
 
   useEffect(() => {
     if (!designResolution.width) return;
@@ -58,26 +63,36 @@ export default function SceneView() {
     return () => clearTimeout(timeout);
   }, [designResolution]);
 
-  useEffect(() => {
-    console.log('filePath', filePath)
+  const load = () => {
     const timeout = setTimeout(() => {
-      loadSceneView(selectedEditingComponent, { rootFolder, ...assets, componentsCache });
+      loadSceneView(selectedEditingComponentRef.current, { rootFolder, ...assets, componentsCache });
     }, 250);
-    window.addEventListener('message', event => {
+    return () => clearTimeout(timeout);
+  }
+
+  useEffect(() => {
+    return load();
+  }, [filePath]);
+
+  useEffect(() => {
+    // console.log('listener selectedEditingComponent')
+    const listener = event => {
       const message = event.data;
       if (message.type === 'refresh') {
-        const timeout = setTimeout(() => {
-          loadSceneView(selectedEditingComponent, { rootFolder, ...assets, componentsCache });
-        }, 250);
+        load()
       }
-    });
-    return () => clearTimeout(timeout);
-  }, [filePath]);
+    }
+    window.addEventListener('message', listener);
+    return () => {
+      // console.log('removeEventListener selectedEditingComponent')
+      window.removeEventListener('message', listener)
+    }
+  }, [selectedEditingComponent]);
 
   useEffect(() => {
     console.log(selectedPaths)
     if (!cc.director || !cc.director.getRunningScene()) return;
-    const parentNode = cc.director.getRunningScene().children[0];
+    const parentNode = getDrawNode();
     selectedPaths.forEach((path, index) => {
       const selectedNode = selectedNodes[index]
       if (!selectedNode.props) return
@@ -103,7 +118,7 @@ export default function SceneView() {
   function onMouseUp() {
     setIsEditing(false);
     if (!cc.director || !cc.director.getRunningScene()) return;
-    const parentNode = cc.director.getRunningScene().children[0];
+    const parentNode = getDrawNode();
     const params = selectedPaths.map((path, index) => {
       const selectedNode = selectedNodes[index]
       if (!selectedNode.props) return {}
@@ -149,7 +164,7 @@ export default function SceneView() {
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
     setPosition({ x, y });
-    const drawLayer = cc.director.getRunningScene().children[0];
+    const drawLayer = getDrawNode();
     const dx = (event.clientX - positionStart.x) / scale * 1.5;
     const dy = (event.clientY - positionStart.y) / -scale * 1.5;
     setPositionStart({ x: event.clientX, y: event.clientY });
@@ -183,7 +198,7 @@ export default function SceneView() {
     setLastScene: (v: number) => void
   ) {
     if (!cc.director || !cc.director.getRunningScene()) return;
-    const parentNode = cc.director.getRunningScene().children[0];
+    const parentNode = getDrawNode();
     parentNode[key] = value;
     setLastScene(value);
     setLast(value);

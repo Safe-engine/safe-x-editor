@@ -19,12 +19,16 @@ export function App() {
   useEffect(() => {
     console.log('file path', (window as any).filePath)
     loadComponent((window as any).filePath)
-    window.addEventListener('message', event => {
+    const listener = event => {
       const message = event.data;
       if (message.type === 'refresh') {
         loadComponent((window as any).filePath); // Hoặc xử lý theo nội dung message.content
       }
-    });
+    }
+    window.addEventListener('message', listener);
+    return () => {
+      window.removeEventListener('message', listener)
+    }
   }, [assetsData])
 
   const width = useMemo(() => designResolution.width, [designResolution])
