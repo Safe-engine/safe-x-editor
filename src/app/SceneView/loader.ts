@@ -4,7 +4,7 @@ interface AssetData {
   key: string
   value: string
 }
-interface ProjectData {
+export interface ProjectData {
   rootFolder: string
   assetsTextureList: AssetData[]
   fontAssets: AssetData[]

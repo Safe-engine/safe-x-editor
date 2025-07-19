@@ -1,21 +1,10 @@
-import AddNewStateDialog from 'components/AddNewStateDialog';
-import ConfirmDeleteDialog from 'components/ConfirmDeleteDialog';
-import CreateComponentModal from 'components/CreateComponentModal';
-import ReNameComponentDialog from 'components/ReNameComponentDialog';
 import pathUtils from 'path-browserify';
-import { useContext, useState } from 'react';
-import { AppContext } from 'states/app.context';
+import { useSelector } from 'states/app.context';
 import { selectSelectedFilePath } from 'states/app.selectors';
 import NodeProps from './NodeProps';
 
 export default function PropertiesPanel() {
-  const { appDispatch: dispatch, useSelector } = useContext(AppContext);
   const filePath = useSelector(selectSelectedFilePath);
-  const [openConfirmDeleteComponent, setOpenConfirmDeleteComponent] = useState(false);
-  const [openRenameComponent, setOpenRenameComponent] = useState(false);
-  const [createPath, setCreatePath] = useState('');
-  const [openCreateComponent, setOpenCreateComponent] = useState(false);
-  const [isOpenNewState, setOpenNewState] = useState(false);
 
   function getComponentName(path) {
     let name = pathUtils.basename(path)
@@ -55,47 +44,9 @@ export default function PropertiesPanel() {
       <div className='flex h-screen'>
         <div className='w-full'>
           <div className='py-1 text-orange-50 font-bold text-center border-cool-gray-300 border-b'>Components</div>
-          {/* {Object.entries(componentPropTypes)
-            .map(([name, value]) => {
-              return <PropDisplay name={name} data={value} onChangePropData={onChangePropData} key={name} />;
-            })} */}
           <NodeProps />
-          {/* <div className='fixed bottom-0 flex justify-around px-4 w-[300px]'>
-            <CheckBox text='Auto save'
-              value={isAutoSave}
-              onValueChange={onChangeAutoSave}></CheckBox>
-            {!isAutoSave &&
-              <GreenButton
-                className=''
-                onClick={onClickGenPropTypes}
-              >
-                {`Save ${isChangeState ? '*' : ''}`}
-              </GreenButton>
-            }
-          </div> */}
         </div>
       </div>
-
-      <CreateComponentModal
-        isOpen={openCreateComponent}
-        setOpen={setOpenCreateComponent}
-        createPath={createPath}
-      />
-      <ConfirmDeleteDialog
-        isOpen={openConfirmDeleteComponent}
-        setOpen={setOpenConfirmDeleteComponent}
-        componentPath={createPath}
-      />
-      <ReNameComponentDialog
-        isOpen={openRenameComponent}
-        setOpen={setOpenRenameComponent}
-        componentPath={createPath}
-      />
-      <AddNewStateDialog
-        isOpen={isOpenNewState}
-        setOpen={setOpenNewState}
-        createPath={createPath}
-      />
     </div>
   );
 }

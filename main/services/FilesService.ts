@@ -46,6 +46,7 @@ export const getFilesInFolder = async ({ src, exclude = [] }) => {
   const designedResolution = getResolutionSettings(src)
   // console.log('components', JSON.stringify(components, null, 2));
   return {
+    isPixi: content.includes('@safe-engine/pixi'),
     componentsTree: getTreeData(filterTree([components])),
     componentsCache,
     assets: {

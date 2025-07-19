@@ -4,6 +4,7 @@ import { getAction } from './actions';
 export const initialState = {
   loading: false,
   error: false,
+  isPixi: false,
   filesData: [],
   rootFolder: '',
   filePath: '',

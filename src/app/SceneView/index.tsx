@@ -4,10 +4,12 @@ import { getNodePosition, Vec2 } from 'helper/node';
 import { parseInt } from 'lodash';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useActions, useSelector } from 'states/app.context';
-import { selectAssets, selectComponentsCache, selectComponentTree, selectDesignResolution, selectRootFolder, selectSelectedEditingPath, selectSelectedNodes, selectSelectedPaths } from 'states/app.selectors';
+import { selectAssets, selectComponentsCache, selectComponentTree, selectDesignResolution, selectIsPixi, selectRootFolder, selectSelectedEditingPath, selectSelectedNodes, selectSelectedPaths } from 'states/app.selectors';
 import ArrowControl from './ArrowControl';
 import { onStart } from './cocos';
 import { loadSceneView } from './loader';
+import { loadSceneViewPixi } from './pixi/loader';
+import { createPixiApp } from './pixi/pixi';
 
 function getCurrentNode(editingClassNamePath: string, parentNode: any, isSceneNode: boolean) {
   const childrenIndex = editingClassNamePath.split('.')[0].split('-').map(parseInt);
@@ -32,16 +34,22 @@ export default function SceneView() {
   const [scale, setScale] = useState(getLastSceneScale());
   const selectedEditingComponent = useSelector(selectComponentTree);
   const designResolution = useSelector(selectDesignResolution);
+  const isPixi = useSelector(selectIsPixi);
   const filePath = useSelector(selectSelectedEditingPath);
   const rootFolder = useSelector(selectRootFolder);
   const assets = useSelector(selectAssets);
   const componentsCache = useSelector(selectComponentsCache);
   const divRef = useRef<HTMLDivElement>(null);
+  const pixiAppRef = useRef<any>(null);
   const selectedPaths = useSelector(selectSelectedPaths);
   const selectedNodes = useSelector(selectSelectedNodes)
 
   useEffect(() => {
     if (!designResolution.width) return;
+    if (isPixi) {
+      pixiAppRef.current = createPixiApp(designResolution)
+      return
+    }
     const { spriteSheetAssets = [] } = assets;
     Object.values(spriteSheetAssets).forEach((spriteSheet) => {
       cc.spriteFrameCache.addSpriteFrames(spriteSheet);
@@ -61,7 +69,12 @@ export default function SceneView() {
   useEffect(() => {
     console.log('filePath', filePath)
     const timeout = setTimeout(() => {
-      loadSceneView(selectedEditingComponent, { rootFolder, ...assets, componentsCache });
+      if (isPixi) {
+        loadSceneViewPixi(pixiAppRef.current, selectedEditingComponent, { rootFolder, ...assets, componentsCache });
+        return
+      } else {
+        loadSceneView(selectedEditingComponent, { rootFolder, ...assets, componentsCache });
+      }
     }, 250);
     return () => clearTimeout(timeout);
   }, [filePath]);
