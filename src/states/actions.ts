@@ -2,77 +2,76 @@ import Tree from '@colin-luo/tree'
 import { Dispatch } from 'react'
 import { AppState } from './app.reducer'
 
-const actions = {
-  getFiles(src: string) {
-    ;(this as AppState).rootFolder = src.replace(/\\/g, '/')
-  },
-  getFilesSuccess(data) {
-    const { components, assets, designedResolution } = data
-    ;(this as AppState).filesData = components[0].children
-    ;(this as AppState).assets = assets
-    ;(this as AppState).settings.designedResolution = designedResolution
-  },
-  loadComponent(path: string) {
-    // if ((this as AppState).filePath !== path)
-    ;(this as AppState).filePath = path
-  },
-  loadComponentSuccess(data) {
-    const { treeData, name } = data
-    ;(this as AppState).componentTree = [treeData]
-    ;(this as AppState).componentPropTypes = (this as AppState).componentTree[0].props
-    ;(this as AppState).editingClassNamePath = ''
-    ;(this as AppState).selectedNode = {}
-    ;(this as AppState).editingPath = name
-  },
-  selectEditingTagNode(path: string) {
-    ;(this as AppState).editingClassNamePath = path
-    const tree = new Tree((this as AppState).componentTree, 'id', 'children')
-    const node = tree.getNode((this as AppState).editingClassNamePath)
-    if (node && node.props) {
-      ;(this as AppState).componentPropTypes = node.props
-      ;(this as AppState).selectedNode = node
-    }
-  },
-  updateEditingComponent(component: string, updated: any) {
-    const tree = new Tree((this as AppState).componentTree, 'id', 'children')
-    const node = tree.getNode((this as AppState).editingClassNamePath)
-    if (node) {
-      node[component] = { ...node[component], ...updated }
-      ;(this as AppState).selectedNode = node
-    }
-  },
-  toggleFolder(key: string) {
-    let tree = new Tree((this as AppState).filesData, 'path', 'children')
-    const node = tree.getNode(key)
-    // console.log(key, node, tree)
-    node.expanded = !node.expanded
-  },
-  selecteEditMultinodes(paths: string[]) {
-    ;(this as AppState).selectedPaths = paths
-    const tree = new Tree((this as AppState).componentTree, 'id', 'children')
-
-    ;(this as AppState).selectedNodes = paths.map((p) => tree.getNode(p))
-  },
-  updateMultinodes(params: Array<{ component?: string; updated?: any }>) {
-    const tree = new Tree((this as AppState).componentTree, 'id', 'children')
-    params.forEach((param, index) => {
-      const { component, updated } = param
-      if (!component) return
-      const path = (this as AppState).selectedPaths[index]
-      const node = tree.getNode(path)
+export function getAction(draft: AppState) {
+  const actions = {
+    getFiles(src: string) {
+      draft.rootFolder = src.replace(/\\/g, '/')
+    },
+    getFilesSuccess(data) {
+      const { componentsTree, componentsCache, assets, designedResolution } = data
+      draft.filesData = componentsTree[0].children
+      draft.assets = assets
+      draft.componentsCache = componentsCache
+      draft.settings.designedResolution = designedResolution
+    },
+    loadComponent(path: string) {
+      // if (draft.filePath !== path)
+      draft.filePath = path
+    },
+    loadComponentSuccess(data) {
+      const { treeData, name } = data
+      draft.componentTree = [treeData]
+      draft.componentPropTypes = draft.componentTree[0].props
+      draft.editingClassNamePath = ''
+      draft.selectedNode = {}
+      draft.editingPath = name
+    },
+    selectEditingTagNode(path: string) {
+      draft.editingClassNamePath = path
+      const tree = new Tree(draft.componentTree, 'id', 'children')
+      const node = tree.getNode(draft.editingClassNamePath)
+      if (node && node.props) {
+        draft.componentPropTypes = node.props
+        draft.selectedNode = node
+      }
+    },
+    updateEditingComponent(component: string, updated: any) {
+      const tree = new Tree(draft.componentTree, 'id', 'children')
+      const node = tree.getNode(draft.editingClassNamePath)
       if (node) {
         node[component] = { ...node[component], ...updated }
-        ;(this as AppState).selectedNodes[index] = node
+        draft.selectedNode = node
       }
-    })
-  },
+    },
+    toggleFolder(key: string) {
+      let tree = new Tree(draft.filesData, 'path', 'children')
+      const node = tree.getNode(key)
+      // console.log(key, node, tree)
+      node.expanded = !node.expanded
+    },
+    selectEditMultiNodes(paths: string[]) {
+      draft.selectedPaths = paths
+      const tree = new Tree(draft.componentTree, 'id', 'children')
+      draft.selectedNodes = paths.map((p) => tree.getNode(p))
+    },
+    updateMultiNodes(params: Array<{ component?: string; updated?: any }>) {
+      const tree = new Tree(draft.componentTree, 'id', 'children')
+      params.forEach((param, index) => {
+        const { component, updated } = param
+        if (!component) return
+        const path = draft.selectedPaths[index]
+        const node = tree.getNode(path)
+        if (node) {
+          node[component] = { ...node[component], ...updated }
+          draft.selectedNodes[index] = node
+        }
+      })
+    },
+  }
+  return actions
 }
 
-export function getAction(draft: AppState, name: string) {
-  return actions[name].bind(draft)
-}
-
-export type Actions = typeof actions
+export type Actions = ReturnType<typeof getAction>
 
 export function createActions(appDispatch: Dispatch<any>) {
   const obj = new Proxy(

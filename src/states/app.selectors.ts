@@ -42,6 +42,11 @@ export const selectComponentTree = createSelector(
   (appState) => appState.componentTree
 );
 
+export const selectComponentsCache = createSelector(
+  selectApp,
+  (appState) => appState.componentsCache
+);
+
 export const selectPropTypes = createSelector(
   selectApp,
   (appState) => appState.componentPropTypes

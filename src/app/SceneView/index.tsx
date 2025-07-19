@@ -4,7 +4,7 @@ import { getNodePosition, Vec2 } from 'helper/node';
 import { parseInt } from 'lodash';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useActions, useSelector } from 'states/app.context';
-import { selectAssets, selectComponentTree, selectDesignResolution, selectRootFolder, selectSelectedEditingPath, selectSelectedNodes, selectSelectedPaths } from 'states/app.selectors';
+import { selectAssets, selectComponentsCache, selectComponentTree, selectDesignResolution, selectRootFolder, selectSelectedEditingPath, selectSelectedNodes, selectSelectedPaths } from 'states/app.selectors';
 import ArrowControl from './ArrowControl';
 import { onStart } from './cocos';
 import { loadSceneView } from './loader';
@@ -23,7 +23,7 @@ function getCurrentNode(editingClassNamePath: string, parentNode: any, isSceneNo
 }
 
 export default function SceneView() {
-  const { updateMultinodes } = useActions();
+  const { updateMultiNodes } = useActions();
   const [position, setPosition] = useState({ x: 200, y: 200 });
   const [isEditing, setIsEditing] = useState(false);
   const [positionStart, setPositionStart] = useState({ x: 0, y: 0 });
@@ -35,6 +35,7 @@ export default function SceneView() {
   const filePath = useSelector(selectSelectedEditingPath);
   const rootFolder = useSelector(selectRootFolder);
   const assets = useSelector(selectAssets);
+  const componentsCache = useSelector(selectComponentsCache);
   const divRef = useRef<HTMLDivElement>(null);
   const selectedPaths = useSelector(selectSelectedPaths);
   const selectedNodes = useSelector(selectSelectedNodes)
@@ -60,7 +61,7 @@ export default function SceneView() {
   useEffect(() => {
     console.log('filePath', filePath)
     const timeout = setTimeout(() => {
-      loadSceneView(selectedEditingComponent, { rootFolder, ...assets });
+      loadSceneView(selectedEditingComponent, { rootFolder, ...assets, componentsCache });
     }, 250);
     return () => clearTimeout(timeout);
   }, [filePath]);
@@ -126,7 +127,7 @@ export default function SceneView() {
         }
       }
     })
-    updateMultinodes(params)
+    updateMultiNodes(params)
   }
 
   function onMouseDown(event: React.MouseEvent<HTMLDivElement>) {
@@ -144,17 +145,17 @@ export default function SceneView() {
     const dx = (event.clientX - positionStart.x) / scale * 1.5;
     const dy = (event.clientY - positionStart.y) / -scale * 1.5;
     setPositionStart({ x: event.clientX, y: event.clientY });
-    // console.log('selectedEditingComponent', selectedEditingComponent, selectedNode)
-    selectedPaths.forEach((path, index) => {
-      const selectedNode = selectedNodes[index]
-      if (!selectedNode.props) {
-        const { x: nx = 0, y: ny = 0 } = drawLayer.getPosition();
-        const lastX = Math.round(nx + dx);
-        const lastY = Math.round(ny + dy);
-        updateParentNode('x', lastX, setLastX, setLastSceneX);
-        updateParentNode('y', lastY, setLastY, setLastSceneY);
-        return;
-      }
+    // console.log('selectedEditingComponent', selectedEditingComponent, selectedPaths)
+    if (!selectedPaths.length) {
+      const { x: nx = 0, y: ny = 0 } = drawLayer.getPosition();
+      const lastX = Math.round(nx + dx);
+      const lastY = Math.round(ny + dy);
+      updateParentNode('x', lastX, setLastX, setLastSceneX);
+      updateParentNode('y', lastY, setLastY, setLastSceneY);
+      return;
+    }
+    selectedPaths.forEach((path) => {
+      // const selectedNode = selectedNodes[index]
       const currentNode = getCurrentNode(path, drawLayer, selectedEditingComponent[0]?.tag === 'SceneComponent');
       const { x: nx = 0, y: ny = 0 } = currentNode.getPosition();
       currentNode.setPosition(nx + dx, ny + dy);

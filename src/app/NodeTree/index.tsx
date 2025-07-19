@@ -9,7 +9,7 @@ import { selectComponentTree, selectRootFolder, selectSelectedFilePath } from 's
 import { TreeItem } from './TreeItem';
 
 export default function NodeTree() {
-  const { selectEditingTagNode, selecteEditMultinodes } = useActions();
+  const { selectEditingTagNode, selectEditMultiNodes } = useActions();
   const treeData = useSelector(selectComponentTree);
   const filePath = useSelector(selectSelectedFilePath);
   const rootPath = useSelector(selectRootFolder);
@@ -67,7 +67,7 @@ export default function NodeTree() {
 
   const onSelectNodes = (nodes) => {
     console.log(nodes)
-    selecteEditMultinodes(nodes.map(n => n.data.id));
+    selectEditMultiNodes(nodes.map(n => n.data.id));
     // if (nodes[0] && nodes[0].data.tag) {
     //   selectEditingTagNode(nodes[0].data.id);
     // }

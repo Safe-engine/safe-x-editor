@@ -10,6 +10,7 @@ export const initialState = {
   editingPath: '',
   editingClassNamePath: '',
   componentTree: [],
+  componentsCache: [],
   assets: {
     fontAssets: [],
     assetsTextureList: [],
@@ -27,7 +28,7 @@ export type AppState = typeof initialState;
 
 const reducer = (state: AppState = initialState, action: any) => produce(state, draft => {
   console.log('reducer', action);
-  getAction(draft, action.type)(...action.data);
+  getAction(draft)[action.type](...action.data);
 });
 
 export default reducer;

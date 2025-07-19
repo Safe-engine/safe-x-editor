@@ -1,5 +1,17 @@
 import { getNodePosition, parseIntFromValue, parseStringFromValue } from 'helper/node'
 
+interface AssetData {
+  key: string
+  value: string
+}
+interface ProjectData {
+  rootFolder: string
+  assetsTextureList: AssetData[]
+  fontAssets: AssetData[]
+  spriteFramesAssets: AssetData[]
+  componentsCache: { [key: string]: any }
+}
+
 function loadSprite(filePath: string): Promise<cc.Sprite> {
   return new Promise((resolve, reject) => {
     // console.log('loadSprite:', filePath);
@@ -29,13 +41,22 @@ function loadFont(filePath: string): Promise<void> {
   })
 }
 
-async function parseChildren(root, parentNode, data) {
-  const { tag, props = {}, children = [] } = root
-  const { rootFolder, assetsTextureList, fontAssets, spriteFramesAssets } = data
+async function parseChildren(root, parentNode, data: ProjectData, evalInit = '') {
+  const { tag, props = {}, children = [], loop } = root
+  const { rootFolder, assetsTextureList, fontAssets, spriteFramesAssets, componentsCache } = data
   // console.log('parseChildren:', tag, props);
-  let renderNode: cc.Node
+  let renderNode = new cc.Node()
+  if (loop) {
+    const { startIndex, startIndexSymbol, count } = loop
+    parentNode.addChild(renderNode)
+    for (let index = 0; index < count; index++) {
+      const evalInit = `${startIndexSymbol}=${index + startIndex};`
+      parseChildren({ tag, props, children }, renderNode, data, evalInit)
+    }
+    return
+  }
   const { node } = props
-  const { x, y } = getNodePosition(node)
+  const { x, y } = getNodePosition(node, evalInit)
   const { scaleX = 1, scaleY = 1, scale = 1, rotation = 0 } = node || {}
   if (tag === 'SpriteRender') {
     const { spriteFrame } = props
@@ -47,7 +68,7 @@ async function parseChildren(root, parentNode, data) {
       renderNode = sprite
     } else {
       const spriteFrame = spriteFramesAssets.find((item) => item.key === frameName)
-      const frame = cc.spriteFrameCache.getSpriteFrame(spriteFrame)
+      const frame = cc.spriteFrameCache.getSpriteFrame(spriteFrame.value)
       renderNode = new cc.Sprite(frame)
     }
     renderNode.setPosition(x, y)
@@ -71,6 +92,11 @@ async function parseChildren(root, parentNode, data) {
     renderNode = label
   } else if (tag === 'SceneComponent') {
     renderNode = parentNode
+  } else {
+    // console.log(componentsCache, tag)
+    if (componentsCache[tag]) {
+      renderNode = await parseChildren(componentsCache[tag], parentNode, data, evalInit)
+    }
   }
   if (!renderNode) return
   if (scale !== 1) {
@@ -88,11 +114,12 @@ async function parseChildren(root, parentNode, data) {
   // console.log('renderNode:', renderNode);
   for (let index = 0; index < children.length; index++) {
     const element = children[index]
-    await parseChildren(element, renderNode, data)
+    await parseChildren(element, renderNode, data, evalInit)
   }
+  return renderNode
 }
 
-export async function loadSceneView(selectedEditingComponent = [], data) {
+export async function loadSceneView(selectedEditingComponent = [], data: ProjectData) {
   const [root] = selectedEditingComponent
   if (!cc.director || !cc.director.getRunningScene() || !root) return
   const parentNode = cc.director.getRunningScene().children[0]

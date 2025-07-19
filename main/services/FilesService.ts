@@ -19,7 +19,7 @@ import rimraf from 'rimraf';
 import { syncResConst } from './TerminalService';
 import { parseAssetsSrcFile } from './assets';
 
-export const getFilesInFolder = ({ src, exclude = [] }) => {
+export const getFilesInFolder = async ({ src, exclude = [] }) => {
   const packageJson = join(src, 'package.json');
   if (!existsSync(packageJson)) {
     throw Error('No package.json.');
@@ -30,7 +30,7 @@ export const getFilesInFolder = ({ src, exclude = [] }) => {
   }
   GlobalData.rootProject = src
   syncResConst()
-  getClassesMetaData(src)
+  const componentsCache = await getClassesMetaData(src, true)
   // setupEditorFiles(src)
   const jsxOption: DirectoryTree.DirectoryTreeOptions = {
     extensions: /\.tsx$/,
@@ -46,7 +46,8 @@ export const getFilesInFolder = ({ src, exclude = [] }) => {
   const designedResolution = getResolutionSettings(src)
   // console.log('components', JSON.stringify(components, null, 2));
   return {
-    components: getTreeData(filterTree([components])),
+    componentsTree: getTreeData(filterTree([components])),
+    componentsCache,
     assets: {
       assetsTextureList,
       fontAssets,
