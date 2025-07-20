@@ -154,13 +154,18 @@ export default function SceneView() {
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
     setPosition({ x, y });
-    const drawLayer = cc.director.getRunningScene().children[0];
+    let drawLayer
+    if (isPixi) {
+      drawLayer = pixiAppRef.current.stage.children[0]
+    } else {
+      drawLayer = cc.director.getRunningScene().children[0];
+    }
     const dx = (event.clientX - positionStart.x) / scale * 1.5;
-    const dy = (event.clientY - positionStart.y) / -scale * 1.5;
+    const dy = (event.clientY - positionStart.y) / scale * 1.5;
     setPositionStart({ x: event.clientX, y: event.clientY });
     // console.log('selectedEditingComponent', selectedEditingComponent, selectedPaths)
     if (!selectedPaths.length) {
-      const { x: nx = 0, y: ny = 0 } = drawLayer.getPosition();
+      const { x: nx = 0, y: ny = 0 } = drawLayer.position;
       const lastX = Math.round(nx + dx);
       const lastY = Math.round(ny + dy);
       updateParentNode('x', lastX, setLastX, setLastSceneX);
@@ -170,8 +175,9 @@ export default function SceneView() {
     selectedPaths.forEach((path) => {
       // const selectedNode = selectedNodes[index]
       const currentNode = getCurrentNode(path, drawLayer, selectedEditingComponent[0]?.tag === 'SceneComponent');
-      const { x: nx = 0, y: ny = 0 } = currentNode.getPosition();
-      currentNode.setPosition(nx + dx, ny + dy);
+      const { x: nx = 0, y: ny = 0 } = currentNode.position;
+      currentNode.x = nx + dx
+      currentNode.y = ny + dy;
     })
   }
 
@@ -187,6 +193,13 @@ export default function SceneView() {
     setLast: (v: number) => void,
     setLastScene: (v: number) => void
   ) {
+    if (isPixi) {
+      const parentNode = pixiAppRef.current.stage.children[0]
+      parentNode[key] = value;
+      setLastScene(value);
+      setLast(value);
+      return
+    }
     if (!cc.director || !cc.director.getRunningScene()) return;
     const parentNode = cc.director.getRunningScene().children[0];
     parentNode[key] = value;

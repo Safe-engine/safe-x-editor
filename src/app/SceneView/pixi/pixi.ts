@@ -24,7 +24,7 @@ export function createPixiApp(options: any = {}) {
 
   // Tạo border (Graphics)
   const border = new PIXI.Graphics();
-  const lineWidth = 2;
+  const lineWidth = 4;
   const pink = 0xe30b5d; // Hot pink
 
   // Vẽ khung viền hình chữ nhật
@@ -35,6 +35,6 @@ export function createPixiApp(options: any = {}) {
   app.stage.addChild(drawLayer);
   drawLayer.x = getLastSceneX(); // Đặt vị trí của layer
   drawLayer.y = getLastSceneY(); // Đặt vị trí của layer
-  drawLayer.scale = getLastSceneScale(); // Giảm kích thước của layer xuống
+  drawLayer.scale = new PIXI.Point(getLastSceneScale(), getLastSceneScale()); // Giảm kích thước của layer xuống
   return app;
 }

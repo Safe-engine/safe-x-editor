@@ -19,7 +19,7 @@ function loadSprite(filePath: string) {
   })
 }
 
-function parseChildren(root, parentNode, data: ProjectData, evalInit = '') {
+async function parseChildren(root, parentNode, data: ProjectData, evalInit = '') {
   const { tag, props = {}, children = [], loop } = root
   const { rootFolder, assetsTextureList, fontAssets, spriteFramesAssets, componentsCache } = data
   console.log('parseChildren:', tag, props);
@@ -29,7 +29,7 @@ function parseChildren(root, parentNode, data: ProjectData, evalInit = '') {
     parentNode.addChild(renderNode)
     for (let index = 0; index < count; index++) {
       const evalInit = `${startIndexSymbol}=${index + startIndex};`
-      parseChildren({ tag, props, children }, renderNode, data, evalInit)
+      await parseChildren({ tag, props, children }, renderNode, data, evalInit)
     }
     return
   }
@@ -44,18 +44,15 @@ function parseChildren(root, parentNode, data: ProjectData, evalInit = '') {
     const frameName = parseStringFromValue(spriteFrame)
     const texture = assetsTextureList.find((item) => item.key === frameName)
     const filePath = `file://${rootFolder}/res/${texture.value}`
-    loadSprite(filePath)
-      .then(sprite => {
-        // console.log('Sprite loaded:', parentNode, sprite)
-        renderNode = sprite
-        // renderNode.addComponent(cc.Sprite).spriteFrame = sprite.spriteFrame;
-        renderNode.x = x
-        renderNode.y = y
-        // renderNode.setScale(scaleX * scale, scaleY * scale);
-        // renderNode.angle = rotation;
-        if (parentNode) parentNode.addChild(renderNode)
-      })
-      .catch(err => cc.log('Error loading sprite:', err));
+    const sprite = await loadSprite(filePath)
+    // console.log('Sprite loaded:', parentNode, sprite)
+    renderNode = sprite
+    // renderNode.addComponent(cc.Sprite).spriteFrame = sprite.spriteFrame;
+    renderNode.x = x
+    renderNode.y = y
+    // renderNode.scale = new PIXI.Point(scaleX, scaleY);
+    // renderNode.angle = rotation;
+    if (parentNode) parentNode.addChild(renderNode)
   } else if (tag === 'FontRender') {
     // Load font and apply to text node
     // loadFont(fontAssets.find(asset => asset.key === props.font)?.value || '')
@@ -75,7 +72,7 @@ function parseChildren(root, parentNode, data: ProjectData, evalInit = '') {
   }
   if (!renderNode) return
   if (scale !== 1) {
-    renderNode.scale = scale
+    renderNode.scale = new PIXI.Point(scale, scale)
   }
   if (scaleX !== 1) {
     renderNode.scaleX = scaleX
@@ -89,7 +86,7 @@ function parseChildren(root, parentNode, data: ProjectData, evalInit = '') {
   // console.log('renderNode:', renderNode);
   for (let index = 0; index < children.length; index++) {
     const element = children[index]
-    parseChildren(element, renderNode, data, evalInit)
+    await parseChildren(element, renderNode, data, evalInit)
   }
   return renderNode
 }
@@ -98,9 +95,9 @@ export async function loadSceneViewPixi(app, selectedEditingComponent = [], data
   const [root] = selectedEditingComponent
   if (!app || !root) return
   const parentNode = app.stage.children[0]
-  for (let i = 1; i < parentNode.childrenCount; i++) {
+  for (let i = 1; i < parentNode.children.length; i++) {
     const child = parentNode.children[i]
-    child.removeFromParent()
+    // child.removeFromParent()
   }
   // console.log('loadSceneView:', selectedEditingComponent, parentNode)
   for (let index = 0; index < selectedEditingComponent.length; index++) {
