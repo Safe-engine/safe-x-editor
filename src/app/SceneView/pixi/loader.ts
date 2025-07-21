@@ -1,4 +1,4 @@
-import { getNodePosition, parseStringFromValue } from "helper/node"
+import { getNodePosition, parseIntFromValue, parseStringFromValue } from "helper/node"
 import { ProjectData } from "../loader"
 declare let PIXI: any
 
@@ -14,6 +14,23 @@ function loadSprite(filePath: string) {
           resolve(sprite)
         } else {
           reject(new Error(`Failed to load sprite from ${filePath}`))
+        }
+      })
+  })
+}
+
+function loadFont(filePath: string): Promise<void> {
+  // Function to load a font from a file path for pixi
+  return new Promise((resolve, reject) => {
+    const loader = new PIXI.Loader()
+    loader.add(filePath)
+      .load((loader, resources) => {
+        if (resources[filePath]) {
+          // Assuming PIXI supports the font loading in a similar way
+          // console.log('loadFont:', filePath, loader, resources)
+          resolve()
+        } else {
+          reject(new Error(`Failed to load font from ${filePath}`))
         }
       })
   })
@@ -53,32 +70,39 @@ async function parseChildren(root, parentNode, data: ProjectData, evalInit = '')
     // renderNode.scale = new PIXI.Point(scaleX, scaleY);
     // renderNode.angle = rotation;
     if (parentNode) parentNode.addChild(renderNode)
-  } else if (tag === 'FontRender') {
+  } else if (tag === 'LabelComp') {
     // Load font and apply to text node
-    // loadFont(fontAssets.find(asset => asset.key === props.font)?.value || '')
-    //   .then(() => {
-    //     const label = renderNode.addComponent(cc.Label);
-    //     label.string = props.text || '';
-    //     label.fontSize = props.fontSize || 20;
-    //     label.lineHeight = props.lineHeight || 24;
-    //     label.horizontalAlign = cc.Label.HorizontalAlign.CENTER;
-    //     label.verticalAlign = cc.Label.VerticalAlign.CENTER;
-    //     renderNode.setPosition(x * scaleX, y * scaleY);
-    //     renderNode.setScale(scaleX * scale, scaleY * scale);
-    //     renderNode.angle = rotation;
-    //     parentNode.addChild(renderNode);
-    //   })
-    //   .catch(err => cc.log('Error loading font:', err));
+    const { string, font = '', size } = props
+    let foundFont = fontAssets.find((item) => item.key === parseStringFromValue(font))
+    if (!foundFont) {
+      foundFont = fontAssets.find((item) => item.key === 'defaultFont')
+    }
+    const filePath = `file://${rootFolder}/res/${foundFont.value}`
+    await loadFont(filePath)
+    const fontSize = size ? parseIntFromValue(size) : 64
+    // console.log('LabelComp:', fontSize, filePath)
+    const label = new PIXI.Text(string, { fontFamily: filePath, fontSize });
+    label.x = x
+    label.y = y
+    renderNode = label
+    parentNode.addChild(label)
+  } else if (tag === 'SceneComponent') {
+    renderNode = parentNode
+  } else {
+    // console.log(componentsCache, tag)
+    if (componentsCache[tag]) {
+      renderNode = await parseChildren(componentsCache[tag], parentNode, data, evalInit)
+    }
   }
   if (!renderNode) return
   if (scale !== 1) {
     renderNode.scale = new PIXI.Point(scale, scale)
   }
   if (scaleX !== 1) {
-    renderNode.scaleX = scaleX
+    renderNode.scale.x = scaleX
   }
   if (scaleY !== 1) {
-    renderNode.scaleY = scaleY
+    renderNode.scale.y = scaleY
   }
   if (rotation !== 0) {
     renderNode.rotation = rotation
