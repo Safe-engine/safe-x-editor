@@ -1,5 +1,5 @@
-import { getNodePosition, parseIntFromValue, parseStringFromValue } from "helper/node";
 import WebFont from 'webfontloader';
+import { getNodePosition, parseIntFromValue, parseStringFromValue } from '../../../helper/node';
 import { ProjectData } from "../cocos/loader";
 declare let PIXI: any
 // declare let WebFont: any
@@ -60,8 +60,7 @@ async function parseChildren(root, parentNode, data: ProjectData, evalInit = '')
     const frameName = parseStringFromValue(spriteFrame)
     const texture = assetsTextureList.find((item) => item.key === frameName)
     if (texture) {
-      const filePath = `file://${rootFolder}/res/${texture.value}`
-      const sprite = await loadSprite(filePath)
+      const sprite = await loadSprite(texture.value)
       // console.log('Sprite loaded:', parentNode, sprite)
       renderNode = sprite
     }
@@ -72,9 +71,8 @@ async function parseChildren(root, parentNode, data: ProjectData, evalInit = '')
     if (!foundFont) {
       foundFont = fontAssets.find((item) => item.key === 'defaultFont')
     }
-    const filePath = `file://${rootFolder}/res/${foundFont.value}`
     const fontName = foundFont.value.split('.')[0].split('/').pop().split('-')[0]
-    await loadFont(fontName, filePath)
+    await loadFont(fontName, foundFont.value)
     const fontSize = size ? parseIntFromValue(size) : 64
     // console.log('LabelComp:', fontSize, filePath)
     const label = new PIXI.Text(string, { fontFamily: fontName, fontSize, fill: '#ffffff' });

@@ -76,7 +76,6 @@ function NodeProps() {
   }))
 
   useEffect(() => {
-    console.log('selectedNode', 'position', selectedNode);
     if (!selectedNode?.props) return
     const { node = {} } = selectedNode.props
     const { x, y } = getNodePosition(node);

@@ -1,4 +1,4 @@
-import { getLastSceneScale, getLastSceneX, getLastSceneY } from "data/AppData";
+import { getLastSceneScale, getLastSceneX, getLastSceneY } from "../../../data/AppData";
 
 declare let PIXI: any
 

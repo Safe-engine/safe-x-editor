@@ -4,6 +4,7 @@ import { getAction } from './actions';
 export const initialState = {
   loading: false,
   error: false,
+  isPixi: false,
   rootFolder: '',
   filePath: '',
   editingPath: '',
@@ -18,7 +19,6 @@ export const initialState = {
   },
   settings: { designedResolution: { width: 0, height: 0 } },
   componentPropTypes: {},
-  selectedNode: {} as any,
   selectedPaths: [],
   selectedNodes: []
 };

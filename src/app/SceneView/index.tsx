@@ -8,6 +8,7 @@ import { selectAssets, selectComponentsCache, selectComponentTree, selectDesignR
 import ArrowControl from './ArrowControl';
 import { getDrawNode, loadSceneViewCocos, onStart } from './cocos';
 import { createPixiApp, loadSceneViewPixi } from './pixi';
+declare let PIXI: any
 
 function getCurrentNode(editingClassNamePath: string, parentNode: any, isSceneNode: boolean) {
   const childrenIndex = editingClassNamePath.split('.')[0].split('-').map(parseInt);
@@ -69,7 +70,7 @@ export default function SceneView() {
     return () => clearTimeout(timeout);
   }, [designResolution]);
 
- const load = () => {
+  const load = () => {
     const timeout = setTimeout(() => {
       if (isPixi) {
         loadSceneViewPixi(pixiAppRef.current, selectedEditingComponentRef.current, { rootFolder, ...assets, componentsCache });
@@ -101,7 +102,6 @@ export default function SceneView() {
   }, [selectedEditingComponent]);
 
   useEffect(() => {
-    console.log(selectedPaths)
     if (!cc.director?.getRunningScene() && !pixiAppRef.current?.stage) return;
     const scene = isPixi ? pixiAppRef.current.stage : cc.director.getRunningScene()
     const parentNode = scene.children[0];
@@ -114,7 +114,7 @@ export default function SceneView() {
       currentNode.y = y
       const { scaleX = 1, scaleY = 1, scale = 1, rotation = 0 } = selectedNode.props.node || {};
       if (scale !== 1) {
-        currentNode.scale = scale;
+        currentNode.scale = isPixi ? new PIXI.Point(scale, scale) : scale;
       }
       if (scaleX !== 1) {
         currentNode.scale.x = scaleX;
@@ -180,11 +180,11 @@ export default function SceneView() {
     const scene = isPixi ? pixiAppRef.current.stage : cc.director.getRunningScene()
     const drawLayer = scene.children[0];
     const dx = (event.clientX - positionStart.x) / scale * 1.5;
-    const dy = (event.clientY - positionStart.y) / scale * 1.5;
+    const dy = (event.clientY - positionStart.y) / scale * (isPixi ? 1.5 : -1.5);
     setPositionStart({ x: event.clientX, y: event.clientY });
     // console.log('selectedEditingComponent', selectedEditingComponent, selectedPaths)
     if (!selectedPaths.length) {
-      const { x: nx = 0, y: ny = 0 } = drawLayer.position;
+      const { x: nx = 0, y: ny = 0 } = drawLayer;
       const lastX = Math.round(nx + dx);
       const lastY = Math.round(ny + dy);
       updateParentNode('x', lastX, setLastX, setLastSceneX);
@@ -194,37 +194,41 @@ export default function SceneView() {
     selectedPaths.forEach((path) => {
       // const selectedNode = selectedNodes[index]
       const currentNode = getCurrentNode(path, drawLayer, selectedEditingComponent[0]?.tag === 'SceneComponent');
-      const { x: nx = 0, y: ny = 0 } = currentNode.position;
+      const { x: nx = 0, y: ny = 0 } = currentNode;
       currentNode.x = nx + dx
       currentNode.y = ny + dy;
     })
   }
 
   const handleWheel = useCallback((e: React.WheelEvent<HTMLDivElement>) => {
-    const value = scale + (e.deltaY > 0 ? -0.05 : 0.05);
-    if (value < 0.1 || value > 2) return;
+    let value = scale + (e.deltaY > 0 ? -0.05 : 0.05);
+    if (value < 0.1) value = 0.1;
+    if (value > 2) value = 2;
     updateParentNode('scale', value, setScale, setLastSceneScale);
-  }, [scale]);
+  }, [scale, isPixi]);
 
-  function updateParentNode(
+  const updateParentNode = useCallback(function (
     key: 'x' | 'y' | 'scale',
     value: number,
     setLast: (v: number) => void,
     setLastScene: (v: number) => void
   ) {
+    console.log('updateParentNode', isPixi, key, pixiAppRef.current)
     if (isPixi) {
       const parentNode = pixiAppRef.current.stage.children[0]
+      if (key === 'scale') {
+        parentNode.scale = new PIXI.Point(value, value);
+      } else {
+        parentNode[key] = value;
+      }
+    } else {
+      if (!cc.director || !cc.director.getRunningScene()) return;
+      const parentNode = getDrawNode();
       parentNode[key] = value;
-      setLastScene(value);
-      setLast(value);
-      return
     }
-    if (!cc.director || !cc.director.getRunningScene()) return;
-    const parentNode = getDrawNode();
-    parentNode[key] = value;
     setLastScene(value);
     setLast(value);
-  }
+  }, [isPixi])
 
   return (
     <div className='w-full h-full'>

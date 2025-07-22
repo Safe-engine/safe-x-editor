@@ -24,6 +24,7 @@ export const getFilesInFolder = ({ src }, panel) => {
   const designedResolution = getResolutionSettings(src)
   // console.log('components', JSON.stringify(components, null, 2));
   return {
+    isPixi: content.includes('@safe-engine/pixi'),
     assets: {
       assetsTextureList,
       fontAssets,
