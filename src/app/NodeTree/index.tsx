@@ -15,26 +15,31 @@ export default function NodeTree() {
   const [selectedTreeItem, setSelectedTreeItem] = useState<any>({});
 
   useEffect(() => {
-    if (treeData && treeData[0]) {
-      async function genComponentCB() {
-        const data: any = await sendRequest({
-          key: GEN_COMPONENT_REQUEST,
-          nodesData: treeData[0], filePath
-        });
-        toast.success('Gen React Component Success');
-      }
-      window.addEventListener('keydown', function (event) {
-        const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
-        const isSaveShortcut = (
-          (isMac && event.metaKey && event.key === 's') ||
-          (!isMac && event.ctrlKey && event.key === 's')
-        );
-        if (isSaveShortcut) {
-          event.preventDefault();
-          console.log('Detected Ctrl+S or Command+S');
-          genComponentCB()
-        }
+    if (!treeData || !treeData[0]) {
+      return
+    }
+    async function genComponentCB() {
+      const data: any = await sendRequest({
+        key: GEN_COMPONENT_REQUEST,
+        nodesData: treeData[0], filePath
       });
+      toast.success('Gen React Component Success');
+    }
+    function onKeyDownE(event) {
+      const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+      const isSaveShortcut = (
+        (isMac && event.metaKey && event.key === 's') ||
+        (!isMac && event.ctrlKey && event.key === 's')
+      );
+      if (isSaveShortcut) {
+        event.preventDefault();
+        console.log('Detected Ctrl+S or Command+S');
+        genComponentCB()
+      }
+    }
+    window.addEventListener('keydown', onKeyDownE);
+    return () => {
+      window.removeEventListener('keydown', onKeyDownE);
     }
   }, [treeData, filePath]);
 
