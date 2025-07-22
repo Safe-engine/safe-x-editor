@@ -4,10 +4,10 @@ import NumberInput from '../../base/NumberInput';
 import { getLastSceneScale, getLastSceneX, getLastSceneY, setLastSceneScale, setLastSceneX, setLastSceneY } from '../../data/AppData';
 import { getNodePosition, Vec2 } from '../../helper/node';
 import { useActions, useSelector } from '../../states/app.context';
-import { selectAssets, selectComponentsCache, selectComponentTree, selectDesignResolution, selectRootFolder, selectSelectedEditingPath, selectSelectedNodes, selectSelectedPaths } from '../../states/app.selectors';
+import { selectAssets, selectComponentsCache, selectComponentTree, selectDesignResolution, selectIsPixi, selectRootFolder, selectSelectedEditingPath, selectSelectedNodes, selectSelectedPaths } from '../../states/app.selectors';
 import ArrowControl from './ArrowControl';
-import { getDrawNode, onStart } from './cocos';
-import { loadSceneView } from './loader';
+import { getDrawNode, loadSceneViewCocos, onStart } from './cocos';
+import { createPixiApp, loadSceneViewPixi } from './pixi';
 
 function getCurrentNode(editingClassNamePath: string, parentNode: any, isSceneNode: boolean) {
   const childrenIndex = editingClassNamePath.split('.')[0].split('-').map(parseInt);
@@ -32,11 +32,13 @@ export default function SceneView() {
   const [scale, setScale] = useState(getLastSceneScale());
   const selectedEditingComponent = useSelector(selectComponentTree);
   const designResolution = useSelector(selectDesignResolution);
+  const isPixi = useSelector(selectIsPixi);
   const filePath = useSelector(selectSelectedEditingPath);
   const rootFolder = useSelector(selectRootFolder);
   const assets = useSelector(selectAssets);
   const componentsCache = useSelector(selectComponentsCache);
   const divRef = useRef<HTMLDivElement>(null);
+  const pixiAppRef = useRef<any>(null);
   const selectedPaths = useSelector(selectSelectedPaths);
   const selectedNodes = useSelector(selectSelectedNodes)
   const selectedEditingComponentRef = useRef(selectedEditingComponent);
@@ -47,6 +49,10 @@ export default function SceneView() {
 
   useEffect(() => {
     if (!designResolution.width) return;
+    if (isPixi) {
+      pixiAppRef.current = createPixiApp(designResolution)
+      return
+    }
     const { spriteSheetAssets = [] } = assets;
     Object.values(spriteSheetAssets).forEach((spriteSheet) => {
       cc.spriteFrameCache.addSpriteFrames(spriteSheet);
@@ -63,9 +69,14 @@ export default function SceneView() {
     return () => clearTimeout(timeout);
   }, [designResolution]);
 
-  const load = () => {
+ const load = () => {
     const timeout = setTimeout(() => {
-      loadSceneView(selectedEditingComponentRef.current, { rootFolder, ...assets, componentsCache });
+      if (isPixi) {
+        loadSceneViewPixi(pixiAppRef.current, selectedEditingComponentRef.current, { rootFolder, ...assets, componentsCache });
+        return
+      } else {
+        loadSceneViewCocos(selectedEditingComponentRef.current, { rootFolder, ...assets, componentsCache });
+      }
     }, 250);
     return () => clearTimeout(timeout);
   }
@@ -91,23 +102,25 @@ export default function SceneView() {
 
   useEffect(() => {
     console.log(selectedPaths)
-    if (!cc.director || !cc.director.getRunningScene()) return;
-    const parentNode = getDrawNode();
+    if (!cc.director?.getRunningScene() && !pixiAppRef.current?.stage) return;
+    const scene = isPixi ? pixiAppRef.current.stage : cc.director.getRunningScene()
+    const parentNode = scene.children[0];
     selectedPaths.forEach((path, index) => {
       const selectedNode = selectedNodes[index]
       if (!selectedNode.props) return
       const currentNode = getCurrentNode(path, parentNode, selectedEditingComponent[0]?.tag === 'SceneComponent');
       const { x, y } = getNodePosition(selectedNode.props.node);
-      currentNode.setPosition(x, y);
+      currentNode.x = x
+      currentNode.y = y
       const { scaleX = 1, scaleY = 1, scale = 1, rotation = 0 } = selectedNode.props.node || {};
       if (scale !== 1) {
         currentNode.scale = scale;
       }
       if (scaleX !== 1) {
-        currentNode.scaleX = scaleX;
+        currentNode.scale.x = scaleX;
       }
       if (scaleY !== 1) {
-        currentNode.scaleY = scaleY;
+        currentNode.scale.y = scaleY;
       }
       if (rotation !== 0) {
         currentNode.rotation = rotation;
@@ -117,14 +130,14 @@ export default function SceneView() {
 
   function onMouseUp() {
     setIsEditing(false);
-    if (!cc.director || !cc.director.getRunningScene()) return;
-    const parentNode = getDrawNode();
+    if (!cc.director?.getRunningScene() && !pixiAppRef.current?.stage) return;
+    const scene = isPixi ? pixiAppRef.current.stage : cc.director.getRunningScene()
+    const parentNode = scene.children[0];
     const params = selectedPaths.map((path, index) => {
       const selectedNode = selectedNodes[index]
       if (!selectedNode.props) return {}
-
       const currentNode = getCurrentNode(path, parentNode, selectedEditingComponent[0]?.tag === 'SceneComponent');
-      console.log('currentNode', currentNode)
+      // console.log('currentNode', currentNode)
       if (selectedNode.props.node?.position) {
         return {
           component: 'props',
@@ -164,13 +177,14 @@ export default function SceneView() {
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
     setPosition({ x, y });
-    const drawLayer = getDrawNode();
+    const scene = isPixi ? pixiAppRef.current.stage : cc.director.getRunningScene()
+    const drawLayer = scene.children[0];
     const dx = (event.clientX - positionStart.x) / scale * 1.5;
-    const dy = (event.clientY - positionStart.y) / -scale * 1.5;
+    const dy = (event.clientY - positionStart.y) / scale * 1.5;
     setPositionStart({ x: event.clientX, y: event.clientY });
     // console.log('selectedEditingComponent', selectedEditingComponent, selectedPaths)
     if (!selectedPaths.length) {
-      const { x: nx = 0, y: ny = 0 } = drawLayer.getPosition();
+      const { x: nx = 0, y: ny = 0 } = drawLayer.position;
       const lastX = Math.round(nx + dx);
       const lastY = Math.round(ny + dy);
       updateParentNode('x', lastX, setLastX, setLastSceneX);
@@ -180,8 +194,9 @@ export default function SceneView() {
     selectedPaths.forEach((path) => {
       // const selectedNode = selectedNodes[index]
       const currentNode = getCurrentNode(path, drawLayer, selectedEditingComponent[0]?.tag === 'SceneComponent');
-      const { x: nx = 0, y: ny = 0 } = currentNode.getPosition();
-      currentNode.setPosition(nx + dx, ny + dy);
+      const { x: nx = 0, y: ny = 0 } = currentNode.position;
+      currentNode.x = nx + dx
+      currentNode.y = ny + dy;
     })
   }
 
@@ -197,6 +212,13 @@ export default function SceneView() {
     setLast: (v: number) => void,
     setLastScene: (v: number) => void
   ) {
+    if (isPixi) {
+      const parentNode = pixiAppRef.current.stage.children[0]
+      parentNode[key] = value;
+      setLastScene(value);
+      setLast(value);
+      return
+    }
     if (!cc.director || !cc.director.getRunningScene()) return;
     const parentNode = getDrawNode();
     parentNode[key] = value;

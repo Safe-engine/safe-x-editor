@@ -55,6 +55,13 @@
     "reselect": "^5.0.1",
     "tailwind-styled-components": "^2.2.0",
     "tailwindcss": "^3.3.5",
-    "typescript": "5.8.3"
+    "ts-loader": "9.5.2",
+    "tsconfig-paths-webpack-plugin": "4.2.0",
+    "tsx": "4.20.3",
+    "typescript": "5.8.3",
+    "webfontloader": "^1.6.28",
+    "webpack": "5.99.9",
+    "webpack-cli": "^5.1.4",
+    "webpack-electron-reload": "^1.0.1"
   }
 }

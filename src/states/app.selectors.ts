@@ -52,6 +52,11 @@ export const selectDesignResolution = createSelector(
   (appState) => appState.settings.designedResolution
 );
 
+export const selectIsPixi = createSelector(
+  selectApp,
+  (appState) => appState.isPixi
+);
+
 export const selectSelectedEditingClassNamePath = createSelector(
   selectApp,
   (appState) => appState.editingClassNamePath
@@ -80,7 +85,7 @@ export const selectEditingComponent = createSelector(
 
 export const selectSelectedNode = createSelector(
   selectApp,
-  (appState) => appState.selectedNode
+  (appState) => appState.selectedNodes[0]
 );
 
 export const selectAssets = createSelector(

@@ -1,11 +1,10 @@
-import { getNodePosition, parseIntFromValue, parseStringFromValue } from "../../helper/node";
-import { getDrawNode } from "./cocos";
+import { getNodePosition, parseIntFromValue, parseStringFromValue } from 'helper/node'
 
 interface AssetData {
   key: string
   value: string
 }
-interface ProjectData {
+export interface ProjectData {
   rootFolder: string
   assetsTextureList: AssetData[]
   fontAssets: AssetData[]
@@ -15,8 +14,8 @@ interface ProjectData {
 
 function loadSprite(filePath: string): Promise<cc.Sprite> {
   return new Promise((resolve, reject) => {
-    console.log('loadSprite:', filePath);
-    cc.loader.load(filePath, function (err, texture) {
+    // console.log('loadSprite:', filePath);
+    cc.loader.load(`file://${filePath}`, function (err, texture) {
       if (err) {
         cc.log('Failed to load file:', filePath, err)
         reject(err)
@@ -30,8 +29,8 @@ function loadSprite(filePath: string): Promise<cc.Sprite> {
 
 function loadFont(filePath: string): Promise<void> {
   return new Promise((resolve, reject) => {
-    console.log('loadFont:', filePath);
-    cc.loader.load(filePath, function (err, font) {
+    // console.log('loadFont:', filePath);
+    cc.loader.load(`file://${filePath}`, function (err, font) {
       if (err) {
         cc.log('Failed to load file:', filePath, err)
         reject(err)
@@ -64,7 +63,8 @@ async function parseChildren(root, parentNode, data: ProjectData, evalInit = '')
     const frameName = parseStringFromValue(spriteFrame)
     const texture = assetsTextureList.find((item) => item.key === frameName)
     if (texture) {
-      const sprite = await loadSprite(texture.value);
+      const filePath = `${rootFolder}/res/${texture.value}`
+      const sprite = await loadSprite(filePath)
       renderNode = sprite
     } else {
       const spriteFrame = spriteFramesAssets.find((item) => item.key === frameName)
@@ -82,7 +82,7 @@ async function parseChildren(root, parentNode, data: ProjectData, evalInit = '')
     }
     const filePath = cc.path.join(rootFolder, 'res', `${foundFont.value}`)
     const fontName = cc.path.basename(filePath, '.ttf')
-    await loadFont(foundFont.value)
+    await loadFont(filePath)
     const fontSize = size ? parseIntFromValue(size) : 64
     const label = new ccui.Text(string, fontName, fontSize)
     console.log('LabelComp:', fontSize, filePath)
@@ -119,15 +119,15 @@ async function parseChildren(root, parentNode, data: ProjectData, evalInit = '')
   return renderNode
 }
 
-export async function loadSceneView(selectedEditingComponent = [], data: ProjectData) {
+export async function loadSceneViewCocos(selectedEditingComponent = [], data: ProjectData) {
   const [root] = selectedEditingComponent
   if (!cc.director || !cc.director.getRunningScene() || !root) return
-  const parentNode = getDrawNode()
+  const parentNode = cc.director.getRunningScene().children[0]
   for (let i = 1; i < parentNode.childrenCount; i++) {
     const child = parentNode.children[i]
     child.removeFromParent()
   }
-  console.log('loadSceneView:', selectedEditingComponent, parentNode)
+  // console.log('loadSceneView:', selectedEditingComponent, parentNode)
   for (let index = 0; index < selectedEditingComponent.length; index++) {
     const element = selectedEditingComponent[index]
     await parseChildren(element, parentNode, data)

@@ -30,7 +30,7 @@ function getPropValue(value) {
 
 const getAttributeProps = (openingElement, fileOrigin) => {
   const props = {};
-  openingElement.attributes.forEach(att => {
+  openingElement?.attributes.forEach(att => {
     const [start, end] = att.range;
     const [key, value] = fileOrigin.substring(start, end).split('=');
     if (key === 'node') {
