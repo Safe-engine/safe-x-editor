@@ -1,6 +1,8 @@
-import { getNodePosition, parseIntFromValue, parseStringFromValue } from "helper/node"
-import { ProjectData } from "../loader"
+import { getNodePosition, parseIntFromValue, parseStringFromValue } from "helper/node";
+import WebFont from 'webfontloader';
+import { ProjectData } from "../loader";
 declare let PIXI: any
+// declare let WebFont: any
 
 function loadSprite(filePath: string) {
   // Function to load a sprite from a file path for pixi
@@ -19,21 +21,22 @@ function loadSprite(filePath: string) {
   })
 }
 
-function loadFont(filePath: string): Promise<void> {
-  // Function to load a font from a file path for pixi
-  return new Promise((resolve, reject) => {
-    const loader = new PIXI.Loader()
-    loader.add(filePath)
-      .load((loader, resources) => {
-        if (resources[filePath]) {
-          // Assuming PIXI supports the font loading in a similar way
-          // console.log('loadFont:', filePath, loader, resources)
-          resolve()
-        } else {
-          reject(new Error(`Failed to load font from ${filePath}`))
-        }
-      })
-  })
+function loadFont(fontName: string, fontURL: string) {
+  const style = document.createElement('style')
+  style.textContent = `
+@font-face {
+  font-family: '${fontName}';
+  src: url('${fontURL}') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+`
+  document.head.appendChild(style)
+  WebFont.load({
+    custom: {
+      families: [fontName],
+    },
+  });
 }
 
 async function parseChildren(root, parentNode, data: ProjectData, evalInit = '') {
@@ -50,26 +53,18 @@ async function parseChildren(root, parentNode, data: ProjectData, evalInit = '')
     }
     return
   }
-  const { node } = props
-  const { x, y } = getNodePosition(node, evalInit)
-  const { scaleX = 1, scaleY = 1, scale = 1, rotation = 0 } = node || {}
-
   // Handle different tags and create corresponding nodes
   if (tag === 'SpriteRender') {
     // Load sprite texture and create sprite node
     const { spriteFrame } = props
     const frameName = parseStringFromValue(spriteFrame)
     const texture = assetsTextureList.find((item) => item.key === frameName)
-    const filePath = `file://${rootFolder}/res/${texture.value}`
-    const sprite = await loadSprite(filePath)
-    // console.log('Sprite loaded:', parentNode, sprite)
-    renderNode = sprite
-    // renderNode.addComponent(cc.Sprite).spriteFrame = sprite.spriteFrame;
-    renderNode.x = x
-    renderNode.y = y
-    // renderNode.scale = new PIXI.Point(scaleX, scaleY);
-    // renderNode.angle = rotation;
-    if (parentNode) parentNode.addChild(renderNode)
+    if (texture) {
+      const filePath = `file://${rootFolder}/res/${texture.value}`
+      const sprite = await loadSprite(filePath)
+      // console.log('Sprite loaded:', parentNode, sprite)
+      renderNode = sprite
+    }
   } else if (tag === 'LabelComp') {
     // Load font and apply to text node
     const { string, font = '', size } = props
@@ -78,14 +73,12 @@ async function parseChildren(root, parentNode, data: ProjectData, evalInit = '')
       foundFont = fontAssets.find((item) => item.key === 'defaultFont')
     }
     const filePath = `file://${rootFolder}/res/${foundFont.value}`
-    await loadFont(filePath)
+    const fontName = foundFont.value.split('.')[0].split('/').pop().split('-')[0]
+    await loadFont(fontName, filePath)
     const fontSize = size ? parseIntFromValue(size) : 64
     // console.log('LabelComp:', fontSize, filePath)
-    const label = new PIXI.Text(string, { fontFamily: filePath, fontSize });
-    label.x = x
-    label.y = y
+    const label = new PIXI.Text(string, { fontFamily: fontName, fontSize, fill: '#ffffff' });
     renderNode = label
-    parentNode.addChild(label)
   } else if (tag === 'SceneComponent') {
     renderNode = parentNode
   } else {
@@ -94,18 +87,24 @@ async function parseChildren(root, parentNode, data: ProjectData, evalInit = '')
       renderNode = await parseChildren(componentsCache[tag], parentNode, data, evalInit)
     }
   }
-  if (!renderNode) return
-  if (scale !== 1) {
-    renderNode.scale = new PIXI.Point(scale, scale)
-  }
-  if (scaleX !== 1) {
-    renderNode.scale.x = scaleX
-  }
-  if (scaleY !== 1) {
-    renderNode.scale.y = scaleY
-  }
-  if (rotation !== 0) {
-    renderNode.rotation = rotation
+  if (renderNode !== parentNode) {
+    parentNode.addChild(renderNode)
+    const { x, y } = getNodePosition(props.node, evalInit)
+    renderNode.x = x
+    renderNode.y = y
+    const { scaleX = 1, scaleY = 1, scale = 1, rotation = 0 } = props.node || {}
+    if (scale !== 1) {
+      renderNode.scale = new PIXI.Point(scale, scale)
+    }
+    if (scaleX !== 1) {
+      renderNode.scale.x = scaleX
+    }
+    if (scaleY !== 1) {
+      renderNode.scale.y = scaleY
+    }
+    if (rotation !== 0) {
+      renderNode.rotation = rotation
+    }
   }
   // console.log('renderNode:', renderNode);
   for (let index = 0; index < children.length; index++) {
