@@ -8,7 +8,7 @@ function NodeProps() {
   const {updateEditingComponent} = useActions();
   const selectedNode = useSelector(selectSelectedNode);
   // console.log('selectedEditingComponent', selectedEditingComponent)
-  // if (!selectedNode.props) return
+  // if (!selectedNode?.props) return
   // const { node = {} } = selectedNode.props
   // let { x, y } = parseVec2(node?.position);
   // if (node?.xy) {
@@ -26,7 +26,7 @@ function NodeProps() {
       // render: () => showProperties(selectedArmature!, 'position'),
       onChange: (value: { x: number; y: number }) => {
         // console.log('onChange', 'selectedNode', selectedNode);
-        if (!selectedNode.props) return
+        if (!selectedNode?.props) return
         const { node = {} } = selectedNode.props
         // console.log('onChangeProp', 'position', value);
         if (node?.position) {
@@ -50,7 +50,7 @@ function NodeProps() {
       label: 'Scale',
       step: 0.1,
       onChange: (value: { x: number; y: number }) => {
-        if (!selectedNode.props) return
+        if (!selectedNode?.props) return
         const { node = {} } = selectedNode.props
         updateEditingComponent('props', {
           node: {
@@ -64,7 +64,7 @@ function NodeProps() {
       label: 'Rotation',
       step: 0.1,
       onChange: (value: { x: number; y: number }) => {
-        if (!selectedNode.props) return
+        if (!selectedNode?.props) return
         const { node = {} } = selectedNode.props
         updateEditingComponent('props', {
           node: {
@@ -76,12 +76,13 @@ function NodeProps() {
   }))
 
   useEffect(() => {
-    if (!selectedNode.props) return
+    console.log('selectedNode', 'position', selectedNode);
+    if (!selectedNode?.props) return
     const { node = {} } = selectedNode.props
     const { x, y } = getNodePosition(node);
-    // console.log('selectedNode', 'position', x, y);
+    console.log('selectedNode', 'position', x, y);
     set({ position: { x, y } })
-    const { scaleX = 1, scaleY = 1, scale = 1, rotation = 0 } = selectedNode.props.node || {};
+    const { scaleX = 1, scaleY = 1, scale = 1, rotation = 0 } = node || {};
     if (scale !== 1) {
       set({ scale });
     }

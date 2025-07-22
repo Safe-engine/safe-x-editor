@@ -24,7 +24,7 @@ export function getAction(draft: AppState) {
       draft.componentTree = [treeData]
       draft.componentPropTypes = draft.componentTree[0].props
       draft.editingClassNamePath = ''
-      draft.selectedNode = {}
+      // draft.selectedNode = {}
       draft.editingPath = name
     },
     selectEditingTagNode(path: string) {
@@ -33,7 +33,7 @@ export function getAction(draft: AppState) {
       const node = tree.getNode(draft.editingClassNamePath)
       if (node && node.props) {
         draft.componentPropTypes = node.props
-        draft.selectedNode = node
+        // draft.selectedNode = node
       }
     },
     updateEditingComponent(component: string, updated: any) {
@@ -41,7 +41,7 @@ export function getAction(draft: AppState) {
       const node = tree.getNode(draft.editingClassNamePath)
       if (node) {
         node[component] = { ...node[component], ...updated }
-        draft.selectedNode = node
+        // draft.selectedNode = node
       }
     },
     toggleFolder(key: string) {

@@ -1,6 +1,6 @@
 import { getNodePosition, parseIntFromValue, parseStringFromValue } from "helper/node";
 import WebFont from 'webfontloader';
-import { ProjectData } from "../loader";
+import { ProjectData } from "../cocos/loader";
 declare let PIXI: any
 // declare let WebFont: any
 

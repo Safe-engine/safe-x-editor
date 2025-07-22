@@ -119,7 +119,7 @@ async function parseChildren(root, parentNode, data: ProjectData, evalInit = '')
   return renderNode
 }
 
-export async function loadSceneView(selectedEditingComponent = [], data: ProjectData) {
+export async function loadSceneViewCocos(selectedEditingComponent = [], data: ProjectData) {
   const [root] = selectedEditingComponent
   if (!cc.director || !cc.director.getRunningScene() || !root) return
   const parentNode = cc.director.getRunningScene().children[0]
