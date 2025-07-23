@@ -8,6 +8,20 @@ function getVsCodeApi() {
   return {
     postMessage: (message: any) => {
       console.log('Dev mode postMessage', message);
+      fetch('http://localhost:7498', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(message),
+      }).then(async (response) => {
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        const data = await response.json();
+        // console.log('Response from server:', data);
+        window.dispatchEvent(new MessageEvent('message', { data: { messageId: message.messageId, data } }));
+      })
     }
   };
 }
