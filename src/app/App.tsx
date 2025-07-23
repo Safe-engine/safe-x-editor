@@ -23,6 +23,9 @@ export function App() {
       const message = event.data;
       if (message.type === 'refresh') {
         loadComponent((window as any).filePath); // Hoặc xử lý theo nội dung message.content
+      } else if (message.type === 'changeFilePath') {
+        (window as any).filePath = message.filePath;
+        loadComponent((window as any).filePath);
       }
     }
     window.addEventListener('message', listener);

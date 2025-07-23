@@ -1,32 +1,48 @@
 import * as vscode from 'vscode';
 import Router from './router/Router';
 import { getEditorWebview } from './webview';
+let panel: vscode.WebviewPanel | undefined;
 
-export function activate(context: vscode.ExtensionContext) {
-  console.log("Activated safexEditor")
-  const panel = vscode.window.createWebviewPanel(
+function createOrShowWebview(context: vscode.ExtensionContext, uri: vscode.Uri) {
+  if (panel) {
+    // Nếu đã tồn tại thì chỉ cần hiện lại
+      panel.webview.postMessage({ type: 'changeFilePath', filePath: uri.fsPath });
+    return;
+  }
+  // Nếu chưa có thì tạo mới
+  panel = vscode.window.createWebviewPanel(
     'safexEditor',
     'Safex Editor',
     vscode.ViewColumn.One,
-    { enableScripts: true, retainContextWhenHidden: true }
+    {
+      enableScripts: true,
+      retainContextWhenHidden: true,
+    }
   );
+
+  panel.webview.html = getEditorWebview(context, uri.fsPath);
+  Router(panel, context)
+
+  // Khi panel bị dispose (user đóng), set biến về undefined
+  panel.onDidDispose(() => {
+    panel = undefined;
+  });
+}
+
+export function activate(context: vscode.ExtensionContext) {
+  console.log("Activated safex Editor")
   context.subscriptions.push(
     vscode.commands.registerCommand(
       'safexEditor.openSafex',
       async (uri: vscode.Uri) => {
-        panel.webview.html = getEditorWebview(context, uri.fsPath);
-        Router(panel, context)
+        createOrShowWebview(context, uri);
       }
     )
   );
   vscode.workspace.onDidSaveTextDocument((document) => {
     if (panel) {
       // console.log('refresh', document.uri.fsPath)
-      // Gửi message sang webview để xử lý (reload hoặc update)
       panel.webview.postMessage({ type: 'refresh' });
-      // Hoặc reload toàn bộ nội dung HTML (ít khuyến khích)
-      // currentPanel.webview.html = getWebviewContent();
-      // panel.webview.html = getEditorWebview(context, document.uri.fsPath);
     }
   });
 }
