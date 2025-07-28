@@ -90,7 +90,7 @@ async function parseChildren(root, parentNode, data: ProjectData, evalInit = '')
     const { x, y } = getNodePosition(props.node, evalInit)
     renderNode.x = x
     renderNode.y = y
-    const { scaleX = 1, scaleY = 1, scale = 1, rotation = 0 } = props.node || {}
+    const { scaleX = 1, scaleY = 1, scale = 1, rotation = 0, anchorX = 0.5, anchorY = 0.5 } = props.node || {}
     if (scale !== 1) {
       renderNode.scale = new PIXI.Point(scale, scale)
     }
@@ -103,6 +103,8 @@ async function parseChildren(root, parentNode, data: ProjectData, evalInit = '')
     if (rotation !== 0) {
       renderNode.rotation = rotation
     }
+    renderNode.anchor.x = anchorX
+    renderNode.anchor.y = anchorY
   }
   // console.log('renderNode:', renderNode);
   for (let index = 0; index < children.length; index++) {
