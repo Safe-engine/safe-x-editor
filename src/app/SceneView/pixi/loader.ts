@@ -41,7 +41,7 @@ function loadFont(fontName: string, fontURL: string) {
 
 async function parseChildren(root, parentNode, data: ProjectData, evalInit = '') {
   const { tag, props = {}, children = [], loop } = root
-  const { rootFolder, assetsTextureList, fontAssets, spriteFramesAssets, componentsCache } = data
+  const { rootFolder, assetsTextureList, fontAssets, spriteFramesAssets, componentsCache = {} } = data
   console.log('parseChildren:', tag, props);
   let renderNode = new PIXI.Container()
   if (loop) {
@@ -103,8 +103,10 @@ async function parseChildren(root, parentNode, data: ProjectData, evalInit = '')
     if (rotation !== 0) {
       renderNode.rotation = rotation
     }
-    renderNode.anchor.x = anchorX
-    renderNode.anchor.y = anchorY
+    if (renderNode.anchor) {
+      renderNode.anchor.x = anchorX
+      renderNode.anchor.y = anchorY
+    }
   }
   // console.log('renderNode:', renderNode);
   for (let index = 0; index < children.length; index++) {

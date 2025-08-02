@@ -43,7 +43,7 @@ function loadFont(filePath: string): Promise<void> {
 
 async function parseChildren(root, parentNode, data: ProjectData, evalInit = '') {
   const { tag, props = {}, children = [], loop } = root
-  const { rootFolder, assetsTextureList, fontAssets, spriteFramesAssets, componentsCache } = data
+  const { rootFolder, assetsTextureList, fontAssets, spriteFramesAssets, componentsCache= {} } = data
   // console.log('parseChildren:', tag, props);
   let renderNode = new cc.Node()
   if (loop) {

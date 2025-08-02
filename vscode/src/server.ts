@@ -30,10 +30,11 @@ function getResponse(message, panel, filePath) {
       return loadComponent(payload)
     }
     case GET_FOLDER_FILES: {
-      payload.src = getProjectPath(filePath); // Đảm bảo đường dẫn đúng
+      payload.src = getProjectPath(filePath);
       return getFilesInFolder(payload, panel)
     }
     case GEN_COMPONENT_REQUEST: {
+      payload.filePath = filePath;
       return updateComponentTag(payload)
     }
   }
