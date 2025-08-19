@@ -54,7 +54,7 @@ async function parseChildren(root, parentNode, data: ProjectData, evalInit = '')
     return
   }
   // Handle different tags and create corresponding nodes
-  if (tag === 'SpriteRender') {
+  if (tag === 'SpriteRender' || tag === 'ProgressTimerComp') {
     // Load sprite texture and create sprite node
     const { spriteFrame } = props
     const frameName = parseStringFromValue(spriteFrame)
@@ -80,7 +80,7 @@ async function parseChildren(root, parentNode, data: ProjectData, evalInit = '')
   } else if (tag === 'SceneComponent') {
     renderNode = parentNode
   } else {
-    // console.log(componentsCache, tag)
+    console.log('componentsCache', componentsCache, tag)
     if (componentsCache[tag]) {
       renderNode = await parseChildren(componentsCache[tag], parentNode, data, evalInit)
     }

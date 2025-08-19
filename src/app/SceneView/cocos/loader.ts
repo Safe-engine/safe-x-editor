@@ -58,7 +58,7 @@ async function parseChildren(root, parentNode, data: ProjectData, evalInit = '')
   const { node } = props
   const { x, y } = getNodePosition(node, evalInit)
   const { scaleX = 1, scaleY = 1, scale = 1, rotation = 0 } = node || {}
-  if (tag === 'SpriteRender') {
+  if (tag === 'SpriteRender' || tag === 'ProgressTimerComp') {
     const { spriteFrame } = props
     const frameName = parseStringFromValue(spriteFrame)
     const texture = assetsTextureList.find((item) => item.key === frameName)

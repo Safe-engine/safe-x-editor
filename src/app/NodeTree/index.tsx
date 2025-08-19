@@ -82,27 +82,24 @@ export default function NodeTree() {
   }
 
   return (
-    <div className='h-screen' >
-      <div className='drive-header dx-treeview-item p-1'>
-        <div className='dx-treeview-item-content '>
-          <i className='dx-icon dx-icon-hierarchy'></i>
-          <span className='text-yellow-400 text-ellipsis overflow-hidden whitespace-nowrap text-left rtl'>{filePath.replace(rootPath, '')}&nbsp;</span>
-        </div>
-      </div>
+    <div className='h-full' >
+      <span className='text-yellow-400 text-ellipsis overflow-hidden whitespace-nowrap text-left rtl'>{filePath.replace(rootPath, '')}&nbsp;</span>
       <hr />
-      <Tree
-        className='p-1'
-        data={treeData[0]?.tag === 'SceneComponent' ? treeData[0].children : treeData}
-        onSelect={
-          onSelectNodes
-        }
-        onRename={(node) => {
-          console.log('onRename', node);
-        }}
-        openByDefault
-      >
-        {TreeItem}
-      </Tree>
+      <div className='overflow-y-scroll h-full'>
+        <Tree
+          className='p-1 '
+          data={treeData[0]?.tag === 'SceneComponent' ? treeData[0].children : treeData}
+          onSelect={
+            onSelectNodes
+          }
+          onRename={(node) => {
+            console.log('onRename', node);
+          }}
+          openByDefault
+        >
+          {TreeItem}
+        </Tree>
+      </div>
       {/* <ContextMenu
         // ref={contextMenuRef}
         actions={contextMenuItems}
