@@ -25,6 +25,7 @@ export function getAction(draft: AppState) {
       draft.componentPropTypes = draft.componentTree[0].props
       draft.editingClassNamePath = ''
       draft.editingPath = name
+      draft.componentsCache[name] = treeData
     },
     selectEditingTagNode(path: string) {
       draft.editingClassNamePath = path

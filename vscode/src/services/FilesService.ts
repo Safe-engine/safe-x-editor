@@ -1,11 +1,12 @@
-import { existsSync, readFileSync } from 'fs';
+import { existsSync, readdirSync, readFileSync } from 'fs';
 import { join } from 'path';
 import { getResolutionSettings } from '../helper/settings';
 import { GlobalData } from '../parser/global';
 import { getClassesMetaData } from '../parser/metadata';
 import { parseAssetsSrcFile } from './assets';
+import { loadComponent } from './ComponentService';
 
-export const getFilesInFolder = ({ src }, panel) => {
+export const getFilesInFolder = async ({ src }, panel) => {
   const packageJson = join(src, 'package.json');
   if (!existsSync(packageJson)) {
     throw Error('No package.json.');
@@ -23,6 +24,17 @@ export const getFilesInFolder = ({ src }, panel) => {
   const spriteFramesAssets = parseAssetsSrcFile(join(assetsTSFolder, 'SpriteFrames.ts'), panel);
   const designedResolution = getResolutionSettings(src)
   // console.log('components', JSON.stringify(components, null, 2));
+  const componentsCache = {}
+  const components = readdirSync(join(src, 'src', 'components'))
+    .filter(file => file.endsWith('.tsx'))
+    .map(async file => {
+      const filePath = join(src, 'src', 'components', file);
+      const { name, treeData } = await loadComponent({ path: filePath });
+      componentsCache[name] = treeData;
+      return filePath
+    });
+  await Promise.all(components);
+  // console.log(components, 'components');
   return {
     isPixi: content.includes('@safe-engine/pixi'),
     assets: {
@@ -31,6 +43,7 @@ export const getFilesInFolder = ({ src }, panel) => {
       spriteSheetAssets,
       spriteFramesAssets,
     },
+    componentsCache,
     designedResolution
   };
 };
