@@ -5,6 +5,22 @@ import { setLastRootFolder } from '../data/AppData';
 import { GET_FOLDER_FILES, LOAD_COMPONENT_REQUEST } from '../shared/constant.message';
 import { Actions, createActions } from './actions';
 
+const undoStack = []
+const redoStack = []
+
+export function undoEdit(updateEditingComponent) {
+  redoStack.push(undoStack.pop())
+  const action = undoStack.pop()
+  if (!action) return
+  updateEditingComponent('props', action)
+}
+
+export function redoEdit(updateEditingComponent) {
+  const action = redoStack.pop()
+  if (!action) return
+  updateEditingComponent('props', action)
+}
+
 export function createMiddleware(dispatch: Dispatch<any>) {
   const { getFilesSuccess, loadComponentSuccess } = createActions(dispatch)
   const middlewares: Partial<Actions> = {
@@ -26,6 +42,10 @@ export function createMiddleware(dispatch: Dispatch<any>) {
         path,
       })
       loadComponentSuccess(data)
+    },
+    updateEditingComponent(component, updated) {
+      console.log('undoStack', component, undoStack)
+      undoStack.push(updated)
     },
   }
   return middlewares

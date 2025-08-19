@@ -1,18 +1,19 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { Tree } from 'react-arborist';
 import toast from 'react-hot-toast';
 import { GEN_COMPONENT_REQUEST } from '../../shared/constant.message';
 import { useActions, useSelector } from '../../states/app.context';
+import { redoEdit, undoEdit } from '../../states/app.middleware';
 import { selectComponentTree, selectRootFolder, selectSelectedFilePath } from '../../states/app.selectors';
 import { sendRequest } from '../app.ipc';
 import { TreeItem } from './TreeItem';
 
 export default function NodeTree() {
-  const { selectEditingTagNode, selectEditMultiNodes } = useActions();
+  const { updateEditingComponent, selectEditMultiNodes } = useActions();
   const treeData = useSelector(selectComponentTree);
   const filePath = useSelector(selectSelectedFilePath);
   const rootPath = useSelector(selectRootFolder);
-  const [selectedTreeItem, setSelectedTreeItem] = useState<any>({});
+  // const [selectedTreeItem, setSelectedTreeItem] = useState<any>({});
 
   useEffect(() => {
     if (!treeData || !treeData[0]) {
@@ -35,6 +36,27 @@ export default function NodeTree() {
         event.preventDefault();
         console.log('Detected Ctrl+S or Command+S');
         genComponentCB()
+        return
+      }
+      const isUndoShortcut = (
+        (isMac && event.metaKey && event.key === 'z') ||
+        (!isMac && event.ctrlKey && event.key === 'z')
+      );
+      if (isUndoShortcut) {
+        event.preventDefault();
+        console.log('Detected Ctrl+Z or Command+Z');
+        undoEdit(updateEditingComponent)
+        return
+      }
+      const isRedoShortcut = (
+        (isMac && event.metaKey && event.key === 'y') ||
+        (!isMac && event.ctrlKey && event.key === 'y')
+      );
+      if (isRedoShortcut) {
+        event.preventDefault();
+        console.log('Detected Ctrl+Z or Command+Z');
+        redoEdit(updateEditingComponent)
+        return
       }
     }
     window.addEventListener('keydown', onKeyDownE);
@@ -43,13 +65,13 @@ export default function NodeTree() {
     }
   }, [treeData, filePath]);
 
-  function onItemClick(node) {
-    console.log('onItemClick node', node.data)
-    const { id: key, tag } = node.data;
-    if (tag) {
-      selectEditingTagNode(key);
-    }
-  }
+  // function onItemClick(node) {
+  //   console.log('onItemClick node', node.data)
+  //   const { id: key, tag } = node.data;
+  //   if (tag) {
+  //     selectEditingTagNode(key);
+  //   }
+  // }
 
   // function contextMenuItemClick(e) {
   //   // console.log(selectedTreeItem);
