@@ -6,8 +6,12 @@ declare let PIXI: any
 
 function loadSprite(filePath: string) {
   // Function to load a sprite from a file path for pixi
+  if (PIXI.Loader.shared.resources[filePath]) {
+    const sprite = PIXI.Sprite.from(filePath)
+    return sprite
+  }
   return new Promise((resolve, reject) => {
-    const loader = new PIXI.Loader()
+    const loader = PIXI.Loader.shared
     loader.add(filePath)
       .load((loader, resources) => {
         // console.log('loadSprite:', filePath, loader, resources)
@@ -42,7 +46,7 @@ function loadFont(fontName: string, fontURL: string) {
 async function parseChildren(root, parentNode, data: ProjectData, evalInit = '') {
   const { tag, props = {}, children = [], loop } = root
   const { rootFolder, assetsTextureList, fontAssets, spriteFramesAssets, componentsCache = {} } = data
-  console.log('parseChildren:', tag, props);
+  // console.log('parseChildren:', tag, props);
   let renderNode = new PIXI.Container()
   if (loop) {
     const { startIndex, startIndexSymbol, count } = loop
@@ -63,6 +67,11 @@ async function parseChildren(root, parentNode, data: ProjectData, evalInit = '')
       const sprite = await loadSprite(texture.value)
       // console.log('Sprite loaded:', parentNode, sprite)
       renderNode = sprite
+    } else {
+      const spriteFrame = spriteFramesAssets.find((item) => item.key === frameName)
+      // console.log('spriteFrame loaded:', PIXI.utils.TextureCache, PIXI.Loader.shared.resources)
+      const texture = PIXI.utils.TextureCache[spriteFrame.value];
+      renderNode = PIXI.Sprite.from(texture)
     }
   } else if (tag === 'LabelComp') {
     // Load font and apply to text node

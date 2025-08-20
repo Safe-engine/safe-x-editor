@@ -50,11 +50,19 @@ export default function SceneView() {
 
   useEffect(() => {
     if (!designResolution.width) return;
+    const { spriteSheetAssets = [] } = assets;
     if (isPixi) {
-      pixiAppRef.current = createPixiApp(designResolution)
+      Object.values(spriteSheetAssets).forEach((spriteSheet) => {
+        const loader = PIXI.Loader.shared
+        // console.log('load spriteSheetAssets', spriteSheet)
+        loader.add(spriteSheet.value)
+          .load((loader, resources) => {
+            // console.log('load spriteSheetAssets', resources)
+            pixiAppRef.current = createPixiApp(designResolution)
+          })
+      });
       return
     }
-    const { spriteSheetAssets = [] } = assets;
     Object.values(spriteSheetAssets).forEach((spriteSheet) => {
       cc.spriteFrameCache.addSpriteFrames(spriteSheet);
     });

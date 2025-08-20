@@ -5,7 +5,7 @@ import { join } from 'path';
 import { Uri, WebviewPanel, workspace } from "vscode";
 import { parseFile } from "../transform";
 
-export function parseAssets(parsed, panel: WebviewPanel) {
+export function parseAssets(parsed, panel?: WebviewPanel) {
   const ret = [];
   ESTraverse.traverse(parsed, {
     enter: function (node, parent) {
@@ -15,6 +15,13 @@ export function parseAssets(parsed, panel: WebviewPanel) {
           // console.log(node.init.properties)
           const { name } = node.id;
           const relativePath = node.init.value as string
+          if (!panel) {
+            ret.push({
+              key: name,
+              value: relativePath
+            });
+            return
+          }
           const base = workspace.workspaceFolders[0].uri
           const fileUri = Uri.joinPath(base, 'res', relativePath);
           ret.push({
@@ -35,7 +42,7 @@ export function getAnimations(root: string, value: string): string[] {
   return Object.keys(json.animations);
 }
 
-export function parseAssetsSrcFile(filePathAssets: string, panel: WebviewPanel) {
+export function parseAssetsSrcFile(filePathAssets: string, panel?: WebviewPanel) {
   if (!existsSync(filePathAssets)) return [];
   const ast = parseFile(filePathAssets);
   return parseAssets(ast, panel) as any;
