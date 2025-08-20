@@ -70,3 +70,6 @@ export const setLastSceneX = (value: number) => setIntForKey('LastSceneX', value
 
 export const getLastSceneY = () => getIntForKey('LastSceneY', 10)
 export const setLastSceneY = (value: number) => setIntForKey('LastSceneY', value)
+
+export const getLastMoveSpeed = () => getFloatForKey('LastMoveSpeed', 1)
+export const setLastMoveSpeed = (value: number) => setFloatForKey('LastMoveSpeed', value)

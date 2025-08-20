@@ -1,7 +1,7 @@
 import { parseInt } from 'lodash';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import NumberInput from '../../base/NumberInput';
-import { getLastSceneScale, getLastSceneX, getLastSceneY, setLastSceneScale, setLastSceneX, setLastSceneY } from '../../data/AppData';
+import { getLastMoveSpeed, getLastSceneScale, getLastSceneX, getLastSceneY, setLastMoveSpeed, setLastSceneScale, setLastSceneX, setLastSceneY } from '../../data/AppData';
 import { getNodePosition, Vec2 } from '../../helper/node';
 import { useActions, useSelector } from '../../states/app.context';
 import { selectAssets, selectComponentsCache, selectComponentTree, selectDesignResolution, selectIsPixi, selectRootFolder, selectSelectedEditingPath, selectSelectedNodes, selectSelectedPaths } from '../../states/app.selectors';
@@ -31,6 +31,7 @@ export default function SceneView() {
   const [lastX, setLastX] = useState(getLastSceneX());
   const [lastY, setLastY] = useState(getLastSceneY());
   const [scale, setScale] = useState(getLastSceneScale());
+  const [moveSpeed, setMoveSpeed] = useState(getLastMoveSpeed());
   const selectedEditingComponent = useSelector(selectComponentTree);
   const designResolution = useSelector(selectDesignResolution);
   const isPixi = useSelector(selectIsPixi);
@@ -187,8 +188,8 @@ export default function SceneView() {
     setPosition({ x, y });
     const scene = isPixi ? pixiAppRef.current.stage : cc.director.getRunningScene()
     const drawLayer = scene.children[0];
-    const dx = (event.clientX - positionStart.x) / scale * 1.5;
-    const dy = (event.clientY - positionStart.y) / scale * (isPixi ? 1.5 : -1.5);
+    const dx = (event.clientX - positionStart.x) / scale * moveSpeed;
+    const dy = (event.clientY - positionStart.y) / scale * (isPixi ? moveSpeed : -moveSpeed);
     setPositionStart({ x: event.clientX, y: event.clientY });
     // console.log('selectedEditingComponent', selectedEditingComponent, selectedPaths)
     if (!selectedPaths.length) {
@@ -267,6 +268,17 @@ export default function SceneView() {
           value={lastY}
           onChange={(value) => {
             updateParentNode('y', value, setLastY, setLastSceneY);
+          }}
+        />
+        <NumberInput
+          label="Move Speed"
+          min={0.1}
+          max={2}
+          step={0.1}
+          value={moveSpeed}
+          onChange={(value) => {
+            setMoveSpeed(value)
+            setLastMoveSpeed(value)
           }}
         />
       </div>

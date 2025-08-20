@@ -9,7 +9,8 @@ import { sendRequest } from '../app.ipc';
 import { TreeItem } from './TreeItem';
 
 export default function NodeTree() {
-  const { updateEditingComponent, selectEditMultiNodes } = useActions();
+  const actions = useActions();
+  const { selectEditMultiNodes } = actions
   const treeData = useSelector(selectComponentTree);
   const filePath = useSelector(selectSelectedFilePath);
   const rootPath = useSelector(selectRootFolder);
@@ -45,7 +46,7 @@ export default function NodeTree() {
       if (isUndoShortcut) {
         event.preventDefault();
         console.log('Detected Ctrl+Z or Command+Z');
-        undoEdit(updateEditingComponent)
+        undoEdit(actions)
         return
       }
       const isRedoShortcut = (
@@ -55,7 +56,7 @@ export default function NodeTree() {
       if (isRedoShortcut) {
         event.preventDefault();
         console.log('Detected Ctrl+Z or Command+Z');
-        redoEdit(updateEditingComponent)
+        redoEdit(actions)
         return
       }
     }
