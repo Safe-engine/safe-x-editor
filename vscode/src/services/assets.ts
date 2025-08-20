@@ -24,8 +24,10 @@ export function parseAssets(parsed, panel?: WebviewPanel) {
           }
           const base = workspace.workspaceFolders[0].uri
           const fileUri = Uri.joinPath(base, 'res', relativePath);
+          const texturePath = relativePath.endsWith('.json') ? Uri.joinPath(base, 'res', relativePath.replace('.json', '.png')) : ''
           ret.push({
             key: name,
+            texture: texturePath ? panel.webview.asWebviewUri(texturePath).toString() : undefined,
             value: panel.webview.asWebviewUri(fileUri).toString()
           });
         }

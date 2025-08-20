@@ -54,13 +54,17 @@ export default function SceneView() {
     const { spriteSheetAssets = [] } = assets;
     if (isPixi) {
       Object.values(spriteSheetAssets).forEach((spriteSheet) => {
-        const loader = PIXI.Loader.shared
         // console.log('load spriteSheetAssets', spriteSheet)
-        loader.add(spriteSheet.value)
-          .load((loader, resources) => {
-            // console.log('load spriteSheetAssets', resources)
-            pixiAppRef.current = createPixiApp(designResolution)
-          })
+        fetch(spriteSheet.value)
+          .then(res => res.json())
+          .then(data => {
+            const baseTex = PIXI.BaseTexture.from(spriteSheet.texture);
+            const sheet = new PIXI.Spritesheet(baseTex, data);
+            sheet.parse(() => {
+              // console.log('load sheet', sheet)
+              pixiAppRef.current = createPixiApp(designResolution)
+            });
+          });
       });
       return
     }
