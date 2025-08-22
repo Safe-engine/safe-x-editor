@@ -12,7 +12,7 @@ export const getFilesInFolder = async ({ src }, panel) => {
     throw Error('No package.json.');
   }
   const content = readFileSync(packageJson, 'utf-8');
-  if (!content.includes("safe-x")) {
+  if (!content.includes("@safe-engine")) {
     throw Error('Not Safex project.');
   }
   GlobalData.rootProject = src
