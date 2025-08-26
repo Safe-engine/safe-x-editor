@@ -219,6 +219,7 @@ export default function SceneView() {
     if (value < 0.1) value = 0.1;
     if (value > 2) value = 2;
     updateParentNode('scale', value, setScale, setLastSceneScale);
+    setMoveSpeed(1 / value)
   }, [scale, isPixi]);
 
   const updateParentNode = useCallback(function (
@@ -255,6 +256,7 @@ export default function SceneView() {
           max={2}
           onChange={(value) => {
             updateParentNode('scale', value, setScale, setLastSceneScale);
+            setMoveSpeed(1 / value)
           }}
         />
         <NumberInput
@@ -278,7 +280,7 @@ export default function SceneView() {
         <NumberInput
           label="Move Speed"
           min={0.1}
-          max={2}
+          max={20}
           step={0.1}
           value={moveSpeed}
           onChange={(value) => {

@@ -153,7 +153,7 @@ async function parseChildren(root, parentNode, data: ProjectData, evalInit = '')
       renderNode = await parseChildren(componentsCache[tag], parentNode, data, evalInit)
     }
   }
-  if (renderNode !== parentNode) {
+  if (renderNode !== parentNode && !renderNode.parent) {
     parentNode.addChild(renderNode)
     const { node = {} } = props
     const { scaleX = 1, scaleY = 1, scale = 1, rotation = 0 } = node
