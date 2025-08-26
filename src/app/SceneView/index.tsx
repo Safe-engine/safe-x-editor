@@ -53,19 +53,20 @@ export default function SceneView() {
     if (!designResolution.width) return;
     const { spriteSheetAssets = [] } = assets;
     if (isPixi) {
-      Object.values(spriteSheetAssets).forEach((spriteSheet) => {
+      Promise.all(Object.values(spriteSheetAssets).map((spriteSheet) => {
         // console.log('load spriteSheetAssets', spriteSheet)
-        fetch(spriteSheet.value)
-          .then(res => res.json())
-          .then(data => {
-            const baseTex = PIXI.BaseTexture.from(spriteSheet.texture);
-            const sheet = new PIXI.Spritesheet(baseTex, data);
-            sheet.parse(() => {
-              // console.log('load sheet', sheet)
-              pixiAppRef.current = createPixiApp(designResolution)
+        return new Promise(resolve => {
+          fetch(spriteSheet.value)
+            .then(res => res.json())
+            .then(data => {
+              const baseTex = PIXI.BaseTexture.from(spriteSheet.texture);
+              const sheet = new PIXI.Spritesheet(baseTex, data);
+              sheet.parse(resolve);
             });
-          });
-      });
+        })
+      })).then(() => {
+        pixiAppRef.current = createPixiApp(designResolution)
+      })
       return
     }
     Object.values(spriteSheetAssets).forEach((spriteSheet) => {

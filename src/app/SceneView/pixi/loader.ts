@@ -2,6 +2,7 @@ import WebFont from 'webfontloader';
 import { getNodePosition, parseIntFromValue, parseStringFromValue } from '../../../helper/node';
 import { ProjectData } from "../cocos/loader";
 declare let PIXI: any
+declare let dragonBones: any
 // declare let WebFont: any
 
 function loadSprite(filePath: string) {
@@ -43,9 +44,35 @@ function loadFont(fontName: string, fontURL: string) {
   });
 }
 
+function loadDragonBones(dataName: string, dragonBonesAssets) {
+  const key = parseStringFromValue(dataName)
+  const data = dragonBonesAssets.find((item) => item.key === key)
+  const { atlas, skeleton, texture } = data.value
+  // console.log('loadDragonBones:', data, PIXI.Loader.shared.resources)
+  return new Promise((resolve, reject) => {
+    const factory = dragonBones.PixiFactory.factory
+    const loader = PIXI.Loader.shared
+    if (!PIXI.Loader.shared.resources[`ske${key}`]) {
+      loader.add(`ske${key}`, skeleton)
+        .add(`texJson${key}`, atlas)
+        .add(`texPng${key}`, texture)
+    }
+    loader.load((loader, resources) => {
+      // console.log('resources:', resources)
+      const dragonData = factory.parseDragonBonesData(resources[`ske${key}`].data, key)
+      factory.parseTextureAtlasData(resources[`texJson${key}`].data, resources[`texPng${key}`].texture, key)
+      const { armatureNames } = dragonData
+      const armatureName = armatureNames[0]
+      const armature = factory.buildArmatureDisplay(armatureName, key)
+      // console.log('armature:', armature)
+      resolve(armature)
+    })
+  })
+}
+
 async function parseChildren(root, parentNode, data: ProjectData, evalInit = '') {
   const { tag, props = {}, children = [], loop } = root
-  const { rootFolder, assetsTextureList, fontAssets, spriteFramesAssets, componentsCache = {} } = data
+  const { assetsTextureList, fontAssets, spriteFramesAssets, componentsCache = {}, dragonBonesAssets, spineAssets } = data
   // console.log('parseChildren:', tag, props);
   let renderNode = new PIXI.Container()
   if (loop) {
@@ -86,6 +113,14 @@ async function parseChildren(root, parentNode, data: ProjectData, evalInit = '')
     // console.log('LabelComp:', fontSize, filePath)
     const label = new PIXI.Text(string, { fontFamily: fontName, fontSize, fill: '#ffffff' });
     renderNode = label
+  } else if (tag === 'SpineSkeleton') {
+    const { data, skin, animation, loop = true, timeScale = 1 } = props
+  } else if (tag === 'DragonBonesComp') {
+    const { data, animation, playTimes = 0, timeScale = 1 } = props
+    renderNode = await loadDragonBones(data, dragonBonesAssets)
+    renderNode.armature.animation.timeScale = timeScale
+    if (animation)
+      renderNode.animation.gotoAndPlayByTime(animation, 0, playTimes)
   } else if (tag === 'SceneComponent') {
     renderNode = parentNode
   } else {
@@ -96,10 +131,13 @@ async function parseChildren(root, parentNode, data: ProjectData, evalInit = '')
   }
   if (renderNode !== parentNode) {
     parentNode.addChild(renderNode)
-    const { x, y } = getNodePosition(props.node, evalInit)
-    renderNode.x = x
-    renderNode.y = y
-    const { scaleX = 1, scaleY = 1, scale = 1, rotation = 0, anchorX = 0.5, anchorY = 0.5 } = props.node || {}
+    const { node = {} } = props
+    if (node.position || node.xy) {
+      const { x, y } = getNodePosition(node, evalInit)
+      renderNode.x = x
+      renderNode.y = y
+    }
+    const { scaleX = 1, scaleY = 1, scale = 1, rotation = 0, anchorX = 0.5, anchorY = 0.5 } = node
     if (scale !== 1) {
       renderNode.scale = new PIXI.Point(scale, scale)
     }

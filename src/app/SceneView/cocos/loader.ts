@@ -4,11 +4,22 @@ interface AssetData {
   key: string
   value: string
 }
+interface SkeletonAnimationData {
+  atlas: string
+  skeleton: string
+  texture: string
+}
+interface SkeletonAnimationAsset {
+  key: string
+  value: SkeletonAnimationData
+}
 export interface ProjectData {
   rootFolder: string
   assetsTextureList: AssetData[]
   fontAssets: AssetData[]
   spriteFramesAssets: AssetData[]
+  dragonBonesAssets: SkeletonAnimationAsset[]
+  spineAssets: SkeletonAnimationAsset[]
   componentsCache: { [key: string]: any }
 }
 
@@ -43,7 +54,7 @@ function loadFont(filePath: string): Promise<void> {
 
 async function parseChildren(root, parentNode, data: ProjectData, evalInit = '') {
   const { tag, props = {}, children = [], loop } = root
-  const { rootFolder, assetsTextureList, fontAssets, spriteFramesAssets, componentsCache= {} } = data
+  const { rootFolder, assetsTextureList, fontAssets, spriteFramesAssets, componentsCache = {} } = data
   // console.log('parseChildren:', tag, props);
   let renderNode = new cc.Node()
   if (loop) {
@@ -55,9 +66,6 @@ async function parseChildren(root, parentNode, data: ProjectData, evalInit = '')
     }
     return
   }
-  const { node } = props
-  const { x, y } = getNodePosition(node, evalInit)
-  const { scaleX = 1, scaleY = 1, scale = 1, rotation = 0 } = node || {}
   if (tag === 'SpriteRender' || tag === 'ProgressTimerComp') {
     const { spriteFrame } = props
     const frameName = parseStringFromValue(spriteFrame)
@@ -70,9 +78,6 @@ async function parseChildren(root, parentNode, data: ProjectData, evalInit = '')
       const frame = cc.spriteFrameCache.getSpriteFrame(spriteFrame.value)
       renderNode = new cc.Sprite(frame)
     }
-    renderNode.setPosition(x, y)
-    // console.log('SpriteRender:', x, y, filePath);
-    if (parentNode) parentNode.addChild(renderNode)
   } else if (tag === 'LabelComp') {
     const { string, font = '', size } = props
     let foundFont = fontAssets.find((item) => item.key === parseStringFromValue(font))
@@ -84,10 +89,8 @@ async function parseChildren(root, parentNode, data: ProjectData, evalInit = '')
     await loadFont(foundFont.value)
     const fontSize = size ? parseIntFromValue(size) : 64
     const label = new ccui.Text(string, fontName, fontSize)
-    console.log('LabelComp:', fontSize, filePath)
+    // console.log('LabelComp:', fontSize, filePath)
     label.setTextVerticalAlignment(cc.VERTICAL_TEXT_ALIGNMENT_BOTTOM)
-    label.setPosition(x, y)
-    parentNode.addChild(label)
     renderNode = label
   } else if (tag === 'SceneComponent') {
     renderNode = parentNode
@@ -97,18 +100,27 @@ async function parseChildren(root, parentNode, data: ProjectData, evalInit = '')
       renderNode = await parseChildren(componentsCache[tag], parentNode, data, evalInit)
     }
   }
-  if (!renderNode) return
-  if (scale !== 1) {
-    renderNode.scale = scale
-  }
-  if (scaleX !== 1) {
-    renderNode.scaleX = scaleX
-  }
-  if (scaleY !== 1) {
-    renderNode.scaleY = scaleY
-  }
-  if (rotation !== 0) {
-    renderNode.rotation = rotation
+  if (renderNode !== parentNode) {
+    parentNode.addChild(renderNode)
+    const { node = {} } = props
+    const { scaleX = 1, scaleY = 1, scale = 1, rotation = 0 } = node
+    if (node.position || node.xy) {
+      const { x, y } = getNodePosition(node, evalInit)
+      renderNode.x = x
+      renderNode.y = y
+    }
+    if (scale !== 1) {
+      renderNode.scale = scale
+    }
+    if (scaleX !== 1) {
+      renderNode.scaleX = scaleX
+    }
+    if (scaleY !== 1) {
+      renderNode.scaleY = scaleY
+    }
+    if (rotation !== 0) {
+      renderNode.rotation = rotation
+    }
   }
   // console.log('renderNode:', renderNode);
   for (let index = 0; index < children.length; index++) {

@@ -21,6 +21,8 @@ export const getFilesInFolder = async ({ src }, panel) => {
   const assetsTextureList = parseAssetsSrcFile(join(assetsTSFolder, 'TextureAssets.ts'), panel);
   const fontAssets = parseAssetsSrcFile(join(assetsTSFolder, 'FontAssets.ts'), panel);
   const spriteSheetAssets = parseAssetsSrcFile(join(assetsTSFolder, 'SpriteSheetAssets.ts'), panel);
+  const dragonBonesAssets = parseAssetsSrcFile(join(assetsTSFolder, 'DragonBonesAssets.ts'), panel);
+  const spineAssets = parseAssetsSrcFile(join(assetsTSFolder, 'SpineAssets.ts'), panel);
   const spriteFramesAssets = parseAssetsSrcFile(join(assetsTSFolder, 'SpriteFrames.ts'));
   const designedResolution = getResolutionSettings(src)
   // console.log('components', JSON.stringify(components, null, 2));
@@ -42,6 +44,8 @@ export const getFilesInFolder = async ({ src }, panel) => {
       fontAssets,
       spriteSheetAssets,
       spriteFramesAssets,
+      dragonBonesAssets,
+      spineAssets
     },
     componentsCache,
     designedResolution
