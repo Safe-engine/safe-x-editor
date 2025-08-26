@@ -16,6 +16,8 @@ export const initialState = {
     assetsTextureList: [],
     spriteSheetAssets: [],
     spriteFramesAssets: [],
+    dragonBonesAssets: [],
+    spineAssets: [],
   },
   settings: { designedResolution: { width: 0, height: 0 } },
   componentPropTypes: {},

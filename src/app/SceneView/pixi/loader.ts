@@ -100,7 +100,7 @@ async function parseChildren(root, parentNode, data: ProjectData, evalInit = '')
       const texture = PIXI.utils.TextureCache[spriteFrame.value];
       renderNode = PIXI.Sprite.from(texture)
     }
-  } else if (tag === 'LabelComp') {
+  } else if (tag === 'LabelComp' || 'RichTextComp' === tag) {
     // Load font and apply to text node
     const { string, font = '', size } = props
     let foundFont = fontAssets.find((item) => item.key === parseStringFromValue(font))
