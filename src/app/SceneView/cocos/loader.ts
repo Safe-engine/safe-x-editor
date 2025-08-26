@@ -1,4 +1,9 @@
 import { getNodePosition, parseIntFromValue, parseStringFromValue } from "../../../helper/node"
+import { SkeletonAnimation } from "../spine/CCSkeletonAnimation"
+import { PixiDragonBonesSprite, SharedDragonBonesManager } from "./PixiDragonBonesSprite"
+
+declare let PIXI: any
+declare let dragonBones: any
 
 interface AssetData {
   key: string
@@ -52,9 +57,29 @@ function loadFont(filePath: string): Promise<void> {
   })
 }
 
+function loadDragonBones(dataName: string, animation, playTimes, dragonBonesAssets) {
+  const key = parseStringFromValue(dataName)
+  const data = dragonBonesAssets.find((item) => item.key === key)
+  const { atlas, skeleton, texture } = data.value
+  // console.log('loadDragonBones:', data, PIXI.Loader.shared.resources)
+  return new Promise(async (resolve, reject) => {
+    const loader = PIXI.Loader.shared
+    await SharedDragonBonesManager.loadAssetsOnce(skeleton, atlas, texture)
+    // console.log('resources:', resources)
+    const dragon = new PixiDragonBonesSprite({
+      ske: skeleton,
+      texJson: atlas,
+      texPng: texture,
+      animationName: animation,
+      playTimes,
+    })
+    resolve(dragon)
+  })
+}
+
 async function parseChildren(root, parentNode, data: ProjectData, evalInit = '') {
   const { tag, props = {}, children = [], loop } = root
-  const { rootFolder, assetsTextureList, fontAssets, spriteFramesAssets, componentsCache = {} } = data
+  const { rootFolder, assetsTextureList, fontAssets, spriteFramesAssets, componentsCache = {}, dragonBonesAssets, spineAssets } = data
   // console.log('parseChildren:', tag, props);
   let renderNode = new cc.Node()
   if (loop) {
@@ -89,9 +114,37 @@ async function parseChildren(root, parentNode, data: ProjectData, evalInit = '')
     await loadFont(foundFont.value)
     const fontSize = size ? parseIntFromValue(size) : 64
     const label = new ccui.Text(string, fontName, fontSize)
-    // console.log('LabelComp:', fontSize, filePath)
+    // console.log('LabelComp:', fontSize, foundFont)
     label.setTextVerticalAlignment(cc.VERTICAL_TEXT_ALIGNMENT_BOTTOM)
     renderNode = label
+  } else if (tag === 'SpineSkeleton') {
+    const { data, skin, animation, loop = true, timeScale = 1 } = props
+    const key = parseStringFromValue(data)
+    const skelData = spineAssets.find((item) => item.key === key)
+    // console.log('SpineSkeleton', skelData, key)
+    const { atlas, skeleton } = skelData.value
+    await new Promise((resolve) => {
+      cc.loader.load([skeleton, atlas], () => { }, () => {
+        // console.log('Cocos loaded spine assets', skeleton, atlas, timeScale);
+        return resolve(null)
+      })
+    })
+    const node = SkeletonAnimation.createWithJsonFile(skeleton, atlas, timeScale)
+    if (skin) {
+      node.setSkin(skin)
+    }
+    if (animation) {
+      node.setAnimation(0, animation, loop)
+    }
+    renderNode = node
+  } else if (tag === 'DragonBonesComp') {
+    const { data, animation, playTimes = 0, timeScale = 1 } = props
+    const node: any = await loadDragonBones(data, animation, playTimes, dragonBonesAssets)
+    // console.log('loadDragonBones', node, timeScale);
+    node._armatureDisplay.animation.timeScale = timeScale
+    if (animation)
+      node._armatureDisplay.animation.gotoAndPlayByTime(animation, 0, playTimes)
+    renderNode = node
   } else if (tag === 'SceneComponent') {
     renderNode = parentNode
   } else {

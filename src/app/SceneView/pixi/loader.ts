@@ -1,6 +1,7 @@
 import WebFont from 'webfontloader';
 import { getNodePosition, parseIntFromValue, parseStringFromValue } from '../../../helper/node';
 import { ProjectData } from "../cocos/loader";
+import { createCocosSpineSprite } from './CocosSpineSprite';
 declare let PIXI: any
 declare let dragonBones: any
 // declare let WebFont: any
@@ -70,7 +71,7 @@ function loadDragonBones(dataName: string, dragonBonesAssets) {
   })
 }
 
-async function parseChildren(root, parentNode, data: ProjectData, evalInit = '') {
+async function parseChildren(app, root, parentNode, data: ProjectData, evalInit = '') {
   const { tag, props = {}, children = [], loop } = root
   const { assetsTextureList, fontAssets, spriteFramesAssets, componentsCache = {}, dragonBonesAssets, spineAssets } = data
   // console.log('parseChildren:', tag, props);
@@ -80,7 +81,7 @@ async function parseChildren(root, parentNode, data: ProjectData, evalInit = '')
     parentNode.addChild(renderNode)
     for (let index = 0; index < count; index++) {
       const evalInit = `${startIndexSymbol}=${index + startIndex};`
-      await parseChildren({ tag, props, children }, renderNode, data, evalInit)
+      await parseChildren(app, { tag, props, children }, renderNode, data, evalInit)
     }
     return
   }
@@ -115,6 +116,11 @@ async function parseChildren(root, parentNode, data: ProjectData, evalInit = '')
     renderNode = label
   } else if (tag === 'SpineSkeleton') {
     const { data, skin, animation, loop = true, timeScale = 1 } = props
+    const key = parseStringFromValue(data)
+    const skelData = spineAssets.find((item) => item.key === key)
+    // console.log('SpineSkeleton', skelData, key)
+    const { atlas, skeleton } = skelData.value
+    renderNode = createCocosSpineSprite(app, { skeleton, atlas, timeScale, animation, loop, skin })
   } else if (tag === 'DragonBonesComp') {
     const { data, animation, playTimes = 0, timeScale = 1 } = props
     renderNode = await loadDragonBones(data, dragonBonesAssets)
@@ -126,7 +132,7 @@ async function parseChildren(root, parentNode, data: ProjectData, evalInit = '')
   } else {
     // console.log('componentsCache', componentsCache, tag)
     if (componentsCache[tag]) {
-      renderNode = await parseChildren(componentsCache[tag], parentNode, data, evalInit)
+      renderNode = await parseChildren(app, componentsCache[tag], parentNode, data, evalInit)
     }
   }
   if (renderNode !== parentNode) {
@@ -158,7 +164,7 @@ async function parseChildren(root, parentNode, data: ProjectData, evalInit = '')
   // console.log('renderNode:', renderNode);
   for (let index = 0; index < children.length; index++) {
     const element = children[index]
-    await parseChildren(element, renderNode, data, evalInit)
+    await parseChildren(app, element, renderNode, data, evalInit)
   }
   return renderNode
 }
@@ -174,6 +180,6 @@ export async function loadSceneViewPixi(app, selectedEditingComponent = [], data
   // console.log('loadSceneView:', selectedEditingComponent, parentNode)
   for (let index = 0; index < selectedEditingComponent.length; index++) {
     const element = selectedEditingComponent[index]
-    await parseChildren(element, parentNode, data)
+    await parseChildren(app, element, parentNode, data)
   }
 }
