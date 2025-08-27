@@ -1,6 +1,9 @@
+import { join } from 'path';
 import * as vscode from 'vscode';
 import Router from './router/Router';
 import { startServer } from './server';
+import { getSettings, saveSettings } from './services/settings.service';
+import { getSettingsWebview } from './settings.html';
 import { getEditorWebview } from './webview';
 let panel: vscode.WebviewPanel | undefined;
 
@@ -37,6 +40,57 @@ export function activate(context: vscode.ExtensionContext) {
       'safexEditor.openSafex',
       async (uri: vscode.Uri) => {
         createOrShowWebview(context, uri);
+      }
+    )
+  );
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      'safex.editSettings',
+      async (uri: vscode.Uri) => {
+        const panel = vscode.window.createWebviewPanel(
+          'editSettings',
+          `Edit Project Settings`,
+          vscode.ViewColumn.One,
+          {
+            enableScripts: true,
+            localResourceRoots: [
+              vscode.Uri.file(join(context.extensionPath, 'media')),
+            ],
+          }
+        );
+
+        const scriptUri = panel.webview.asWebviewUri(
+          vscode.Uri.file(
+            join(context.extensionPath, 'media', 'settings.js')
+          )
+        );
+
+        const cssUri = panel.webview.asWebviewUri(
+          vscode.Uri.file(
+            join(context.extensionPath, 'media', 'style.css')
+          )
+        );
+
+        const { groupsList, colliderMatrix } = await getSettings()
+
+        panel.webview.html = getSettingsWebview(
+          scriptUri,
+          cssUri,
+          groupsList,
+          colliderMatrix,
+        );
+        panel.webview.onDidReceiveMessage(async (message) => {
+          if (message.command === 'saveSettings') {
+            try {
+              const { groupsList, colliderMatrix, } = message;
+              console.log('Received image message:', message);
+              const response = await saveSettings(groupsList, colliderMatrix);
+              console.log('Response from saveSettings:', response);
+            } catch (err) {
+              console.error(err);
+            }
+          }
+        });
       }
     )
   );

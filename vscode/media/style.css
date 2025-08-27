@@ -1,0 +1,46 @@
+body {
+  margin: 0;
+  padding: 0;
+}
+
+#container {
+  display: flex;
+}
+
+#groupsContainer {
+  border: 1px solid #ccc;
+  display: flex;
+  flex-direction: column;
+  padding: 1em;
+}
+
+#matrixContainer {
+  border: 1px solid #ccc;
+  display: flex;
+  padding: 1em;
+  flex-direction: column;
+  width: 360px;
+}
+
+.rowItem {
+  display: flex;
+  margin: 10px;
+  justify-content: space-between;
+}
+
+.rowItem div {
+  width: 25%;
+}
+
+.itemTitle {
+  padding: 1.5px;
+}
+
+.buttons-container {
+  display: flex;
+  flex-direction: column;
+}
+
+.input-container {
+  margin-top: 20px;
+}
