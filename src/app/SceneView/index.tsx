@@ -193,8 +193,8 @@ export default function SceneView() {
     setPosition({ x, y });
     const scene = isPixi ? pixiAppRef.current.stage : cc.director.getRunningScene()
     const drawLayer = scene.children[0];
-    const dx = (event.clientX - positionStart.x) / scale * moveSpeed;
-    const dy = (event.clientY - positionStart.y) / scale * (isPixi ? moveSpeed : -moveSpeed);
+    const dx = (event.clientX - positionStart.x) / scale * moveSpeed * (isPixi ? 0.33 : 1);
+    const dy = (event.clientY - positionStart.y) / scale * (isPixi ? moveSpeed * 0.33 : -moveSpeed);
     setPositionStart({ x: event.clientX, y: event.clientY });
     // console.log('selectedEditingComponent', selectedEditingComponent, selectedPaths)
     if (!selectedPaths.length) {

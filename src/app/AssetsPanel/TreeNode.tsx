@@ -1,21 +1,20 @@
 import clsx from "clsx";
-import { useState } from "react";
 import { NodeRendererProps } from "react-arborist";
-import { AiFillFolderOpen } from "react-icons/ai";
+import { AiFillFolder, AiFillFolderOpen } from "react-icons/ai";
 import { Box, Center, HStack } from "../../base/Stack";
+import { useActions } from "../../states/app.context";
 
-function renderIcon(data: any) {
+function renderIcon(node: any) {
+  const { data, isOpen } = node
   if (data.isDirectory) {
-    return <AiFillFolderOpen color="white" />;
+    return isOpen ? <AiFillFolderOpen color="white" /> : <AiFillFolder color="white" />;
   }
   // console.log('data', data);
   return <img src={data.custom.path} style={{ width: 24, height: 24 }} />;
 }
 
 export function TreeNode({ node, style, dragHandle }: NodeRendererProps<any>) {
-  const [tempName, setTempName] = useState('');
-  // console.log('style', style);
-  // const { openMenu } = useContextMenuStore();
+  const { setDragNode } = useActions()
 
   const handleContextMenu = (
     e: React.MouseEvent,
@@ -32,12 +31,13 @@ export function TreeNode({ node, style, dragHandle }: NodeRendererProps<any>) {
     )}
 
     onDragStart={(event) => {
-      console.log('onDragStart node', node.data.path)
+      // console.log('onDragStart node', node.data.path)
+      setDragNode(node.data.path)
     }}
     onContextMenu={(e) => handleContextMenu(e, node.data)}
   >
     <Center>
-      <Box style={style} className="m-auto">{renderIcon(node.data)}</Box>
+      <Box style={style} className="m-auto">{renderIcon(node)}</Box>
       <Box className={clsx(node.isSelected ? 'text-yellow-400' : 'text-white')}>{node.data.name}</Box>
     </Center>
   </HStack >

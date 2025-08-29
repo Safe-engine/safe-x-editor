@@ -1,33 +1,33 @@
-import { useEffect, useRef } from 'react'
+import { useRef } from 'react'
 import { Tree, TreeApi } from 'react-arborist'
-import { getLastLoadedFile, setLastLoadedFile } from '../../data/AppData'
 import { useActions, useSelector } from '../../states/app.context'
 import { selectImagesTree } from '../../states/app.selectors'
 import { TreeNode } from './TreeNode'
 
 export default function AssetsPanel() {
-  const { loadComponent, toggleFolder } = useActions();
+  const { toggleFolder } = useActions();
   const treeRef = useRef<TreeApi<any>>(null)
   const treeData = useSelector(selectImagesTree);
 
-  useEffect(() => {
-    const lastFile = getLastLoadedFile()
-    if (treeData[1] && lastFile) {
-      console.log('treeData Files', lastFile)
-      const node = treeRef.current.get(lastFile)
-      // console.log('getLastLoadedFile node', node)
-      treeRef.current.select(node)
-    }
-  }, [treeData])
+  // useEffect(() => {
+  //   const lastFile = getLastLoadedFile()
+  //   if (treeData[1] && lastFile) {
+  //     console.log('treeData Files', lastFile)
+  //     const node = treeRef.current.get(lastFile)
+  //     // console.log('getLastLoadedFile node', node)
+  //     treeRef.current.select(node)
+  //   }
+  // }, [treeData])
 
   function onItemClick(node) {
-    console.log('onItemClick', node);
-    const { id: key, path, isDirectory } = node.data;
+    // console.log('onItemClick', node.isOpen);
+    const { path, isDirectory } = node.data;
     if (isDirectory) {
-      toggleFolder(key)
-    } else {
-      setLastLoadedFile(path)
-      loadComponent(path);
+      // toggleFolder(path)
+      node.toggle()
+      // } else {
+      //   setLastLoadedFile(path)
+      //   loadComponent(path);
     }
   }
 
@@ -47,12 +47,16 @@ export default function AssetsPanel() {
             if (nodes[0])
               onItemClick(nodes[0])
           }}
+          disableDrag={(drag) => {
+            // console.log('disableDrag', drag)
+            return drag.isDirectory;
+          }}
           // onRename={(node) => {
           //   console.log('onRename', node);
           // }}
-          onMove={({ dragIds, parentId, index }) => {
-            console.log('dragIds', dragIds, parentId, index);
-          }}
+          // onMove={({ dragIds, parentId, index }) => {
+          //   console.log('dragIds', dragIds, parentId, index);
+          // }}
           openByDefault
         >
           {TreeNode}

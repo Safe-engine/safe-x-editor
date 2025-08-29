@@ -97,7 +97,7 @@ export function activate(context: vscode.ExtensionContext) {
   vscode.workspace.onDidSaveTextDocument((document) => {
     if (panel) {
       // console.log('refresh', document.uri.fsPath)
-      panel.webview.postMessage({ type: 'refresh' });
+      panel.webview.postMessage({ type: 'reLoad' });
     }
   });
 }

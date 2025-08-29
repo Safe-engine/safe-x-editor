@@ -42,7 +42,7 @@ export const getFilesInFolder = async ({ src }, panel) => {
   await Promise.all(components);
   // console.log(components, 'components');
   const images = DirectoryTree(
-    join(src, 'res', 'Texture'),
+    join(src, 'res'),
     {
       extensions: /\.(gif|jpe?g|tiff?|png|webp|bmp)$/i,
       exclude: [],

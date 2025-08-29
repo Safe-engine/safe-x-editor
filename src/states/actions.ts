@@ -1,4 +1,5 @@
 import { default as Tree } from '@colin-luo/tree'
+import snakeCase from 'lodash/snakeCase'
 import { Dispatch } from 'react'
 import { AppState } from './app.reducer'
 
@@ -44,10 +45,10 @@ export function getAction(draft: AppState) {
       }
     },
     toggleFolder(key: string) {
-      // let tree = new Tree(draft.filesData, 'path', 'children')
-      // const node = tree.getNode(key)
-      console.log(key, 'toggleFolder')
-      // node.expanded = !node.expanded
+      let tree = new Tree(draft.imagesTree, 'path', 'children')
+      const node = tree.getNode(key)
+      console.log(key, 'toggleFolder', node.isOpen)
+      node.expanded = !node.expanded
     },
     selectEditMultiNodes(paths: string[]) {
       draft.selectedPaths = paths
@@ -66,6 +67,30 @@ export function getAction(draft: AppState) {
           draft.selectedNodes[index] = node
         }
       })
+    },
+    setDragNode(path: string) {
+      draft.dragNodePath = path
+    },
+    createNode(parentPath: string) {
+      const tree = new Tree(draft.componentTree, 'id', 'children')
+      const parentNode = tree.getNode(parentPath)
+      if (parentNode && draft.dragNodePath) {
+        if (!parentNode.children) parentNode.children = []
+        const id = parentNode.id.split('.')[0] + '-' + parentNode.children.length+ '.' + + Date.now()
+        const type = draft.dragNodePath.split('/').pop().split('.')[0];
+        const key = snakeCase( type).toLowerCase();
+        const newNode = {
+          id,
+          "expanded": true,
+          "tag": "SpriteRender",
+          "props": { "spriteFrame": `{sf_${key}}`, },
+          "components": [],
+          "children": []
+        }
+        draft.dragNodePath = ''
+        parentNode.children.push(newNode)
+        window.postMessage({ type: 'refresh' })
+      }
     },
   }
   return actions
