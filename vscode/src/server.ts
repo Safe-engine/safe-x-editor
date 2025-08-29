@@ -77,6 +77,14 @@ export function startServer(filePath) {
 }
 
 function getDevPort(rootPath: string) {
+  {
+    const viteJsonPath = join(rootPath, 'vite.config.ts');
+    const vite = readFileSync(viteJsonPath, 'utf-8');
+    const match = vite.match(/port:\s*(\d+)/);
+    if (match) {
+      return match[1];
+    }
+  }
   const packageJsonPath = join(rootPath, 'package.json');
   const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
   const { dev } = packageJson.scripts
