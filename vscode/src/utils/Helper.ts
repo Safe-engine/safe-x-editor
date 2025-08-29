@@ -15,15 +15,14 @@ export interface TreeViewData {
 
 export const getTreeData = (treeData: any[]) => {
   const tree = new Tree(treeData, 'path', 'children');
-  const ret: any = tree.mapNodes((currentNode): any => (
+  const ret: any = tree.mapNodes((currentNode) => (
     {
       id: currentNode.path,
       name: currentNode.name,
       path: currentNode.path,
       isDirectory: currentNode.type === 'directory',
       children: getTreeData(currentNode.children),
-      width: currentNode.width,
-      height: currentNode.height,
+      custom: currentNode.custom,
     }
   ));
   return ret as TreeNode<TreeViewData, 'id', 'items'>[];

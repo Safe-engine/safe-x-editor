@@ -1,9 +1,13 @@
+import DirectoryTree from 'directory-tree';
 import { existsSync, readdirSync, readFileSync } from 'fs';
+import sizeOf from 'image-size';
 import { join } from 'path';
+import { Uri } from "vscode";
 import { getResolutionSettings } from '../helper/settings';
 import { GlobalData } from '../parser/global';
 import { getClassesMetaData } from '../parser/metadata';
-import { parseAssetsSrcFile } from './assets';
+import { filterImages, getTreeData } from '../utils/Helper';
+import { getViewPath, parseAssetsSrcFile } from './assets';
 import { loadComponent } from './ComponentService';
 
 export const getFilesInFolder = async ({ src }, panel) => {
@@ -37,7 +41,21 @@ export const getFilesInFolder = async ({ src }, panel) => {
     });
   await Promise.all(components);
   // console.log(components, 'components');
+  const images = DirectoryTree(
+    join(src, 'res', 'Texture'),
+    {
+      extensions: /\.(gif|jpe?g|tiff?|png|webp|bmp)$/i,
+      exclude: [],
+      attributes: ['type'],
+    },
+    (item, path) => {
+      const { width, height } = sizeOf(readFileSync(path));
+      item.custom = { width, height, path: getViewPath(panel, Uri.file(path)) };
+    },
+  );
+  // console.log(images, 'images');
   return {
+    imagesTree: getTreeData(filterImages([images])),
     isPixi: content.includes('@safe-engine/pixi'),
     assets: {
       assetsTextureList,

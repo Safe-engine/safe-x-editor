@@ -5,7 +5,7 @@ import { join } from 'path';
 import { Uri, WebviewPanel, workspace } from "vscode";
 import { parseFile } from "../transform";
 
-function getViewPath(panel: WebviewPanel, relativePath?: Uri) {
+export function getViewPath(panel: WebviewPanel, relativePath?: Uri) {
   return relativePath ? panel.webview.asWebviewUri(relativePath).toString() : undefined
 }
 

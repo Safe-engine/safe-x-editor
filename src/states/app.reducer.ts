@@ -9,6 +9,7 @@ export const initialState = {
   filePath: '',
   editingPath: '',
   editingClassNamePath: '',
+  imagesTree: [],
   componentTree: [],
   componentsCache: [],
   assets: {

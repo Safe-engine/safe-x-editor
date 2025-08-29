@@ -2,6 +2,7 @@ import { Allotment } from 'allotment'
 import { useEffect, useMemo } from 'react'
 import { useActions, useSelector } from '../states/app.context'
 import { selectAssets, selectDesignResolution } from '../states/app.selectors'
+import AssetsPanel from './AssetsPanel'
 import NodeTree from './NodeTree'
 import PropertiesPanel from './PropertiesPanel'
 import SceneView from './SceneView'
@@ -40,6 +41,9 @@ export function App() {
   return (
     <main className="bg-gray-600 h-screen">
       <Allotment>
+        <Allotment.Pane snap minSize={200} maxSize={250}>
+          <AssetsPanel />
+        </Allotment.Pane>
         {width <= height &&
           <Allotment.Pane minSize={250} maxSize={280}>
             <NodeTree />
