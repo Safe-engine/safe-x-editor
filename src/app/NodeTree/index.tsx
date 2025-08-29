@@ -118,6 +118,9 @@ export default function NodeTree() {
           onRename={(node) => {
             console.log('onRename', node);
           }}
+          onMove={({ dragIds, parentId, index }) => {
+            console.log('onMove', dragIds, parentId, index);
+          }}
           openByDefault
         >
           {TreeItem}

@@ -47,8 +47,11 @@ export default function AssetsPanel() {
             if (nodes[0])
               onItemClick(nodes[0])
           }}
-          onRename={(node) => {
-            console.log('onRename', node);
+          // onRename={(node) => {
+          //   console.log('onRename', node);
+          // }}
+          onMove={({ dragIds, parentId, index }) => {
+            console.log('dragIds', dragIds, parentId, index);
           }}
           openByDefault
         >

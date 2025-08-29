@@ -8,7 +8,7 @@ function renderIcon(data: any) {
   if (data.isDirectory) {
     return <AiFillFolderOpen color="white" />;
   }
-  console.log('data', data);
+  // console.log('data', data);
   return <img src={data.custom.path} style={{ width: 24, height: 24 }} />;
 }
 
@@ -31,9 +31,8 @@ export function TreeNode({ node, style, dragHandle }: NodeRendererProps<any>) {
       node.isSelected && 'bg-gray-500'
     )}
 
-    onDoubleClick={() => {
-      // setTempName(node.data.name)
-      // node.edit()
+    onDragStart={(event) => {
+      console.log('onDragStart node', node.data.path)
     }}
     onContextMenu={(e) => handleContextMenu(e, node.data)}
   >
