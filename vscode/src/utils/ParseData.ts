@@ -7,7 +7,7 @@ import isEmpty from 'lodash/isEmpty';
 import startsWith from 'lodash/startsWith';
 import { basename } from 'path';
 import { parseValue } from '../parser/ast';
-import { noRenderList } from './constants';
+import { hasRender } from '../parser/jsx';
 
 export function fallback(node) {
   // console.log(node.type, 'fallback')
@@ -97,7 +97,7 @@ const parseTreeData = (root, fileOrigin = '', childrenIndex = [], index = 0) => 
   const components = []
   const filteredChildren = children.filter(child => {
     const childTag = get(child.openingElement, 'name.name');
-    if (noRenderList.includes(childTag)) {
+    if (childTag && !hasRender(childTag)) {
       components.push({
         tag: childTag,
         props: getAttributeProps(child.openingElement, fileOrigin)

@@ -7,7 +7,7 @@ export class GlobalData {
   static currentClassName: string = '';
   static cbMethodParamsMap: any = {};
   static objectTypeMap: any = {};
-  static customNoRenderComponents: string[] = [];
+  static customHasRenderComponents: string[] = [];
   static jsonAssetsMap: { [key: string]: string } = {}
   static cbParamsMap: { [key: string]: number } = {
     onCollisionEnter: 2,

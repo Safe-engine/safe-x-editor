@@ -38,9 +38,6 @@ export async function getClassesMetaData(srcDir: string, idDebug = false) {
         } else if (node.type === 'ClassDeclaration') {
           const { superClass, id, body } = node
           const { name: className } = id
-          if (parseValue(superClass) === 'NoRenderComponentX') {
-            GlobalData.customNoRenderComponents.push(className)
-          }
           body.body.forEach(d => {
             const { type } = d
             if (type === 'MethodDefinition') {
@@ -49,6 +46,7 @@ export async function getClassesMetaData(srcDir: string, idDebug = false) {
               const { params } = value as any
               GlobalData.componentsMap[className] = { properties: {}, method: {} }
               if (name === 'create' && params.length) {
+                GlobalData.customHasRenderComponents.push(className)
                 params.forEach(p => {
                   const { properties } = p
                   GlobalData.componentsMap[className] = properties.map(p => {
