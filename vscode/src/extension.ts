@@ -1,7 +1,6 @@
 import { join } from 'path';
 import * as vscode from 'vscode';
 import Router from './router/Router';
-import { startServer } from './server';
 import { getSettings, saveSettings } from './services/settings.service';
 import { getSettingsWebview } from './settings.html';
 import { getEditorWebview } from './webview';
@@ -26,7 +25,7 @@ function createOrShowWebview(context: vscode.ExtensionContext, uri: vscode.Uri) 
 
   panel.webview.html = getEditorWebview(context, uri.fsPath);
   Router(panel, context)
-  startServer(uri.fsPath); // test only
+  // startServer(uri.fsPath); // test only
   // Khi panel bị dispose (user đóng), set biến về undefined
   panel.onDidDispose(() => {
     panel = undefined;
