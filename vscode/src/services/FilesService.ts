@@ -6,7 +6,7 @@ import { Uri } from "vscode";
 import { getResolutionSettings } from '../helper/settings';
 import { GlobalData } from '../parser/global';
 import { getClassesMetaData } from '../parser/metadata';
-import { filterImages, getTreeData } from '../utils/Helper';
+import { filterImages, filterTree, getTreeData } from '../utils/Helper';
 import { getViewPath, parseAssetsSrcFile } from './assets';
 import { loadComponent } from './ComponentService';
 
@@ -40,6 +40,11 @@ export const getFilesInFolder = async ({ src }, panel) => {
       return filePath
     });
   await Promise.all(components);
+  const jsxOption: DirectoryTree.DirectoryTreeOptions = {
+    extensions: /\.tsx$/,
+    exclude: [],
+    attributes: ['type', 'extension'],
+  }
   // console.log(components, 'components');
   const images = DirectoryTree(
     join(src, 'res'),
@@ -56,6 +61,7 @@ export const getFilesInFolder = async ({ src }, panel) => {
   // console.log(images, 'images');
   return {
     imagesTree: getTreeData(filterImages([images])),
+    componentsTree: getTreeData(filterTree([DirectoryTree(join(src, 'src'), jsxOption)])),
     isPixi: content.includes('@safe-engine/pixi'),
     assets: {
       assetsTextureList,

@@ -5,6 +5,10 @@ export const onStart = (designResolution) => function () {
   const { width, height } = designResolution
   const policy = width > height ? cc.ResolutionPolicy.FIXED_HEIGHT : cc.ResolutionPolicy.FIXED_WIDTH
   cc.view.setDesignResolutionSize(width, height, policy)
+  getDrawLayer(designResolution)
+}
+
+export function getDrawLayer(designResolution) {
   const newScene = new cc.Scene()
   const gray = cc.color(75, 85, 99, 255); // Màu xám (cool gray)
   const drawLayer = new cc.LayerColor(gray)
@@ -13,7 +17,7 @@ export const onStart = (designResolution) => function () {
   const border = new cc.DrawNode();
   const pink = cc.color(227, 11, 93, 255); // Màu hồng (hot pink)
   const lineWidth = 4; // Độ dày viền
-
+  const { width, height } = designResolution
   // Vẽ khung hình chữ nhật quanh layer
   border.drawRect(
     cc.p(0, 0),                   // Góc trái dưới
@@ -27,6 +31,7 @@ export const onStart = (designResolution) => function () {
   drawLayer.setPosition(getLastSceneX(), getLastSceneY()); // Đặt vị trí của layer
   drawLayer.scale = getLastSceneScale(); // Giảm kích thước của layer xuống
   cc.director.runScene(newScene)
+  return drawLayer
 }
 
 export function getDrawNode() {

@@ -11,7 +11,7 @@ import { createPixiApp, loadSceneViewPixi } from './pixi';
 declare let PIXI: any
 
 function getCurrentNode(editingClassNamePath: string, parentNode: any, isSceneNode: boolean) {
-  const childrenIndex = editingClassNamePath.split('.')[0].split('-').map(parseInt);
+  const childrenIndex = editingClassNamePath.split('-').map(parseInt);
   if (isSceneNode)
     childrenIndex.shift();
   let currentNode = parentNode;
@@ -20,6 +20,7 @@ function getCurrentNode(editingClassNamePath: string, parentNode: any, isSceneNo
     if (currentNode.children[index])
       currentNode = currentNode.children[index];
   });
+  console.log('currentNode', parentNode, childrenIndex, currentNode)
   return currentNode;
 }
 
@@ -87,10 +88,10 @@ export default function SceneView() {
   const load = () => {
     const timeout = setTimeout(() => {
       if (isPixi) {
-        loadSceneViewPixi(pixiAppRef.current, selectedEditingComponentRef.current, { rootFolder, ...assets, componentsCache });
+        loadSceneViewPixi(pixiAppRef.current, selectedEditingComponentRef.current, { rootFolder, ...assets, componentsCache, designResolution });
         return
       } else {
-        loadSceneViewCocos(selectedEditingComponentRef.current, { rootFolder, ...assets, componentsCache });
+        loadSceneViewCocos(selectedEditingComponentRef.current, { rootFolder, ...assets, componentsCache, designResolution });
       }
     }, 250);
     return () => clearTimeout(timeout);
@@ -206,7 +207,6 @@ export default function SceneView() {
       return;
     }
     selectedPaths.forEach((path) => {
-      // const selectedNode = selectedNodes[index]
       const currentNode = getCurrentNode(path, drawLayer, selectedEditingComponent[0]?.tag === 'SceneComponent');
       const { x: nx = 0, y: ny = 0 } = currentNode;
       currentNode.x = nx + dx

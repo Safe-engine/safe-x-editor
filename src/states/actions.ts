@@ -9,8 +9,8 @@ export function getAction(draft: AppState) {
       draft.rootFolder = src.replace(/\\/g, '/')
     },
     getFilesSuccess(data) {
-      const { imagesTree, componentsCache, assets, designedResolution, isPixi } = data
-      // draft.filesData = componentsTree[0].children
+      const { imagesTree, componentsTree, componentsCache, assets, designedResolution, isPixi } = data
+      draft.filesData = componentsTree[0].children
       draft.assets = assets
       draft.imagesTree = imagesTree[0] ? imagesTree[0].children : []
       draft.componentsCache = componentsCache
@@ -71,26 +71,32 @@ export function getAction(draft: AppState) {
     setDragNode(path: string) {
       draft.dragNodePath = path
     },
-    createNode(parentPath: string) {
+    createNode(parentPath?: string) {
+      if (!draft.dragNodePath) return
       const tree = new Tree(draft.componentTree, 'id', 'children')
       const parentNode = tree.getNode(parentPath)
-      if (parentNode && draft.dragNodePath) {
-        if (!parentNode.children) parentNode.children = []
-        const id = parentNode.id.split('.')[0] + '-' + parentNode.children.length+ '.' + + Date.now()
-        const type = draft.dragNodePath.split('/').pop().split('.')[0];
-        const key = snakeCase( type).toLowerCase();
-        const newNode = {
-          id,
-          "expanded": true,
-          "tag": "SpriteRender",
-          "props": { "spriteFrame": `{sf_${key}}`, },
-          "components": [],
-          "children": []
-        }
-        draft.dragNodePath = ''
-        parentNode.children.push(newNode)
-        window.postMessage({ type: 'refresh' })
+      const type = draft.dragNodePath.split('/').pop().split('.')[0];
+      const key = snakeCase(type).toLowerCase();
+      const newNode = {
+        id: '',
+        "expanded": true,
+        "tag": "SpriteRender",
+        "props": { "spriteFrame": `{sf_${key}}`, },
+        "components": [],
+        "children": []
       }
+      if (parentNode) {
+        if (!parentNode.children) parentNode.children = []
+        const id = parentNode.id + '-' + parentNode.children.length
+        newNode.id = id
+        parentNode.children.push(newNode)
+      } else {
+        const newId = '0-' + draft.componentTree[0].children.length
+        newNode.id = newId
+        draft.componentTree[0].children.push(newNode)
+      }
+      draft.dragNodePath = ''
+      window.postMessage({ type: 'refresh' })
     },
   }
   return actions

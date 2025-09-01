@@ -1,5 +1,6 @@
 import { getNodePosition, parseIntFromValue, parseStringFromValue } from "../../../helper/node"
 import { SkeletonAnimation } from "../spine/CCSkeletonAnimation"
+import { getDrawLayer } from "./cocos"
 import { PixiDragonBonesSprite, SharedDragonBonesManager } from "./PixiDragonBonesSprite"
 
 declare let PIXI: any
@@ -26,6 +27,7 @@ export interface ProjectData {
   dragonBonesAssets: SkeletonAnimationAsset[]
   spineAssets: SkeletonAnimationAsset[]
   componentsCache: { [key: string]: any }
+  designResolution: { width: number; height: number }
 }
 
 function loadSprite(filePath: string): Promise<cc.Sprite> {
@@ -186,14 +188,11 @@ async function parseChildren(root, parentNode, data: ProjectData, evalInit = '')
 export async function loadSceneViewCocos(selectedEditingComponent = [], data: ProjectData) {
   const [root] = selectedEditingComponent
   if (!cc.director || !cc.director.getRunningScene() || !root) return
-  const parentNode = cc.director.getRunningScene().children[0]
-  for (let i = 1; i < parentNode.childrenCount; i++) {
-    const child = parentNode.children[i]
-    child.removeFromParent()
-  }
+ const { designResolution } = data
+  const drawLayer = getDrawLayer(designResolution)
   // console.log('loadSceneView:', selectedEditingComponent, parentNode)
   for (let index = 0; index < selectedEditingComponent.length; index++) {
     const element = selectedEditingComponent[index]
-    await parseChildren(element, parentNode, data)
+    await parseChildren(element, drawLayer, data)
   }
 }

@@ -11,6 +11,7 @@ export const initialState = {
   editingClassNamePath: '',
   dragNodePath: '',
   imagesTree: [],
+  filesData: [],
   componentTree: [],
   componentsCache: [],
   assets: {

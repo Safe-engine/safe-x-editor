@@ -97,7 +97,7 @@ export default function NodeTree() {
   // }
 
   const onSelectNodes = (nodes) => {
-    console.log(nodes)
+    // console.log(nodes)
     selectEditMultiNodes(nodes.map(n => n.data.id));
     // if (nodes[0] && nodes[0].data.tag) {
     //   selectEditingTagNode(nodes[0].data.id);
@@ -108,18 +108,23 @@ export default function NodeTree() {
     <div className='h-full' >
       <span className='text-yellow-400 text-ellipsis overflow-hidden whitespace-nowrap text-left rtl'>{filePath.replace(rootPath, '')}&nbsp;</span>
       <hr />
-      <div className='overflow-y-scroll h-full'>
+      <div className='overflow-y-scroll h-full'
+        onDrop={(event) => {
+          event.preventDefault();
+          setTimeout(() => {
+          // console.log('drop', event)
+          createNode()
+          })
+        }}>
         <Tree
           className='p-1 '
           data={treeData[0]?.tag === 'SceneComponent' ? treeData[0].children : treeData}
-          onSelect={
-            onSelectNodes
-          }
-          onRename={(node) => {
-            console.log('onRename', node);
-          }}
+          onSelect={onSelectNodes}
+          // onRename={(node) => {
+          //   console.log('onRename', node);
+          // }}
           onMove={({ dragIds, parentId, index }) => {
-            console.log('onMove', dragIds, parentId, index);
+            // console.log('onMove', dragIds, parentId, index);
             createNode(parentId)
           }}
           openByDefault

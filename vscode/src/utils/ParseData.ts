@@ -63,7 +63,7 @@ const parseTreeData = (root, fileOrigin = '', childrenIndex = [], index = 0) => 
   const [start, end] = range;
   // console.log('parseTreeData', root);
   const thisIndexes = [...childrenIndex, index];
-  const id = `${thisIndexes.join('-')}.${Math.random()}`;
+  const id = `${thisIndexes.join('-')}`;
   if (type === 'JSXText') { return { name: value.trim(), id }; }
   if (type === 'JSXExpressionContainer') {
     const { expression } = root
