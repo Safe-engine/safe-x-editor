@@ -2,8 +2,8 @@ import { useEffect } from 'react';
 import { Tree } from 'react-arborist';
 import toast from 'react-hot-toast';
 import { GEN_COMPONENT_REQUEST } from '../../shared/constant.message';
+import { redoEdit, undoEdit } from '../../states/actions';
 import { useActions, useSelector } from '../../states/app.context';
-import { redoEdit, undoEdit } from '../../states/app.middleware';
 import { selectComponentTree, selectRootFolder, selectSelectedFilePath } from '../../states/app.selectors';
 import { sendRequest } from '../app.ipc';
 import { TreeItem } from './TreeItem';
@@ -55,7 +55,7 @@ export default function NodeTree() {
       );
       if (isRedoShortcut) {
         event.preventDefault();
-        console.log('Detected Ctrl+Z or Command+Z');
+        console.log('Detected Ctrl+Y or Command+Y');
         redoEdit(actions)
         return
       }

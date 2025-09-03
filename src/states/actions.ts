@@ -1,7 +1,29 @@
-import { default as Tree } from '@colin-luo/tree'
-import snakeCase from 'lodash/snakeCase'
-import { Dispatch } from 'react'
-import { AppState } from './app.reducer'
+import { default as Tree } from '@colin-luo/tree';
+import snakeCase from 'lodash/snakeCase';
+import { Dispatch } from 'react';
+import { AppState } from './app.reducer';
+
+const undoStack = []
+const redoStack = []
+
+export function undoEdit(actions) {
+  const prev = undoStack.pop();
+  if (!prev) return;
+  redoStack.push(prev);
+  const { name, data } = prev;
+  if (name && actions[name]) {
+    actions[name](...data);
+  }
+}
+
+export function redoEdit(actions) {
+  const next = redoStack.pop();
+  if (!next) return;
+  undoStack.push(next);
+  if (next.name && actions[next.name]) {
+    actions[next.name](next.data);
+  }
+}
 
 export function getAction(draft: AppState) {
   const actions = {
@@ -63,10 +85,23 @@ export function getAction(draft: AppState) {
         const path = draft.selectedPaths[index]
         const node = tree.getNode(path)
         if (node) {
+          const { xy } = node[component].node
+          undoStack.push({ name: 'undo', data: [draft.selectedPaths[0], component, { node: { xy: [...xy] } }] });
+          // console.log('updateMultiNodes middleware', current(node[component]), current(xy))
           node[component] = { ...node[component], ...updated }
           draft.selectedNodes[index] = node
         }
       })
+    },
+    undo(nodePath: string, component: string, updated: any) {
+      // console.log('undo', nodePath, component, updated)
+      const tree = new Tree(draft.componentTree, 'id', 'children')
+      const node = tree.getNode(nodePath)
+      // console.log('node', current(node))
+      if (node) {
+        node[component] = { ...node[component], ...updated }
+        window.postMessage({ type: 'refresh' })
+      }
     },
     setDragNode(path: string) {
       draft.dragNodePath = path

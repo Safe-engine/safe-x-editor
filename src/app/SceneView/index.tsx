@@ -224,8 +224,7 @@ export default function SceneView() {
       } else {
         const worldPosition = currentNode.parent.convertToWorldSpace(currentNode);
         const { x, y } = worldPosition;
-        console.log('worldPosition', currentNode.x, currentNode.y, worldPosition)
-        // setPosition({ x: x * getLastSceneScale(), y: y * getLastSceneScale() });
+        // console.log('worldPosition', currentNode.x, currentNode.y, worldPosition)
         getArrowNode().setPosition(x, y);
       }
     })
