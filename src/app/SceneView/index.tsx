@@ -6,14 +6,13 @@ import { getCurrentNode, getNodePosition, Vec2 } from '../../helper/node';
 import { handleChange } from '../../helper/utils';
 import { useActions, useSelector } from '../../states/app.context';
 import { selectAssets, selectComponentsCache, selectComponentTree, selectDesignResolution, selectIsPixi, selectRootFolder, selectSelectedEditingPath, selectSelectedNodes, selectSelectedPaths } from '../../states/app.selectors';
-import ArrowControl from './ArrowControl';
-import { getDrawNode, loadSceneViewCocos, onStart } from './cocos';
+import { getArrowNode, getDrawNode, loadSceneViewCocos, onStart } from './cocos';
 import { createPixiApp, loadSceneViewPixi } from './pixi';
 declare let PIXI: any
 
 export default function SceneView() {
   const { updateMultiNodes } = useActions();
-  const [position, setPosition] = useState({ x: 200, y: 200 });
+  // const [position, setPosition] = useState({ x: 200, y: 200 });
   const [isEditing, setIsEditing] = useState(false);
   const [positionStart, setPositionStart] = useState({ x: 0, y: 0 });
   const [lastX, setLastX] = useState(getLastSceneX());
@@ -105,6 +104,11 @@ export default function SceneView() {
 
   useEffect(() => {
     if (!cc.director?.getRunningScene() && !pixiAppRef.current?.stage) return;
+    if (!selectedPaths.length) {
+      setLastX(getLastSceneX());
+      setLastY(getLastSceneY());
+      return
+    }
     const scene = isPixi ? pixiAppRef.current.stage : cc.director.getRunningScene()
     const parentNode = scene.children[0];
     selectedPaths.forEach((path, index) => {
@@ -116,6 +120,13 @@ export default function SceneView() {
       currentNode.y = y
       setLastX(x);
       setLastY(y);
+      if (isPixi) {
+      } else {
+        const worldPosition = currentNode.parent.convertToWorldSpace(currentNode);
+        const { x, y } = worldPosition;
+        // console.log('worldPosition', currentNode.x, currentNode.y, worldPosition)
+        getArrowNode().setPosition(x, y);
+      }
       // scale, scaleX, scaleY, rotation
       const { scaleX = 1, scaleY = 1, scale = 1, rotation = 0 } = selectedNode.props.node || {};
       if (scale !== 1) {
@@ -181,7 +192,7 @@ export default function SceneView() {
     if (!rect || !selectedEditingComponent || !isEditing) return;
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
-    setPosition({ x, y });
+    // setPosition({ x, y });
     const scene = isPixi ? pixiAppRef.current.stage : cc.director.getRunningScene()
     const drawLayer = scene.children[0];
     const dx = (event.clientX - positionStart.x) / scale * moveSpeed * (isPixi ? 0.33 : 1);
@@ -194,6 +205,12 @@ export default function SceneView() {
       const lastY = Math.round(ny + dy);
       updateParentNode('x', lastX, setLastX, setLastSceneX);
       updateParentNode('y', lastY, setLastY, setLastSceneY);
+      if (isPixi) {
+      } else {
+        const worldPosition = getDrawNode().convertToWorldSpace(cc.p(0, 0));
+        const { x, y } = worldPosition;
+        getArrowNode().setPosition(x, y);
+      }
       return;
     }
     selectedPaths.forEach((path) => {
@@ -203,6 +220,14 @@ export default function SceneView() {
       currentNode.y = round(ny + dy);
       setLastX(currentNode.x);
       setLastY(currentNode.y);
+      if (isPixi) {
+      } else {
+        const worldPosition = currentNode.parent.convertToWorldSpace(currentNode);
+        const { x, y } = worldPosition;
+        console.log('worldPosition', currentNode.x, currentNode.y, worldPosition)
+        // setPosition({ x: x * getLastSceneScale(), y: y * getLastSceneScale() });
+        getArrowNode().setPosition(x, y);
+      }
     })
   }
 
@@ -211,7 +236,6 @@ export default function SceneView() {
     if (value < 0.1) value = 0.1;
     if (value > 2) value = 2;
     updateParentNode('scale', round(value, 2), setScale, setLastSceneScale);
-    setMoveSpeed(round(1 / value, 2))
   }, [scale, isPixi]);
 
   const updateParentNode = useCallback(function (
@@ -254,7 +278,6 @@ export default function SceneView() {
   useEffect(() => {
     if (!selectedPaths.length) {
       updateParentNode('scale', scale, setScale, setLastSceneScale);
-      setMoveSpeed(round(1 / scale, 2))
       return
     }
   }, [scale])
@@ -293,7 +316,7 @@ export default function SceneView() {
         className='w-full h-full relative'
       >
         <canvas id='gameCanvas' className='pointer-events-none' />
-        <ArrowControl position={position} />
+        {/* <ArrowControl position={position} /> */}
       </div>
     </div>
   );

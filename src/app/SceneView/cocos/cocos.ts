@@ -27,13 +27,28 @@ export function getDrawLayer(designResolution) {
     pink,                         // Màu viền
   );
   drawLayer.addChild(border);       // Thêm border vào layer
+  const arrowContainer = new cc.Node();
+  const arrowSpriteHorizon = new cc.Sprite('Ico_arrow.png');
+  const arrowSpriteVertical = new cc.Sprite('Ico_arrow.png');
+  arrowSpriteVertical.setAnchorPoint(0.5, 0);
+  arrowSpriteHorizon.setAnchorPoint(0.5, 0);
+  arrowSpriteVertical.color = cc.color(255, 0, 0, 255);
+  arrowSpriteHorizon.setRotation(90);
+  arrowContainer.addChild(arrowSpriteHorizon);
+  arrowContainer.addChild(arrowSpriteVertical);
+  arrowContainer.setTag(2);
   newScene.addChild(drawLayer)
   drawLayer.setPosition(getLastSceneX(), getLastSceneY()); // Đặt vị trí của layer
   drawLayer.scale = getLastSceneScale(); // Giảm kích thước của layer xuống
+  newScene.addChild(arrowContainer);
   cc.director.runScene(newScene)
   return drawLayer
 }
 
 export function getDrawNode() {
   return cc.director.getRunningScene().getChildByTag(1)
+}
+
+export function getArrowNode() {
+  return cc.director.getRunningScene().getChildByTag(2)
 }
