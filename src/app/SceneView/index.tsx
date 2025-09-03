@@ -1,28 +1,15 @@
-import { parseInt } from 'lodash';
+import { round } from 'lodash';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import NumberInput from '../../base/NumberInput';
+import Input from '../../base/Input';
 import { getLastMoveSpeed, getLastSceneScale, getLastSceneX, getLastSceneY, setLastMoveSpeed, setLastSceneScale, setLastSceneX, setLastSceneY } from '../../data/AppData';
-import { getNodePosition, Vec2 } from '../../helper/node';
+import { getCurrentNode, getNodePosition, Vec2 } from '../../helper/node';
+import { handleChange } from '../../helper/utils';
 import { useActions, useSelector } from '../../states/app.context';
 import { selectAssets, selectComponentsCache, selectComponentTree, selectDesignResolution, selectIsPixi, selectRootFolder, selectSelectedEditingPath, selectSelectedNodes, selectSelectedPaths } from '../../states/app.selectors';
 import ArrowControl from './ArrowControl';
 import { getDrawNode, loadSceneViewCocos, onStart } from './cocos';
 import { createPixiApp, loadSceneViewPixi } from './pixi';
 declare let PIXI: any
-
-function getCurrentNode(editingClassNamePath: string, parentNode: any, isSceneNode: boolean) {
-  const childrenIndex = editingClassNamePath.split('-').map(parseInt);
-  if (isSceneNode)
-    childrenIndex.shift();
-  let currentNode = parentNode;
-  childrenIndex.forEach((child, i) => {
-    const index = i === 0 ? child + 1 : child;
-    if (currentNode.children[index])
-      currentNode = currentNode.children[index];
-  });
-  console.log('currentNode', parentNode, childrenIndex, currentNode)
-  return currentNode;
-}
 
 export default function SceneView() {
   const { updateMultiNodes } = useActions();
@@ -127,6 +114,9 @@ export default function SceneView() {
       const { x, y } = getNodePosition(selectedNode.props.node);
       currentNode.x = x
       currentNode.y = y
+      setLastX(x);
+      setLastY(y);
+      // scale, scaleX, scaleY, rotation
       const { scaleX = 1, scaleY = 1, scale = 1, rotation = 0 } = selectedNode.props.node || {};
       if (scale !== 1) {
         currentNode.scale = isPixi ? new PIXI.Point(scale, scale) : scale;
@@ -209,8 +199,10 @@ export default function SceneView() {
     selectedPaths.forEach((path) => {
       const currentNode = getCurrentNode(path, drawLayer, selectedEditingComponent[0]?.tag === 'SceneComponent');
       const { x: nx = 0, y: ny = 0 } = currentNode;
-      currentNode.x = nx + dx
-      currentNode.y = ny + dy;
+      currentNode.x = round(nx + dx)
+      currentNode.y = round(ny + dy);
+      setLastX(currentNode.x);
+      setLastY(currentNode.y);
     })
   }
 
@@ -218,8 +210,8 @@ export default function SceneView() {
     let value = scale + (e.deltaY > 0 ? -0.05 : 0.05);
     if (value < 0.1) value = 0.1;
     if (value > 2) value = 2;
-    updateParentNode('scale', value, setScale, setLastSceneScale);
-    setMoveSpeed(1 / value)
+    updateParentNode('scale', round(value, 2), setScale, setLastSceneScale);
+    setMoveSpeed(round(1 / value, 2))
   }, [scale, isPixi]);
 
   const updateParentNode = useCallback(function (
@@ -245,48 +237,50 @@ export default function SceneView() {
     setLast(value);
   }, [isPixi])
 
+  useEffect(() => {
+    if (!selectedPaths.length) {
+      updateParentNode('x', lastX, setLastX, setLastSceneX);
+      return
+    }
+  }, [lastX])
+
+  useEffect(() => {
+    if (!selectedPaths.length) {
+      updateParentNode('y', lastY, setLastY, setLastSceneY);
+      return
+    }
+  }, [lastY])
+
+  useEffect(() => {
+    if (!selectedPaths.length) {
+      updateParentNode('scale', scale, setScale, setLastSceneScale);
+      setMoveSpeed(round(1 / scale, 2))
+      return
+    }
+  }, [scale])
+
+  useEffect(() => {
+    setLastMoveSpeed(moveSpeed);
+  }, [moveSpeed])
+
   return (
     <div className='w-full h-full'>
-      <div className='flex space-x-1 p-1'>
-        <NumberInput
-          step={0.05}
-          label="Scale"
+      <div className='inline-block space-x-1 p-1 text-white items-center justify-start'>
+        Scale:<Input
           value={scale}
-          min={0.1}
-          max={2}
-          onChange={(value) => {
-            updateParentNode('scale', value, setScale, setLastSceneScale);
-            setMoveSpeed(1 / value)
-          }}
+          onChange={handleChange(setScale)}
         />
-        <NumberInput
-          label="X"
-          min={-1000}
-          max={1000}
+        X:<Input
           value={lastX}
-          onChange={(value) => {
-            updateParentNode('x', value, setLastX, setLastSceneX);
-          }}
+          onChange={handleChange(setLastX)}
         />
-        <NumberInput
-          label="Y"
-          min={-1000}
-          max={1000}
+        Y:<Input
           value={lastY}
-          onChange={(value) => {
-            updateParentNode('y', value, setLastY, setLastSceneY);
-          }}
+          onChange={handleChange(setLastY)}
         />
-        <NumberInput
-          label="Move Speed"
-          min={0.1}
-          max={20}
-          step={0.1}
+        Move Speed:<Input
           value={moveSpeed}
-          onChange={(value) => {
-            setMoveSpeed(value)
-            setLastMoveSpeed(value)
-          }}
+          onChange={handleChange(setMoveSpeed)}
         />
       </div>
       <hr />

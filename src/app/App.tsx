@@ -4,7 +4,6 @@ import { useActions, useSelector } from '../states/app.context'
 import { selectAssets, selectDesignResolution } from '../states/app.selectors'
 import AssetsPanel from './AssetsPanel'
 import NodeTree from './NodeTree'
-import PropertiesPanel from './PropertiesPanel'
 import SceneView from './SceneView'
 import './globals.css'
 
@@ -61,9 +60,9 @@ export function App() {
             }
           </Allotment>
         </Allotment.Pane>
-        <Allotment.Pane snap minSize={200} maxSize={400}>
+        {/* <Allotment.Pane snap minSize={200} maxSize={400}>
           <PropertiesPanel />
-        </Allotment.Pane>
+        </Allotment.Pane> */}
       </Allotment>
     </main>
   )

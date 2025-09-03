@@ -1,3 +1,5 @@
+import { parseInt } from "lodash";
+
 export function parseEval(evalInit: string) {
   return (v: string) => eval(evalInit + v)
 }
@@ -31,4 +33,18 @@ export function parseIntFromValue(value) {
 
 export function parseStringFromValue(value) {
   return value.replace('{', '').replace('}', '')
+}
+
+export function getCurrentNode(editingClassNamePath: string, parentNode: any, isSceneNode: boolean) {
+  const childrenIndex = editingClassNamePath.split('-').map(parseInt);
+  if (isSceneNode)
+    childrenIndex.shift();
+  let currentNode = parentNode;
+  childrenIndex.forEach((child, i) => {
+    const index = i === 0 ? child + 1 : child;
+    if (currentNode.children[index])
+      currentNode = currentNode.children[index];
+  });
+  // console.log('currentNode', editingClassNamePath, childrenIndex, currentNode)
+  return currentNode;
 }
