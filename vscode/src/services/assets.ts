@@ -41,7 +41,8 @@ export function parseAssets(parsed, panel?: WebviewPanel) {
           const texturePath = relativePath.endsWith('.json') ? Uri.joinPath(base, 'res', relativePath.replace('.json', '.png')) : undefined
           ret.push({
             size,
-            path: texturePath ? texturePath + '/' + relativePath : relativePath,
+            path: relativePath,
+            json: relativePath.endsWith('.json') ? JSON.parse(readFileSync(fileUri.fsPath, 'utf-8')) : undefined,
             key: name,
             texture: getViewPath(panel, texturePath),
             value: panel.webview.asWebviewUri(fileUri).toString()

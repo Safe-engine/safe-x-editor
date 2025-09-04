@@ -6,10 +6,13 @@ export interface TreeNode {
 function getId(name: string, isDirectory: boolean, data, type: string) {
   if (isDirectory) return name
   if (type === 'dragonBones') return data.value.atlas
+  if (type === 'frame') {
+    return name
+  }
   return data.value
 }
 
-function createNode(path: string[], tree: TreeNode[], data, type: string): void {
+function createNode(path: string[], tree: TreeNode[], data, type: string) {
   const name = path.shift();
   const idx = tree.findIndex((e: TreeNode) => {
     return e.id == name;
@@ -35,7 +38,7 @@ function createNode(path: string[], tree: TreeNode[], data, type: string): void 
 
 export function pathListToTree(data): TreeNode[] {
   const { assetsTextureList = [], dragonBonesAssets = [], fontAssets = [],
-    spineAssets = [], spriteFramesAssets = []
+    spineAssets = [], spriteSheetAssets = []
   } = data
   const tree: TreeNode[] = [];
   for (let i = 0; i < assetsTextureList.length; i++) {
@@ -47,6 +50,13 @@ export function pathListToTree(data): TreeNode[] {
     const { path } = dragonBonesAssets[i];
     const split: string[] = path.split('/');
     createNode(split, tree, dragonBonesAssets[i], 'dragonBones');
+  }
+  for (let i = 0; i < spriteSheetAssets.length; i++) {
+    const { path, json } = spriteSheetAssets[i];
+    const split: string[] = path.split('/');
+    Object.keys(json.frames).forEach(frame => {
+      createNode([...split, frame], tree, spriteSheetAssets[i], 'frame')
+    })
   }
   // console.log('pathListToTree', tree);
   return tree;

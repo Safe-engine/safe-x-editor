@@ -5,6 +5,26 @@ import { GiSkeletonInside } from "react-icons/gi";
 import { Box, Center, HStack } from "../../base/Stack";
 import { useActions } from "../../states/app.context";
 
+function Sprite({ src, rect, naturalSize, className }) {
+  return (
+    <div className={`relative ${className}`}>
+      <div
+        className="bg-no-repeat"
+        style={{
+          scale: 24 / rect.h,
+          width: rect.w,
+          height: rect.h,
+          backgroundImage: `url(${src})`,
+          backgroundPosition: `-${rect.x}px -${rect.y}px`,
+          backgroundSize: `${naturalSize.w}px ${naturalSize.h}px`,
+          // transform: `translate(-${rect.x}px, -${rect.y}px)`,
+          translate: `-20px -24px`,
+        }}
+      />
+    </div>
+  );
+}
+
 function renderIcon(node: any) {
   const { data, isOpen } = node
   if (data.isDirectory) {
@@ -13,12 +33,24 @@ function renderIcon(node: any) {
   if (data.type === 'dragonBones') {
     return <GiSkeletonInside color="blue" />;
   }
-  // console.log('data', data);
+  if (data.type === 'frame') {
+    // console.log('data', data.json);
+    const { frame } = data.json.frames[data.name]
+    return <Sprite
+      className={"w-[24px] h-[24px]"}
+      src={data.texture}
+      rect={frame}
+      naturalSize={data.json.meta.size}
+    />
+  }
   return <img src={data.value} style={{ width: 24, height: 24 }} />;
 }
 
 function getNodeName(data) {
-  const { key = '', name, isDirectory } = data
+  const { key = '', name, isDirectory, type } = data
+  if (type === 'frame') {
+    return name
+  }
   return isDirectory ? name : key.replaceAll('sf_', '').replaceAll('db_', '').replaceAll('_json', '');
 }
 
