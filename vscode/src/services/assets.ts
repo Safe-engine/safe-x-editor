@@ -23,9 +23,11 @@ export function parseAssets(parsed, panel?: WebviewPanel) {
           const fileUri = Uri.joinPath(base, 'res', relativePath);
           let size
           if (relativePath.endsWith('.png') || relativePath.endsWith('.jpg')) {
-            const { width, height } = sizeOf(readFileSync(fileUri.fsPath));
-            // console.log(fileUri.fsPath, width, height);
-            size = { width, height }
+            if (existsSync(fileUri.fsPath)) {
+              const { width, height } = sizeOf(readFileSync(fileUri.fsPath));
+              // console.log(fileUri.fsPath, width, height);
+              size = { width, height }
+            }
           }
           if (!panel) {
             ret.push({

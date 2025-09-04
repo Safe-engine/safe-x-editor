@@ -36,5 +36,17 @@ export function createPixiApp(options: any = {}) {
   drawLayer.x = getLastSceneX(); // Đặt vị trí của layer
   drawLayer.y = getLastSceneY(); // Đặt vị trí của layer
   drawLayer.scale = new PIXI.Point(getLastSceneScale(), getLastSceneScale()); // Giảm kích thước của layer xuống
+  const arrowContainer = new PIXI.Container();
+  const arrowSpriteHorizon = PIXI.Sprite.from('Ico_arrow.png');
+  const arrowSpriteVertical = PIXI.Sprite.from('Ico_arrow.png');
+  arrowSpriteVertical.anchor.x = 0.5;
+  arrowSpriteHorizon.anchor.x = 0.5;
+  arrowSpriteVertical.anchor.y = 1;
+  arrowSpriteHorizon.anchor.y = 1;
+  arrowSpriteVertical.tint = 0xff0000;
+  arrowSpriteHorizon.rotation = Math.PI / 2;
+  arrowContainer.addChild(arrowSpriteHorizon);
+  arrowContainer.addChild(arrowSpriteVertical);
+  app.stage.addChild(arrowContainer);
   return app;
 }

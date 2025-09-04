@@ -40,11 +40,25 @@ export default function SceneView() {
   }, [selectedEditingComponent]);
 
   useEffect(() => {
+    if (isPixi) {
+      if (!pixiAppRef.current?.stage) return;
+      const arrowNode = pixiAppRef.current.stage.children[1]
+      const horizonArrow = arrowNode.children[0];
+      horizonArrow.alpha = lockX ? 0.2 : 1;
+      return
+    }
     if (!cc.director?.getRunningScene()) return;
     getHorizonArrow().opacity = lockX ? 50 : 255
   }, [lockX])
 
   useEffect(() => {
+    if (isPixi) {
+      if (!pixiAppRef.current?.stage) return;
+      const arrowNode = pixiAppRef.current.stage.children[1]
+      const verticalArrow = arrowNode.children[1];
+      verticalArrow.alpha = lockY ? 0.2 : 1;
+      return
+    }
     if (!cc.director?.getRunningScene()) return;
     // getVerticalArrow().color = lockY ? cc.color(0, 0, 0, 0) : cc.color(255, 0, 0, 255)
     getVerticalArrow().opacity = lockY ? 50 : 255
@@ -150,6 +164,10 @@ export default function SceneView() {
       setLastX(x);
       setLastY(y);
       if (isPixi) {
+        const globalPos = currentNode.getGlobalPosition();
+        const arrowNode = pixiAppRef.current.stage.children[1]
+        arrowNode.x = globalPos.x;
+        arrowNode.y = globalPos.y;
       } else {
         const worldPosition = currentNode.parent.convertToWorldSpace(currentNode);
         const { x, y } = worldPosition;
@@ -171,7 +189,7 @@ export default function SceneView() {
         currentNode.rotation = rotation;
       }
     })
-  }, [selectedPaths, selectedNodes]);
+  }, [selectedPaths, selectedNodes, scale]);
 
   function onMouseUp() {
     setIsEditing(false);
@@ -235,6 +253,10 @@ export default function SceneView() {
       updateParentNode('x', lastX, setLastX, setLastSceneX);
       updateParentNode('y', lastY, setLastY, setLastSceneY);
       if (isPixi) {
+        const globalPos = pixiAppRef.current.stage.children[0].getGlobalPosition();
+        const arrowNode = pixiAppRef.current.stage.children[1]
+        arrowNode.x = globalPos.x;
+        arrowNode.y = globalPos.y;
       } else {
         const worldPosition = getDrawNode().convertToWorldSpace(cc.p(0, 0));
         const { x, y } = worldPosition;
@@ -254,6 +276,10 @@ export default function SceneView() {
         setLastY(currentNode.y);
       }
       if (isPixi) {
+        const globalPos = currentNode.getGlobalPosition();
+        const arrowNode = pixiAppRef.current.stage.children[1]
+        arrowNode.x = globalPos.x;
+        arrowNode.y = globalPos.y;
       } else {
         const worldPosition = currentNode.parent.convertToWorldSpace(currentNode);
         const { x, y } = worldPosition;
