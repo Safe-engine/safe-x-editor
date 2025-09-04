@@ -1,3 +1,4 @@
+import clsx from 'clsx';
 import { round } from 'lodash';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Input from '../../base/Input';
@@ -6,7 +7,7 @@ import { getCurrentNode, getNodePosition, Vec2 } from '../../helper/node';
 import { handleChange } from '../../helper/utils';
 import { useActions, useSelector } from '../../states/app.context';
 import { selectAssets, selectComponentsCache, selectComponentTree, selectDesignResolution, selectIsPixi, selectRootFolder, selectSelectedEditingPath, selectSelectedNodes, selectSelectedPaths } from '../../states/app.selectors';
-import { getArrowNode, getDrawNode, loadSceneViewCocos, onStart } from './cocos';
+import { getArrowNode, getDrawNode, getHorizonArrow, getVerticalArrow, loadSceneViewCocos, onStart } from './cocos';
 import { createPixiApp, loadSceneViewPixi } from './pixi';
 declare let PIXI: any
 
@@ -17,6 +18,8 @@ export default function SceneView() {
   const [positionStart, setPositionStart] = useState({ x: 0, y: 0 });
   const [lastX, setLastX] = useState(getLastSceneX());
   const [lastY, setLastY] = useState(getLastSceneY());
+  const [lockX, setLockX] = useState(false);
+  const [lockY, setLockY] = useState(false);
   const [scale, setScale] = useState(getLastSceneScale());
   const [moveSpeed, setMoveSpeed] = useState(getLastMoveSpeed());
   const selectedEditingComponent = useSelector(selectComponentTree);
@@ -35,6 +38,32 @@ export default function SceneView() {
   useEffect(() => {
     selectedEditingComponentRef.current = selectedEditingComponent;
   }, [selectedEditingComponent]);
+
+  useEffect(() => {
+    if (!cc.director?.getRunningScene()) return;
+    getHorizonArrow().opacity = lockX ? 50 : 255
+  }, [lockX])
+
+  useEffect(() => {
+    if (!cc.director?.getRunningScene()) return;
+    // getVerticalArrow().color = lockY ? cc.color(0, 0, 0, 0) : cc.color(255, 0, 0, 255)
+    getVerticalArrow().opacity = lockY ? 50 : 255
+  }, [lockY])
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'x' || e.key === 'X') {
+        setLockX(!lockX);
+      }
+      if (e.key === 'y' || e.key === 'Y') {
+        setLockY(!lockY);
+      }
+    }
+    window.addEventListener('keydown', onKeyDown);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+    }
+  }, [lockX, lockY])
 
   useEffect(() => {
     if (!designResolution.width) return;
@@ -201,8 +230,8 @@ export default function SceneView() {
     // console.log('selectedEditingComponent', selectedEditingComponent, selectedPaths)
     if (!selectedPaths.length) {
       const { x: nx = 0, y: ny = 0 } = drawLayer;
-      const lastX = Math.round(nx + dx);
-      const lastY = Math.round(ny + dy);
+      const lastX = round(nx + dx);
+      const lastY = round(ny + dy);
       updateParentNode('x', lastX, setLastX, setLastSceneX);
       updateParentNode('y', lastY, setLastY, setLastSceneY);
       if (isPixi) {
@@ -216,10 +245,14 @@ export default function SceneView() {
     selectedPaths.forEach((path) => {
       const currentNode = getCurrentNode(path, drawLayer, selectedEditingComponent[0]?.tag === 'SceneComponent');
       const { x: nx = 0, y: ny = 0 } = currentNode;
-      currentNode.x = round(nx + dx)
-      currentNode.y = round(ny + dy);
-      setLastX(currentNode.x);
-      setLastY(currentNode.y);
+      if (!lockX) {
+        currentNode.x = round(nx + dx)
+        setLastX(currentNode.x);
+      }
+      if (!lockY) {
+        currentNode.y = round(ny + dy);
+        setLastY(currentNode.y);
+      }
       if (isPixi) {
       } else {
         const worldPosition = currentNode.parent.convertToWorldSpace(currentNode);
@@ -243,7 +276,7 @@ export default function SceneView() {
     setLast: (v: number) => void,
     setLastScene: (v: number) => void
   ) {
-    console.log('updateParentNode', isPixi, key, pixiAppRef.current)
+    // console.log('updateParentNode', isPixi, key, pixiAppRef.current)
     if (isPixi) {
       const parentNode = pixiAppRef.current.stage.children[0]
       if (key === 'scale') {
@@ -292,11 +325,19 @@ export default function SceneView() {
           value={scale}
           onChange={handleChange(setScale)}
         />
-        X:<Input
+        <span className={clsx('cursor-pointer select-none', { 'line-through decoration-red-500 decoration-2': lockX })}
+          onClick={() => setLockX(!lockX)}
+        >X:</span>
+        <Input
+          readOnly={lockX}
           value={lastX}
           onChange={handleChange(setLastX)}
         />
-        Y:<Input
+        <span className={clsx('cursor-pointer select-none', { 'line-through decoration-red-500 decoration-2': lockY })}
+          onClick={() => setLockY(!lockY)}
+        >Y:</span>
+        <Input
+          readOnly={lockY}
           value={lastY}
           onChange={handleChange(setLastY)}
         />

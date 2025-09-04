@@ -12,7 +12,6 @@ export function getDrawLayer(designResolution) {
   const newScene = new cc.Scene()
   const gray = cc.color(75, 85, 99, 255); // Màu xám (cool gray)
   const drawLayer = new cc.LayerColor(gray)
-  drawLayer.setTag(1)
   // Tạo một DrawNode để vẽ khung viền
   const border = new cc.DrawNode();
   const pink = cc.color(227, 11, 93, 255); // Màu hồng (hot pink)
@@ -36,7 +35,10 @@ export function getDrawLayer(designResolution) {
   arrowSpriteHorizon.setRotation(90);
   arrowContainer.addChild(arrowSpriteHorizon);
   arrowContainer.addChild(arrowSpriteVertical);
+  drawLayer.setTag(1)
   arrowContainer.setTag(2);
+  arrowSpriteHorizon.setTag(3);
+  arrowSpriteVertical.setTag(4);
   newScene.addChild(drawLayer)
   drawLayer.setPosition(getLastSceneX(), getLastSceneY()); // Đặt vị trí của layer
   drawLayer.scale = getLastSceneScale(); // Giảm kích thước của layer xuống
@@ -51,4 +53,12 @@ export function getDrawNode() {
 
 export function getArrowNode() {
   return cc.director.getRunningScene().getChildByTag(2)
+}
+
+export function getHorizonArrow() {
+  return getArrowNode().getChildByTag(3)
+}
+
+export function getVerticalArrow() {
+  return getArrowNode().getChildByTag(4)
 }
