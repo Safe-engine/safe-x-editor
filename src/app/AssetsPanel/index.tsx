@@ -39,7 +39,7 @@ export default function AssetsPanel() {
       <hr />
       <div className='flex h-screen'>
         <Tree
-          height={window.innerHeight}
+          height={window.innerHeight - 25}
           ref={treeRef}
           data={treeData}
           onSelect={(nodes) => {

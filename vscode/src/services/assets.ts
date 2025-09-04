@@ -1,16 +1,17 @@
 import ESTraverse from "estraverse";
 import { readFileSync } from 'fs';
 import { existsSync } from 'fs-extra';
+import sizeOf from 'image-size';
 import { join } from 'path';
 import { Uri, WebviewPanel, workspace } from "vscode";
 import { parseFile } from "../transform";
-
 export function getViewPath(panel: WebviewPanel, relativePath?: Uri) {
   return relativePath ? panel.webview.asWebviewUri(relativePath).toString() : undefined
 }
 
 export function parseAssets(parsed, panel?: WebviewPanel) {
   const ret = [];
+  const base = workspace.workspaceFolders[0].uri
   ESTraverse.traverse(parsed, {
     enter: function (node, parent) {
       if (node.type === 'VariableDeclarator') {
@@ -19,17 +20,24 @@ export function parseAssets(parsed, panel?: WebviewPanel) {
         if (node.id.type === 'Identifier' && node.init.type === 'Literal') {
           // console.log(node.init.properties)
           const relativePath = node.init.value as string
+          const fileUri = Uri.joinPath(base, 'res', relativePath);
+          let size
+          if (relativePath.endsWith('.png') || relativePath.endsWith('.jpg')) {
+            const { width, height } = sizeOf(readFileSync(fileUri.fsPath));
+            // console.log(fileUri.fsPath, width, height);
+            size = { width, height }
+          }
           if (!panel) {
             ret.push({
+              size,
               key: name,
               value: relativePath
             });
             return
           }
-          const base = workspace.workspaceFolders[0].uri
-          const fileUri = Uri.joinPath(base, 'res', relativePath);
           const texturePath = relativePath.endsWith('.json') ? Uri.joinPath(base, 'res', relativePath.replace('.json', '.png')) : undefined
           ret.push({
+            size,
             key: name,
             texture: getViewPath(panel, texturePath),
             value: panel.webview.asWebviewUri(fileUri).toString()
@@ -48,7 +56,6 @@ export function parseAssets(parsed, panel?: WebviewPanel) {
             key: name,
             value: obj
           })
-
         }
       }
     },

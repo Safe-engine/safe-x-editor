@@ -1,10 +1,10 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Tree } from 'react-arborist';
 import toast from 'react-hot-toast';
 import { GEN_COMPONENT_REQUEST } from '../../shared/constant.message';
 import { redoEdit, undoEdit } from '../../states/actions';
 import { useActions, useSelector } from '../../states/app.context';
-import { selectComponentTree, selectRootFolder, selectSelectedFilePath } from '../../states/app.selectors';
+import { selectComponentTree, selectDragNodePath, selectRootFolder, selectSelectedFilePath } from '../../states/app.selectors';
 import { sendRequest } from '../app.ipc';
 import { TreeItem } from './TreeItem';
 
@@ -14,7 +14,12 @@ export default function NodeTree() {
   const treeData = useSelector(selectComponentTree);
   const filePath = useSelector(selectSelectedFilePath);
   const rootPath = useSelector(selectRootFolder);
-  // const [selectedTreeItem, setSelectedTreeItem] = useState<any>({});
+  const dragNodePath = useSelector(selectDragNodePath);
+  const dragNodePathRef = useRef<string | null>(null)
+
+  useEffect(() => {
+    dragNodePathRef.current = dragNodePath
+  }, [dragNodePath])
 
   useEffect(() => {
     if (!treeData || !treeData[0]) {
@@ -112,12 +117,14 @@ export default function NodeTree() {
         onDrop={(event) => {
           event.preventDefault();
           setTimeout(() => {
-          // console.log('drop', event)
-          createNode()
-          })
+            console.log('drop', dragNodePathRef.current)
+            if (!dragNodePathRef.current) return
+            createNode()
+          }, 1)
         }}>
         <Tree
           className='p-1 '
+          height={window.innerHeight - 25}
           data={treeData[0]?.tag === 'SceneComponent' ? treeData[0].children : treeData}
           onSelect={onSelectNodes}
           // onRename={(node) => {

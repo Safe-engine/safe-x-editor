@@ -97,3 +97,8 @@ export const selectImagesTree = createSelector(
   selectApp,
   (appState) => appState.imagesTree
 );
+
+export const selectDragNodePath = createSelector(
+  selectApp,
+  (appState) => appState.dragNodePath
+);

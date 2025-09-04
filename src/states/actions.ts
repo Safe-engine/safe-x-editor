@@ -9,7 +9,6 @@ const redoStack = []
 export function undoEdit(actions) {
   const prev = undoStack.pop();
   if (!prev) return;
-  redoStack.push(prev);
   const { name, data } = prev;
   if (name && actions[name]) {
     actions[name](...data);
@@ -19,7 +18,6 @@ export function undoEdit(actions) {
 export function redoEdit(actions) {
   const next = redoStack.pop();
   if (!next) return;
-  undoStack.push(next);
   if (next.name && actions[next.name]) {
     actions[next.name](next.data);
   }
@@ -99,6 +97,20 @@ export function getAction(draft: AppState) {
       const node = tree.getNode(nodePath)
       // console.log('node', current(node))
       if (node) {
+        const { xy } = node[component].node
+        redoStack.push({ name: 'redo', data: [draft.selectedPaths[0], component, { node: { xy: [...xy] } }] });
+        node[component] = { ...node[component], ...updated }
+        window.postMessage({ type: 'refresh' })
+      }
+    },
+    redo(nodePath: string, component: string, updated: any) {
+      // console.log('undo', nodePath, component, updated)
+      const tree = new Tree(draft.componentTree, 'id', 'children')
+      const node = tree.getNode(nodePath)
+      // console.log('node', current(node))
+      if (node) {
+        const { xy } = node[component].node
+        undoStack.push({ name: 'undo', data: [draft.selectedPaths[0], component, { node: { xy: [...xy] } }] });
         node[component] = { ...node[component], ...updated }
         window.postMessage({ type: 'refresh' })
       }
@@ -109,27 +121,40 @@ export function getAction(draft: AppState) {
     createNode(parentPath?: string) {
       if (!draft.dragNodePath) return
       const tree = new Tree(draft.componentTree, 'id', 'children')
-      const parentNode = tree.getNode(parentPath)
+      let parentNode = tree.getNode(parentPath)
       const type = draft.dragNodePath.split('/').pop().split('.')[0];
       const key = snakeCase(type).toLowerCase();
       const newNode = {
         id: '',
         "expanded": true,
         "tag": "SpriteRender",
-        "props": { "spriteFrame": `{sf_${key}}`, },
+        "props": { "spriteFrame": `{sf_${key}}`, node: { xy: [0, 0] } },
         "components": [],
         "children": []
       }
       if (parentNode) {
+        // console.log('createNode parentNode', current(parentNode))
         if (!parentNode.children) parentNode.children = []
         const id = parentNode.id + '-' + parentNode.children.length
         newNode.id = id
-        parentNode.children.push(newNode)
+        if (parentNode.props?.spriteFrame) {
+          const key = parentNode.props.spriteFrame.match(/\{(.+?)\}/)?.[1]
+          const parentSf = draft.assets.assetsTextureList.find(a => a.key === key)
+          // console.log('createNode parentSf', key)
+          if (parentSf) {
+            // console.log('createNode parentSf', current(parentSf))
+            const { width, height } = parentSf.size
+            newNode.props.node.xy = [width * 0.5, height * 0.5]
+          }
+        }
       } else {
         const newId = '0-' + draft.componentTree[0].children.length
         newNode.id = newId
-        draft.componentTree[0].children.push(newNode)
+        const { width, height } = draft.settings.designedResolution
+        newNode.props.node.xy = [width * 0.5, height * 0.5]
+        parentNode = draft.componentTree[0]
       }
+      parentNode.children.push(newNode)
       draft.dragNodePath = ''
       window.postMessage({ type: 'refresh' })
     },
