@@ -3,6 +3,7 @@
  */
 import Tree from '@colin-luo/tree';
 import { createSelector } from 'reselect';
+import { pathListToTree } from '../helper/tree';
 import { AppState, initialState } from './app.reducer';
 
 const selectApp = (state: AppState) => state || initialState;
@@ -95,7 +96,7 @@ export const selectAssets = createSelector(
 
 export const selectImagesTree = createSelector(
   selectApp,
-  (appState) => appState.imagesTree
+  (appState) => pathListToTree(appState.assets),
 );
 
 export const selectDragNodePath = createSelector(

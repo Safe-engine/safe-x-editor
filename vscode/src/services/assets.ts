@@ -32,6 +32,7 @@ export function parseAssets(parsed, panel?: WebviewPanel) {
           if (!panel) {
             ret.push({
               size,
+              path: relativePath,
               key: name,
               value: relativePath
             });
@@ -40,21 +41,27 @@ export function parseAssets(parsed, panel?: WebviewPanel) {
           const texturePath = relativePath.endsWith('.json') ? Uri.joinPath(base, 'res', relativePath.replace('.json', '.png')) : undefined
           ret.push({
             size,
+            path: texturePath ? texturePath + '/' + relativePath : relativePath,
             key: name,
             texture: getViewPath(panel, texturePath),
             value: panel.webview.asWebviewUri(fileUri).toString()
           });
         } else if ('ObjectExpression' === node.init.type) {
           const obj = {}
+          let path
           node.init.properties.forEach((p: any) => {
             if (p.type === 'Property' && p.value.type === 'Literal') {
               const base = workspace.workspaceFolders[0].uri
               const fileUri = Uri.joinPath(base, 'res', p.value.value as string);
               // console.log(fileUri.fsPath);
               obj[p.key.value] = getViewPath(panel, fileUri)
+              if (p.key.value === 'atlas') {
+                path = p.value.value as string
+              }
             }
           })
           ret.push({
+            path,
             key: name,
             value: obj
           })
