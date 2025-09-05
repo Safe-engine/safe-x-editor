@@ -177,6 +177,7 @@ export async function loadSceneViewPixi(app, selectedEditingComponent = [], data
     const child = parentNode.children[i]
     child.destroy()
   }
+  // parentNode.removeChildren()
   // console.log('loadSceneView:', selectedEditingComponent, parentNode)
   for (let index = 0; index < selectedEditingComponent.length; index++) {
     const element = selectedEditingComponent[index]

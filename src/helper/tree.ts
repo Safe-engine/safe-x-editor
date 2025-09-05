@@ -51,6 +51,16 @@ export function pathListToTree(data): TreeNode[] {
     const split: string[] = path.split('/');
     createNode(split, tree, dragonBonesAssets[i], 'dragonBones');
   }
+  for (let i = 0; i < spineAssets.length; i++) {
+    const { path } = spineAssets[i];
+    const split: string[] = path.split('/');
+    createNode(split, tree, spineAssets[i], 'dragonBones');
+  }
+  for (let i = 0; i < fontAssets.length; i++) {
+    const { path } = fontAssets[i];
+    const split: string[] = path.split('/');
+    createNode(split, tree, fontAssets[i], 'font');
+  }
   for (let i = 0; i < spriteSheetAssets.length; i++) {
     const { path, json } = spriteSheetAssets[i];
     const split: string[] = path.split('/');

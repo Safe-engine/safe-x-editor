@@ -1,10 +1,11 @@
 import clsx from "clsx";
 import { NodeRendererProps } from "react-arborist";
 import { AiFillFolder, AiFillFolderOpen } from "react-icons/ai";
+import { FaFont } from "react-icons/fa";
 import { GiSkeletonInside } from "react-icons/gi";
+import { SiSpine } from "react-icons/si";
 import { Box, Center, HStack } from "../../base/Stack";
 import { useActions } from "../../states/app.context";
-
 function Sprite({ src, rect, naturalSize, className }) {
   return (
     <div className={`relative ${className}`}>
@@ -32,6 +33,12 @@ function renderIcon(node: any) {
   }
   if (data.type === 'dragonBones') {
     return <GiSkeletonInside color="blue" />;
+  }
+  if (data.type === 'spine') {
+    return <SiSpine color="orange" />;
+  }
+  if (data.type === 'font') {
+    return <FaFont color="white" />;
   }
   if (data.type === 'frame') {
     // console.log('data', data.json);
@@ -73,7 +80,7 @@ export function TreeNode({ node, style, dragHandle }: NodeRendererProps<any>) {
 
     onDragStart={(event) => {
       // console.log('onDragStart node', node.data.path)
-      setDragNode(node.data.path)
+      setDragNode(node.data)
     }}
     onContextMenu={(e) => handleContextMenu(e, node.data)}
   >

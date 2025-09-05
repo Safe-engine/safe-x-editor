@@ -1,5 +1,6 @@
 import { default as Tree } from '@colin-luo/tree';
-import snakeCase from 'lodash/snakeCase';
+import { current } from 'immer';
+import { snakeCase } from 'lodash';
 import { Dispatch } from 'react';
 import { AppState } from './app.reducer';
 
@@ -115,23 +116,52 @@ export function getAction(draft: AppState) {
         window.postMessage({ type: 'refresh' })
       }
     },
-    setDragNode(path: string) {
-      draft.dragNodePath = path
+    setDragNode(node: any) {
+      draft.dragNode = node
     },
     createNode(parentPath?: string) {
-      if (!draft.dragNodePath) return
+      if (!draft.dragNode.path) return
       const tree = new Tree(draft.componentTree, 'id', 'children')
       let parentNode = tree.getNode(parentPath)
-      const type = draft.dragNodePath.split('/').pop().split('.')[0];
-      const key = snakeCase(type).toLowerCase();
-      const newNode = {
+      const { type, key, name } = draft.dragNode
+      console.log('createNode', current(draft.dragNode), parentPath)
+      const newNode: any = {
         id: '',
         "expanded": true,
         "tag": "SpriteRender",
-        "props": { "spriteFrame": `{sf_${key}}`, node: { xy: [0, 0] } },
+        "props": { "spriteFrame": `{${key}}` },
         "components": [],
         "children": []
       }
+      switch (type) {
+        case 'spriteFrame':
+          break;
+        case 'dragonBones':
+          newNode.tag = 'DragonBonesComp'
+          newNode.props = { data: `{${key}}` }
+          break;
+        case 'spine':
+          newNode.tag = 'SpineSkeleton'
+          newNode.props = { data: `{${key}}` }
+          break;
+        case 'font':
+          newNode.tag = 'LabelComp'
+          if (name === 'defaultFont') {
+            newNode.props = { string: 'Label' }
+            break;
+          }
+          newNode.props = { string: 'Label', fontName: `{${key}}` }
+          break;
+        case 'frame': {
+          const type = name.split('/').pop().split('.')[0];
+          const key = snakeCase(type).toLowerCase();
+          newNode.props = { spriteFrame: `{sf_${key}}` }
+          break;
+        }
+        default:
+          break;
+      }
+      let parentSize = { width: 100, height: 100 }
       if (parentNode) {
         // console.log('createNode parentNode', current(parentNode))
         if (!parentNode.children) parentNode.children = []
@@ -143,19 +173,19 @@ export function getAction(draft: AppState) {
           // console.log('createNode parentSf', key)
           if (parentSf) {
             // console.log('createNode parentSf', current(parentSf))
-            const { width, height } = parentSf.size
-            newNode.props.node.xy = [width * 0.5, height * 0.5]
+            parentSize = parentSf.size
           }
         }
       } else {
         const newId = '0-' + draft.componentTree[0].children.length
         newNode.id = newId
-        const { width, height } = draft.settings.designedResolution
-        newNode.props.node.xy = [width * 0.5, height * 0.5]
+        parentSize = draft.settings.designedResolution
         parentNode = draft.componentTree[0]
       }
+      const { width, height } = parentSize
+      newNode.props.node = { xy: [width * 0.5, height * 0.5] }
       parentNode.children.push(newNode)
-      draft.dragNodePath = ''
+      draft.dragNode = {}
       window.postMessage({ type: 'refresh' })
     },
   }

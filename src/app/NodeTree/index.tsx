@@ -14,12 +14,12 @@ export default function NodeTree() {
   const treeData = useSelector(selectComponentTree);
   const filePath = useSelector(selectSelectedFilePath);
   const rootPath = useSelector(selectRootFolder);
-  const dragNodePath = useSelector(selectDragNodePath);
+  const dragNode = useSelector(selectDragNodePath);
   const dragNodePathRef = useRef<string | null>(null)
 
   useEffect(() => {
-    dragNodePathRef.current = dragNodePath
-  }, [dragNodePath])
+    dragNodePathRef.current = dragNode.path
+  }, [dragNode])
 
   useEffect(() => {
     if (!treeData || !treeData[0]) {

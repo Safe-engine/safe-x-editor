@@ -101,5 +101,5 @@ export const selectImagesTree = createSelector(
 
 export const selectDragNodePath = createSelector(
   selectApp,
-  (appState) => appState.dragNodePath
+  (appState) => appState.dragNode
 );
