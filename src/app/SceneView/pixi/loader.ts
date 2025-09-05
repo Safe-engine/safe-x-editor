@@ -2,6 +2,7 @@ import WebFont from 'webfontloader';
 import { getNodePosition, parseIntFromValue, parseStringFromValue } from '../../../helper/node';
 import { ProjectData } from "../cocos/loader";
 import { createCocosSpineSprite } from './CocosSpineSprite';
+import { createPixiRoot } from './pixi';
 declare let PIXI: any
 declare let dragonBones: any
 // declare let WebFont: any
@@ -172,12 +173,10 @@ async function parseChildren(app, root, parentNode, data: ProjectData, evalInit 
 export async function loadSceneViewPixi(app, selectedEditingComponent = [], data: ProjectData) {
   const [root] = selectedEditingComponent
   if (!app || !root) return
+  app.stage.removeChildren()
+  app.stage.sortDirty = true
+  createPixiRoot(app, data.designResolution)
   const parentNode = app.stage.children[0]
-  for (let i = 1; i < parentNode.children.length; i++) {
-    const child = parentNode.children[i]
-    child.destroy()
-  }
-  // parentNode.removeChildren()
   // console.log('loadSceneView:', selectedEditingComponent, parentNode)
   for (let index = 0; index < selectedEditingComponent.length; index++) {
     const element = selectedEditingComponent[index]

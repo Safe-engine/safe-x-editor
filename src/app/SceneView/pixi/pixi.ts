@@ -17,7 +17,10 @@ export function createPixiApp(options: any = {}) {
 
   // Enable interaction
   app.stage.interactive = true;
+  return app;
+}
 
+export function createPixiRoot(app, designResolution) {
   // Tạo drawLayer (Container)
   const drawLayer = new PIXI.Container();
   drawLayer.name = 'drawLayer';
@@ -29,6 +32,7 @@ export function createPixiApp(options: any = {}) {
 
   // Vẽ khung viền hình chữ nhật
   border.lineStyle(lineWidth, pink, 1);
+  const { width, height } = designResolution
   border.drawRect(0, 0, width, height);
 
   drawLayer.addChild(border);
@@ -48,5 +52,4 @@ export function createPixiApp(options: any = {}) {
   arrowContainer.addChild(arrowSpriteHorizon);
   arrowContainer.addChild(arrowSpriteVertical);
   app.stage.addChild(arrowContainer);
-  return app;
 }
