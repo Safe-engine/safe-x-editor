@@ -174,7 +174,6 @@ export default function SceneView() {
         // console.log('worldPosition', currentNode.x, currentNode.y, worldPosition)
         getArrowNode().setPosition(x, y);
       }
-      // scale, scaleX, scaleY, rotation
       const { scaleX = 1, scaleY = 1, scale = 1, rotation = 0 } = selectedNode.props.node || {};
       if (scale !== 1) {
         currentNode.scale = isPixi ? new PIXI.Point(scale, scale) : scale;
@@ -294,6 +293,8 @@ export default function SceneView() {
     if (value < 0.1) value = 0.1;
     if (value > 2) value = 2;
     updateParentNode('scale', round(value, 2), setScale, setLastSceneScale);
+    setMoveSpeed(round(1 / value));
+    setLastMoveSpeed(round(1 / value));
   }, [scale, isPixi]);
 
   const updateParentNode = useCallback(function (

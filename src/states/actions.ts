@@ -84,9 +84,9 @@ export function getAction(draft: AppState) {
         const path = draft.selectedPaths[index]
         const node = tree.getNode(path)
         if (node) {
-          const { xy } = node[component].node
+          // console.log('updateMultiNodes middleware', current(node[component]), component)
+          const { xy = [0, 0] } = node[component]?.node || {}
           undoStack.push({ name: 'undo', data: [draft.selectedPaths[0], component, { node: { xy: [...xy] } }] });
-          // console.log('updateMultiNodes middleware', current(node[component]), current(xy))
           node[component] = { ...node[component], ...updated }
           draft.selectedNodes[index] = node
         }
