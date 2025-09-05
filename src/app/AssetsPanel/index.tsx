@@ -1,23 +1,22 @@
-import { useEffect, useRef } from 'react'
+import { useRef } from 'react'
 import { Tree, TreeApi } from 'react-arborist'
-import { useActions, useSelector } from '../../states/app.context'
+import { useSelector } from '../../states/app.context'
 import { selectImagesTree } from '../../states/app.selectors'
 import { TreeNode } from './TreeNode'
 
 export default function AssetsPanel() {
-  const { toggleFolder } = useActions();
   const treeRef = useRef<TreeApi<any>>(null)
   const treeData = useSelector(selectImagesTree);
 
-  useEffect(() => {
+  // useEffect(() => {
   //   const lastFile = getLastLoadedFile()
   //   if (treeData[1] && lastFile) {
-      console.log('treeData Files', treeData)
+      // console.log('treeData Files', treeData)
   //     const node = treeRef.current.get(lastFile)
   //     // console.log('getLastLoadedFile node', node)
   //     treeRef.current.select(node)
   //   }
-  }, [treeData])
+  // }, [treeData])
 
   function onItemClick(node) {
     // console.log('onItemClick', node.isOpen);

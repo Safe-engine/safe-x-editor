@@ -72,6 +72,34 @@ export default function SceneView() {
       if (e.key === 'y' || e.key === 'Y') {
         setLockY(!lockY);
       }
+      // check arrow key and move
+      let value = 1
+      if (e.shiftKey) {
+        value = 10
+      }
+
+      e.preventDefault();
+      // console.log('onKeyDown', e.key, lockX, lockY, value)
+      switch (e.key) {
+        case 'ArrowUp':
+          if (isPixi) {
+            value = value * -1
+          }
+          if (!lockY) updateNodes(0, value);
+          break;
+        case 'ArrowDown':
+          if (isPixi) {
+            value = value * -1
+          }
+          if (!lockY) updateNodes(0, -value);
+          break;
+        case 'ArrowLeft':
+          if (!lockX) updateNodes(-value, 0);
+          break;
+        case 'ArrowRight':
+          if (!lockX) updateNodes(value, 0);
+          break;
+      }
     }
     window.addEventListener('keydown', onKeyDown);
     return () => {
@@ -263,6 +291,13 @@ export default function SceneView() {
       }
       return;
     }
+    updateNodes(dx, dy);
+  }
+
+  function updateNodes(dx, dy) {
+    if (!selectedEditingComponent) return;
+    const scene = isPixi ? pixiAppRef.current.stage : cc.director.getRunningScene()
+    const drawLayer = scene.children[0];
     selectedPaths.forEach((path) => {
       const currentNode = getCurrentNode(path, drawLayer, selectedEditingComponent[0]?.tag === 'SceneComponent');
       const { x: nx = 0, y: ny = 0 } = currentNode;
