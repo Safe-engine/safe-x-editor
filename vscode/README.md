@@ -18,10 +18,12 @@ A Visual Studio Code extension that help moving and edit scene in safex game:
 
 - `Ctrl/Cmd + S`: Save scene
 - `X`: Lock/Unlock move X
-- Y`: Lock/Unlock move Y
+- `Y`: Lock/Unlock move Y
+- `Keep left mouse and move`: Move node
 - `Arrow keys`: Move by 1px
 - `Shift + Arrow keys`: Move by 10px
-- `Mouse wheel scroll` to scale scene
+- `Mouse wheel scroll`: scale scene
+- `Keep middle mouse and move`: Move scene
 
 ---
 

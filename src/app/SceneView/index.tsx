@@ -15,6 +15,7 @@ export default function SceneView() {
   const { updateMultiNodes } = useActions();
   // const [position, setPosition] = useState({ x: 200, y: 200 });
   const [isEditing, setIsEditing] = useState(false);
+  const [isMiddleMouse, setIsMiddleMouse] = useState(false);
   const [positionStart, setPositionStart] = useState({ x: 0, y: 0 });
   const [lastX, setLastX] = useState(getLastSceneX());
   const [lastY, setLastY] = useState(getLastSceneY());
@@ -219,6 +220,9 @@ export default function SceneView() {
   }, [selectedPaths, selectedNodes, scale]);
 
   function onMouseUp() {
+    if (isMiddleMouse) {
+      setIsMiddleMouse(false);
+    }
     setIsEditing(false);
     if (!cc.director?.getRunningScene() && !pixiAppRef.current?.stage) return;
     const scene = isPixi ? pixiAppRef.current.stage : cc.director.getRunningScene()
@@ -257,6 +261,9 @@ export default function SceneView() {
   }
 
   function onMouseDown(event: React.MouseEvent<HTMLDivElement>) {
+    if (event.button === 1) {
+      setIsMiddleMouse(true);
+    }
     setIsEditing(true);
     setPositionStart({ x: event.clientX, y: event.clientY });
   }
@@ -273,7 +280,7 @@ export default function SceneView() {
     const dy = (event.clientY - positionStart.y) / scale * (isPixi ? moveSpeed * 0.33 : -moveSpeed);
     setPositionStart({ x: event.clientX, y: event.clientY });
     // console.log('selectedEditingComponent', selectedEditingComponent, selectedPaths)
-    if (!selectedPaths.length) {
+    if (!selectedPaths.length || isMiddleMouse) {
       const { x: nx = 0, y: ny = 0 } = drawLayer;
       const lastX = round(nx + dx);
       const lastY = round(ny + dy);
@@ -404,6 +411,7 @@ export default function SceneView() {
           onChange={handleChange(setLastY)}
         />
         Move Speed:<Input
+          className='w-16'
           value={moveSpeed}
           onChange={handleChange(setMoveSpeed)}
         />

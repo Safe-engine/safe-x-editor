@@ -33,7 +33,7 @@ export default function AssetsPanel() {
   return (
     <div className='h-full'>
       <div className='flex w-[280px] space-x-1'>
-        <span className='text-yellow-400 text-ellipsis overflow-hidden whitespace-nowrap text-left rtl'>Images&nbsp;</span>
+        <span className='text-yellow-400 text-ellipsis overflow-hidden whitespace-nowrap text-left rtl'>Assets&nbsp;</span>
       </div>
       <hr />
       <div className='flex h-screen'>
@@ -41,6 +41,7 @@ export default function AssetsPanel() {
           height={window.innerHeight - 25}
           ref={treeRef}
           data={treeData}
+          idAccessor="path"
           onSelect={(nodes) => {
             // console.log('nodes', nodes);
             if (nodes[0])
