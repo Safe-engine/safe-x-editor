@@ -102,6 +102,10 @@ async function parseChildren(app, root, parentNode, data: ProjectData, evalInit 
       const texture = PIXI.utils.TextureCache[spriteFrame.value];
       renderNode = PIXI.Sprite.from(texture)
     }
+    if (tag === 'ProgressTimerComp') {
+      renderNode.anchor.x = 0
+      renderNode.anchor.y = 0
+    }
   } else if (tag === 'LabelComp' || 'RichTextComp' === tag) {
     // Load font and apply to text node
     const { string, font = '', size } = props
