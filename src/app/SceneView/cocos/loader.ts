@@ -105,6 +105,10 @@ async function parseChildren(root, parentNode, data: ProjectData, evalInit = '')
       const frame = cc.spriteFrameCache.getSpriteFrame(spriteFrame.value)
       renderNode = new cc.Sprite(frame)
     }
+    if (tag === 'ProgressTimerComp') {
+      renderNode.anchorX = 0
+      renderNode.anchorY = 0
+    }
   } else if (tag === 'LabelComp' || 'RichTextComp' === tag) {
     const { string, font = '', size } = props
     let foundFont = fontAssets.find((item) => item.key === parseStringFromValue(font))
@@ -188,7 +192,7 @@ async function parseChildren(root, parentNode, data: ProjectData, evalInit = '')
 export async function loadSceneViewCocos(selectedEditingComponent = [], data: ProjectData) {
   const [root] = selectedEditingComponent
   if (!cc.director || !cc.director.getRunningScene() || !root) return
- const { designResolution } = data
+  const { designResolution } = data
   const drawLayer = getDrawLayer(designResolution)
   // console.log('loadSceneView:', selectedEditingComponent, parentNode)
   for (let index = 0; index < selectedEditingComponent.length; index++) {

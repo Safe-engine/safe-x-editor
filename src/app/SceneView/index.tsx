@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import Input from '../../base/Input';
 import { getLastMoveSpeed, getLastSceneScale, getLastSceneX, getLastSceneY, setLastMoveSpeed, setLastSceneScale, setLastSceneX, setLastSceneY } from '../../data/AppData';
 import { getCurrentNode, getNodePosition, Vec2 } from '../../helper/node';
-import { handleChange } from '../../helper/utils';
+import { handleChangeNumber } from '../../helper/utils';
 import { useActions, useSelector } from '../../states/app.context';
 import { selectAssets, selectComponentsCache, selectComponentTree, selectDesignResolution, selectIsPixi, selectRootFolder, selectSelectedEditingPath, selectSelectedNodes, selectSelectedPaths } from '../../states/app.selectors';
 import { getArrowNode, getDrawNode, getHorizonArrow, getVerticalArrow, loadSceneViewCocos, onStart } from './cocos';
@@ -78,8 +78,7 @@ export default function SceneView() {
       if (e.shiftKey) {
         value = 10
       }
-
-      e.preventDefault();
+      // e.preventDefault();
       // console.log('onKeyDown', e.key, lockX, lockY, value)
       switch (e.key) {
         case 'ArrowUp':
@@ -390,17 +389,13 @@ export default function SceneView() {
   return (
     <div className='w-full h-full'>
       <div className='inline-block space-x-1 p-1 text-white items-center justify-start'>
-        Scale:<Input
-          value={scale}
-          onChange={handleChange(setScale)}
-        />
         <span className={clsx('cursor-pointer select-none', { 'line-through decoration-red-500 decoration-2': lockX })}
           onClick={() => setLockX(!lockX)}
         >X:</span>
         <Input
           readOnly={lockX}
           value={lastX}
-          onChange={handleChange(setLastX)}
+          onChange={handleChangeNumber(setLastX)}
         />
         <span className={clsx('cursor-pointer select-none', { 'line-through decoration-red-500 decoration-2': lockY })}
           onClick={() => setLockY(!lockY)}
@@ -408,12 +403,16 @@ export default function SceneView() {
         <Input
           readOnly={lockY}
           value={lastY}
-          onChange={handleChange(setLastY)}
+          onChange={handleChangeNumber(setLastY)}
+        />
+        Scale:<Input
+          value={scale}
+          onChange={handleChangeNumber(setScale)}
         />
         Move Speed:<Input
           className='w-16'
           value={moveSpeed}
-          onChange={handleChange(setMoveSpeed)}
+          onChange={handleChangeNumber(setMoveSpeed)}
         />
       </div>
       <hr />

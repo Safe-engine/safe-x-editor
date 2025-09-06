@@ -41,7 +41,7 @@ export default function AssetsPanel() {
           height={window.innerHeight - 25}
           ref={treeRef}
           data={treeData}
-          idAccessor="path"
+          // idAccessor="path"
           onSelect={(nodes) => {
             // console.log('nodes', nodes);
             if (nodes[0])

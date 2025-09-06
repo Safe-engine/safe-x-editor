@@ -4,7 +4,7 @@
   "description": "edit for safex components",
   "author": "antn9x",
   "publisher": "antn9x",
-  "version": "0.6.3",
+  "version": "0.6.4",
   "engines": {
     "vscode": "^1.100.0"
   },
