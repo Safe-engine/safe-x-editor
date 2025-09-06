@@ -4,11 +4,7 @@
   "description": "edit for safex components",
   "author": "antn9x",
   "publisher": "antn9x",
-  "version": "0.6.1",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/Microsoft/vscode-extension-samples"
-  },
+  "version": "0.6.3",
   "engines": {
     "vscode": "^1.100.0"
   },
@@ -48,7 +44,7 @@
     }
   },
   "scripts": {
-    "deploy": "vsce package",
+    "deploy": "vsce package --allow-missing-repository",
     "vscode:prepublish": "yarn run compile",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./"
