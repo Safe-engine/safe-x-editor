@@ -328,8 +328,8 @@ export default function SceneView() {
     if (value < 0.1) value = 0.1;
     if (value > 2) value = 2;
     updateParentNode('scale', round(value, 2), setScale, setLastSceneScale);
-    setMoveSpeed(round(1 / value));
-    setLastMoveSpeed(round(1 / value));
+    setMoveSpeed(round(1 / value, 2));
+    setLastMoveSpeed(round(1 / value, 2));
   }, [scale, isPixi]);
 
   const updateParentNode = useCallback(function (
@@ -418,7 +418,6 @@ export default function SceneView() {
         className='w-full h-full relative'
       >
         <canvas id='gameCanvas' className='pointer-events-none' />
-        {/* <ArrowControl position={position} /> */}
       </div>
     </div>
   );

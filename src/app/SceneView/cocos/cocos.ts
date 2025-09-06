@@ -27,8 +27,8 @@ export function getDrawLayer(designResolution) {
   );
   drawLayer.addChild(border);       // Thêm border vào layer
   const arrowContainer = new cc.Node();
-  const arrowSpriteHorizon = new cc.Sprite('Ico_arrow.png');
-  const arrowSpriteVertical = new cc.Sprite('Ico_arrow.png');
+  const arrowSpriteHorizon = new cc.Sprite((window as any).arrowPng);
+  const arrowSpriteVertical = new cc.Sprite((window as any).arrowPng);
   arrowSpriteVertical.setAnchorPoint(0.5, 0);
   arrowSpriteHorizon.setAnchorPoint(0.5, 0);
   arrowSpriteVertical.color = cc.color(255, 0, 0, 255);

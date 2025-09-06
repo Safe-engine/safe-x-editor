@@ -24,7 +24,7 @@ function createOrShowWebview(context: vscode.ExtensionContext, uri: vscode.Uri) 
     }
   );
 
-  panel.webview.html = getEditorWebview(context, uri.fsPath);
+  panel.webview.html = getEditorWebview(context, uri.fsPath, panel);
   Router(panel, context)
   startServer(uri.fsPath); // test only
   // Khi panel bị dispose (user đóng), set biến về undefined

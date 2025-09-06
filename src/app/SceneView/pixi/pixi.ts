@@ -41,8 +41,8 @@ export function createPixiRoot(app, designResolution) {
   drawLayer.y = getLastSceneY(); // Đặt vị trí của layer
   drawLayer.scale = new PIXI.Point(getLastSceneScale(), getLastSceneScale()); // Giảm kích thước của layer xuống
   const arrowContainer = new PIXI.Container();
-  const arrowSpriteHorizon = PIXI.Sprite.from('Ico_arrow.png');
-  const arrowSpriteVertical = PIXI.Sprite.from('Ico_arrow.png');
+  const arrowSpriteHorizon = PIXI.Sprite.from((window as any).arrowPng);
+  const arrowSpriteVertical = PIXI.Sprite.from((window as any).arrowPng);
   arrowSpriteVertical.anchor.x = 0.5;
   arrowSpriteHorizon.anchor.x = 0.5;
   arrowSpriteVertical.anchor.y = 1;
