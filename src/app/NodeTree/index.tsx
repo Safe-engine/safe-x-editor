@@ -10,7 +10,7 @@ import { TreeItem } from './TreeItem';
 
 export default function NodeTree() {
   const actions = useActions();
-  const { selectEditMultiNodes, createNode } = actions
+  const { selectEditMultiNodes, createNode, arrangeNode } = actions
   const treeData = useSelector(selectComponentTree);
   const filePath = useSelector(selectSelectedFilePath);
   const rootPath = useSelector(selectRootFolder);
@@ -132,7 +132,8 @@ export default function NodeTree() {
           // }}
           onMove={({ dragIds, parentId, index }) => {
             // console.log('onMove', dragIds, parentId, index);
-            createNode(parentId)
+            if (dragIds.length > 0) arrangeNode(parentId, dragIds)
+            else createNode(parentId)
           }}
           openByDefault
         >

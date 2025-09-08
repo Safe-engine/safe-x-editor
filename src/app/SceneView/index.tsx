@@ -12,7 +12,7 @@ import { createPixiApp, loadSceneViewPixi } from './pixi';
 declare let PIXI: any
 
 export default function SceneView() {
-  const { updateMultiNodes } = useActions();
+  const { updateMultiNodes, deleteNodes } = useActions();
   // const [position, setPosition] = useState({ x: 200, y: 200 });
   const [isEditing, setIsEditing] = useState(false);
   const [isMiddleMouse, setIsMiddleMouse] = useState(false);
@@ -79,7 +79,7 @@ export default function SceneView() {
         value = 10
       }
       // e.preventDefault();
-      // console.log('onKeyDown', e.key, lockX, lockY, value)
+      console.log('onKeyDown', e.key, value)
       switch (e.key) {
         case 'ArrowUp':
           if (isPixi) {
@@ -98,6 +98,10 @@ export default function SceneView() {
           break;
         case 'ArrowRight':
           if (!lockX) updateNodes(value, 0);
+          break;
+        case 'Delete':
+        case 'Backspace':
+          deleteNodes();
           break;
       }
     }
@@ -175,9 +179,17 @@ export default function SceneView() {
 
   useEffect(() => {
     if (!cc.director?.getRunningScene() && !pixiAppRef.current?.stage) return;
+    let arrowNode
+    if (isPixi) {
+      arrowNode = pixiAppRef.current.stage.children[1]
+    } else {
+      arrowNode = getArrowNode()
+    }
     if (!selectedPaths.length) {
       setLastX(getLastSceneX());
       setLastY(getLastSceneY());
+      arrowNode.x = -1000;
+      arrowNode.y = -1000;
       return
     }
     const scene = isPixi ? pixiAppRef.current.stage : cc.director.getRunningScene()
@@ -193,14 +205,13 @@ export default function SceneView() {
       setLastY(y);
       if (isPixi) {
         const globalPos = currentNode.getGlobalPosition();
-        const arrowNode = pixiAppRef.current.stage.children[1]
         arrowNode.x = globalPos.x;
         arrowNode.y = globalPos.y;
       } else {
         const worldPosition = currentNode.parent.convertToWorldSpace(currentNode);
         const { x, y } = worldPosition;
         // console.log('worldPosition', currentNode.x, currentNode.y, worldPosition)
-        getArrowNode().setPosition(x, y);
+        arrowNode.setPosition(x, y);
       }
       const { scaleX = 1, scaleY = 1, scale = 1, rotation = 0 } = selectedNode.props.node || {};
       if (scale !== 1) {

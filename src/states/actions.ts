@@ -1,6 +1,6 @@
 import { default as Tree } from '@colin-luo/tree';
 import { current } from 'immer';
-import { snakeCase } from 'lodash';
+import { cloneDeep, snakeCase } from 'lodash';
 import { Dispatch } from 'react';
 import { AppState } from './app.reducer';
 
@@ -119,8 +119,28 @@ export function getAction(draft: AppState) {
     setDragNode(node: any) {
       draft.dragNode = node
     },
+    arrangeNode(parentPath: string, dragIds: string[] = []) {
+      const tree = new Tree(draft.componentTree, 'id', 'children')
+      let parentNode = tree.getNode(parentPath)
+      dragIds.forEach(id => {
+        let dragNode = tree.getNode(parentPath)
+        parentNode.children.push(cloneDeep(dragNode))
+      })
+      tree.removeNodes(dragIds)
+      const iterator = function (node, index, parent, level) {
+        if (!parent) node.id = '0'
+        else node.id = parent.id + '-' + index
+        // console.log(current(node), index)
+      };
+      tree.walker(iterator, null, 'breadth');
+      draft.selectedPaths = []
+      draft.selectedNodes = []
+      window.postMessage({ type: 'refresh' })
+    },
     createNode(parentPath?: string) {
-      if (!draft.dragNode.path) return
+      if (!draft.dragNode.path) {
+        return
+      }
       const tree = new Tree(draft.componentTree, 'id', 'children')
       let parentNode = tree.getNode(parentPath)
       const { type, key, name } = draft.dragNode
@@ -188,6 +208,19 @@ export function getAction(draft: AppState) {
       draft.dragNode = {}
       window.postMessage({ type: 'refresh' })
     },
+    deleteNodes() {
+      const tree = new Tree(draft.componentTree, 'id', 'children')
+      tree.removeNodes(draft.selectedNodes)
+      const iterator = function (node, index, parent, level) {
+        if (!parent) node.id = '0'
+        else node.id = parent.id + '-' + index
+        // console.log(current(node), index)
+      };
+      tree.walker(iterator, null, 'breadth');
+      draft.selectedPaths = []
+      draft.selectedNodes = []
+      window.postMessage({ type: 'refresh' })
+    }
   }
   return actions
 }
