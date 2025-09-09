@@ -45,7 +45,8 @@ export async function getClassesMetaData(srcDir: string, idDebug = false) {
               const { name } = key as any
               const { params } = value as any
               GlobalData.componentsMap[className] = { properties: {}, method: {} }
-              if (name === 'create' && params.length) {
+              // log('GlobalData.customHasRenderComponents', className, name)
+              if (name === 'render') {
                 GlobalData.customHasRenderComponents.push(className)
                 params.forEach(p => {
                   const { properties } = p

@@ -1,12 +1,12 @@
 import { useRef } from 'react'
 import { Tree, TreeApi } from 'react-arborist'
 import { useSelector } from '../../states/app.context'
-import { selectImagesTree } from '../../states/app.selectors'
+import { selectAssetsTree } from '../../states/app.selectors'
 import { TreeNode } from './TreeNode'
 
 export default function AssetsPanel() {
   const treeRef = useRef<TreeApi<any>>(null)
-  const treeData = useSelector(selectImagesTree);
+  const treeData = useSelector(selectAssetsTree);
 
   // useEffect(() => {
   //   const lastFile = getLastLoadedFile()

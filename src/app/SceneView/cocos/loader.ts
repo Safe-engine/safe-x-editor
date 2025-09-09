@@ -154,7 +154,7 @@ async function parseChildren(root, parentNode, data: ProjectData, evalInit = '')
   } else if (tag === 'SceneComponent') {
     renderNode = parentNode
   } else {
-    // console.log(componentsCache, tag)
+    // console.log('componentsCache', componentsCache, tag)
     if (componentsCache[tag]) {
       renderNode = await parseChildren(componentsCache[tag], parentNode, data, evalInit)
     }

@@ -94,7 +94,7 @@ export const selectAssets = createSelector(
   (appState) => appState.assets
 );
 
-export const selectImagesTree = createSelector(
+export const selectAssetsTree = createSelector(
   selectApp,
   (appState) => pathListToTree(appState.assets),
 );

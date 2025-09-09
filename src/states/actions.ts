@@ -30,10 +30,9 @@ export function getAction(draft: AppState) {
       draft.rootFolder = src.replace(/\\/g, '/')
     },
     getFilesSuccess(data) {
-      const { imagesTree, componentsTree, componentsCache, assets, designedResolution, isPixi } = data
+      const { componentsTree, componentsCache, assets, designedResolution, isPixi } = data
       draft.filesData = componentsTree[0].children
       draft.assets = assets
-      draft.imagesTree = imagesTree[0] ? imagesTree[0].children : []
       draft.componentsCache = componentsCache
       draft.settings.designedResolution = designedResolution
       draft.isPixi = isPixi
@@ -64,12 +63,6 @@ export function getAction(draft: AppState) {
       if (node) {
         node[component] = { ...node[component], ...updated }
       }
-    },
-    toggleFolder(key: string) {
-      let tree = new Tree(draft.imagesTree, 'path', 'children')
-      const node = tree.getNode(key)
-      console.log(key, 'toggleFolder', node.isOpen)
-      node.expanded = !node.expanded
     },
     selectEditMultiNodes(paths: string[]) {
       draft.selectedPaths = paths

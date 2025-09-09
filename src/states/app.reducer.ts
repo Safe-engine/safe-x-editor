@@ -10,7 +10,6 @@ export const initialState = {
   editingPath: '',
   editingClassNamePath: '',
   dragNode: {} as any,
-  imagesTree: [],
   filesData: [],
   componentTree: [],
   componentsCache: [],

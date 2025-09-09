@@ -1,13 +1,11 @@
 import DirectoryTree from 'directory-tree';
 import { existsSync, readdirSync, readFileSync } from 'fs';
-import sizeOf from 'image-size';
 import { join } from 'path';
-import { Uri } from "vscode";
 import { getResolutionSettings } from '../helper/settings';
 import { GlobalData } from '../parser/global';
 import { getClassesMetaData } from '../parser/metadata';
-import { filterImages, filterTree, getTreeData } from '../utils/Helper';
-import { getViewPath, parseAssetsSrcFile } from './assets';
+import { filterTree, getTreeData } from '../utils/Helper';
+import { parseAssetsSrcFile } from './assets';
 import { loadComponent } from './ComponentService';
 
 export const getFilesInFolder = async ({ src }, panel) => {
@@ -46,21 +44,7 @@ export const getFilesInFolder = async ({ src }, panel) => {
     attributes: ['type', 'extension'],
   }
   // console.log(components, 'components');
-  const images = DirectoryTree(
-    join(src, 'res'),
-    {
-      extensions: /\.(gif|jpe?g|tiff?|png|webp|bmp)$/i,
-      exclude: [],
-      attributes: ['type'],
-    },
-    (item, path) => {
-      const { width, height } = sizeOf(readFileSync(path));
-      item.custom = { width, height, path: getViewPath(panel, Uri.file(path)) };
-    },
-  );
-  // console.log(images, 'images');
   return {
-    imagesTree: getTreeData(filterImages([images])),
     componentsTree: getTreeData(filterTree([DirectoryTree(join(src, 'src'), jsxOption)])),
     isPixi: content.includes('@safe-engine/pixi'),
     assets: {
