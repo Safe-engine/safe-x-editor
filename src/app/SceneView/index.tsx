@@ -1,5 +1,6 @@
 import clsx from 'clsx';
 import { round } from 'lodash';
+import { Assets, Point, Spritesheet } from 'pixi.js';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Input from '../../base/Input';
 import { getLastMoveSpeed, getLastSceneScale, getLastSceneX, getLastSceneY, setLastMoveSpeed, setLastSceneScale, setLastSceneX, setLastSceneY } from '../../data/AppData';
@@ -9,7 +10,6 @@ import { useActions, useSelector } from '../../states/app.context';
 import { selectAssets, selectComponentsCache, selectComponentTree, selectDesignResolution, selectIsPixi, selectRootFolder, selectSelectedEditingPath, selectSelectedNodes, selectSelectedPaths } from '../../states/app.selectors';
 import { getArrowNode, getDrawNode, getHorizonArrow, getVerticalArrow, loadSceneViewCocos, onStart } from './cocos';
 import { createPixiApp, loadSceneViewPixi } from './pixi';
-declare let PIXI: any
 
 export default function SceneView() {
   const { updateMultiNodes, deleteNodes } = useActions();
@@ -121,13 +121,15 @@ export default function SceneView() {
           fetch(spriteSheet.value)
             .then(res => res.json())
             .then(data => {
-              const baseTex = PIXI.BaseTexture.from(spriteSheet.texture);
-              const sheet = new PIXI.Spritesheet(baseTex, data);
-              sheet.parse(resolve);
-            });
+              const sheet = new Spritesheet(spriteSheet.texture, data);
+              return sheet.parse();
+            }).then(resolve);
         })
       })).then(() => {
-        pixiAppRef.current = createPixiApp(designResolution)
+        createPixiApp(designResolution).then(app => {
+          Assets.load((window as any).arrowPng)
+          pixiAppRef.current = app;
+        })
       })
       return
     }
@@ -215,7 +217,7 @@ export default function SceneView() {
       }
       const { scaleX = 1, scaleY = 1, scale = 1, rotation = 0 } = selectedNode.props.node || {};
       if (scale !== 1) {
-        currentNode.scale = isPixi ? new PIXI.Point(scale, scale) : scale;
+        currentNode.scale = isPixi ? new Point(scale, scale) : scale;
       }
       if (scaleX !== 1) {
         currentNode.scale.x = scaleX;
@@ -359,7 +361,7 @@ export default function SceneView() {
     if (isPixi) {
       const parentNode = pixiAppRef.current.stage.children[0]
       if (key === 'scale') {
-        parentNode.scale = new PIXI.Point(value, value);
+        parentNode.scale = new Point(value, value);
       } else {
         parentNode[key] = value;
       }

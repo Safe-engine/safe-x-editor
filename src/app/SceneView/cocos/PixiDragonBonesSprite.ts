@@ -3,7 +3,7 @@ declare let dragonBones: any
 
 export const SharedDragonBonesManager = {
   isLoaded: false,
-  factory: dragonBones.PixiFactory.factory,
+  // factory: dragonBones.PixiFactory.factory,
   assets: {},
 
   loadAssetsOnce: function (key, texJsonUrl, texPngUrl) {

@@ -23,14 +23,6 @@ export default defineConfig({
           src: 'node_modules/cocos-html5-ts/lib/cocos2d-3.17.js',
           dest: 'vendor',
         },
-        {
-          src: 'node_modules/pixi.js/dist/pixi.min.js',
-          dest: 'vendor',
-        },
-        {
-          src: 'node_modules/pixi5-dragonbones/dragonBones.min.js',
-          dest: 'vendor',
-        },
     ],
   }),
   viteSingleFile({ deleteInlinedFiles: true })],

@@ -54,7 +54,7 @@ export function pathListToTree(data): TreeNode[] {
   for (let i = 0; i < spineAssets.length; i++) {
     const { path } = spineAssets[i];
     const split: string[] = path.split('/');
-    createNode(split, tree, spineAssets[i], 'dragonBones');
+    createNode(split, tree, spineAssets[i], 'spine');
   }
   for (let i = 0; i < fontAssets.length; i++) {
     const { path } = fontAssets[i];
