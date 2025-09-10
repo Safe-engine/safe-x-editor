@@ -20,7 +20,4 @@ build/
 gen/
 output/
 release/
-vscode/media/favicon.ico
-vscode/media/index.html
-vscode/media/Ico_arrow.png
-vscode/media/vendor
+vscode/media/

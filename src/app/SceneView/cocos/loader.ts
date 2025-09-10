@@ -105,10 +105,6 @@ async function parseChildren(root, parentNode, data: ProjectData, evalInit = '')
       const frame = cc.spriteFrameCache.getSpriteFrame(spriteFrame.value)
       renderNode = new cc.Sprite(frame)
     }
-    if (tag === 'ProgressTimerComp') {
-      renderNode.anchorX = 0
-      renderNode.anchorY = 0
-    }
   } else if (tag === 'LabelComp' || 'RichTextComp' === tag) {
     const { string, font = '', size } = props
     let foundFont = fontAssets.find((item) => item.key === parseStringFromValue(font))
