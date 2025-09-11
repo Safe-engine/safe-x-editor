@@ -1,5 +1,4 @@
 import { Dispatch } from 'react';
-import toast from 'react-hot-toast';
 import { sendRequest } from '../app/app.ipc';
 import { setLastRootFolder } from '../data/AppData';
 import { GET_FOLDER_FILES, LOAD_COMPONENT_REQUEST } from '../shared/constant.message';
@@ -14,7 +13,6 @@ export function createMiddleware(dispatch: Dispatch<any>) {
         src,
       })
       if (data.error) {
-        toast.error(data.message)
         return
       }
       setLastRootFolder(src)

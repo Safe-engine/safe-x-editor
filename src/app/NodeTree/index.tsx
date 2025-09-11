@@ -1,6 +1,5 @@
 import { useEffect, useRef } from 'react';
 import { Tree } from 'react-arborist';
-import toast from 'react-hot-toast';
 import { GEN_COMPONENT_REQUEST } from '../../shared/constant.message';
 import { redoEdit, undoEdit } from '../../states/actions';
 import { useActions, useSelector } from '../../states/app.context';
@@ -30,7 +29,6 @@ export default function NodeTree() {
         key: GEN_COMPONENT_REQUEST,
         nodesData: treeData[0], filePath
       });
-      toast.success('Gen React Component Success');
     }
     function onKeyDownE(event) {
       const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;

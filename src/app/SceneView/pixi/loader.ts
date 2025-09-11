@@ -38,13 +38,7 @@ async function loadDragonBones(dataName: string, dragonBonesAssets) {
   const key = parseStringFromValue(dataName)
   const data = dragonBonesAssets.find((item) => item.key === key)
   const { atlas, skeleton, texture } = data.value
-  // console.log('loadDragonBones:', data, Loader.shared.resources)
   const factory = PixiFactory.factory
-  // if (!Assets.get(`ske${key}`)) {
-  //   Assets.addBundle(`ske${key}`, skeleton)
-  //     .addBundle(`texJson${key}`, atlas)
-  //     .add(`texPng${key}`, texture)
-  // }
   const resources = await Assets.load([skeleton, atlas, texture])
   // console.log('resources:', resources)
   const dragonData = factory.parseDragonBonesData(resources[skeleton], key)
@@ -56,11 +50,11 @@ async function loadDragonBones(dataName: string, dragonBonesAssets) {
   return armature
 }
 
-async function loadPixi(dataName: string, spinesAssets) {
+async function loadPixiSpine(dataName: string, spinesAssets) {
   const key = parseStringFromValue(dataName)
   const data = spinesAssets.find((item) => item.key === key)
   const { atlas, skeleton, texture } = data.value
-  // console.log('loadPixi:', data)
+  // console.log('loadPixiSpine:', data)
   Assets.add({ alias: `ske${key}`, src: skeleton })
   Assets.add({ alias: `texJson${key}`, src: atlas })
   await Assets.load([`ske${key}`, `texJson${key}`, texture])
@@ -119,7 +113,7 @@ async function parseChildren(app, root, parentNode, data: ProjectData, evalInit 
     renderNode = label
   } else if (tag === 'SpineSkeleton') {
     const { data, skin, animation, loop = true, timeScale = 1 } = props
-    const spine = await loadPixi(data, spineAssets)
+    const spine = await loadPixiSpine(data, spineAssets)
     spine.state.timeScale = timeScale
     if (animation)
       spine.state.setAnimation(0, animation, loop)

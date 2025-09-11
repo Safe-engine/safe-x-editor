@@ -1,10 +1,8 @@
+import { Assets } from "pixi.js"
 import { getNodePosition, parseIntFromValue, parseStringFromValue } from "../../../helper/node"
-import { SkeletonAnimation } from "../spine/CCSkeletonAnimation"
 import { getDrawLayer } from "./cocos"
-import { PixiDragonBonesSprite, SharedDragonBonesManager } from "./PixiDragonBonesSprite"
-
-declare let PIXI: any
-declare let dragonBones: any
+import { PixiDragonBonesSprite } from "./PixiDragonBonesSprite"
+import { PixiSpineSprite } from "./PixiSpineSprite"
 
 interface AssetData {
   key: string
@@ -59,24 +57,42 @@ function loadFont(filePath: string): Promise<void> {
   })
 }
 
-function loadDragonBones(dataName: string, animation, playTimes, dragonBonesAssets) {
+async function loadDragonBones(dataName: string, animation, playTimes, dragonBonesAssets) {
   const key = parseStringFromValue(dataName)
   const data = dragonBonesAssets.find((item) => item.key === key)
   const { atlas, skeleton, texture } = data.value
-  // console.log('loadDragonBones:', data, PIXI.Loader.shared.resources)
-  return new Promise(async (resolve, reject) => {
-    const loader = PIXI.Loader.shared
-    await SharedDragonBonesManager.loadAssetsOnce(skeleton, atlas, texture)
-    // console.log('resources:', resources)
-    const dragon = new PixiDragonBonesSprite({
-      ske: skeleton,
-      texJson: atlas,
-      texPng: texture,
-      animationName: animation,
-      playTimes,
-    })
-    resolve(dragon)
+  await Assets.load([skeleton, atlas, texture])
+  // console.log('resources:', resources)
+  const dragon = new PixiDragonBonesSprite({
+    key,
+    skeleton,
+    atlas,
+    texture,
+    animationName: animation,
+    playTimes,
   })
+  return dragon
+}
+
+async function loadSpine(dataName: string, animation, loop, skin, timeScale, spineAssets) {
+  const key = parseStringFromValue(dataName)
+  const data = spineAssets.find((item) => item.key === key)
+  const { atlas, skeleton, texture } = data.value
+  Assets.add({ alias: `ske${key}`, src: skeleton })
+  Assets.add({ alias: `texJson${key}`, src: atlas })
+  await Assets.load([`ske${key}`, `texJson${key}`, texture])
+  // console.log('resources:', resources)
+  const spineSprite = new PixiSpineSprite({
+    key,
+    skeleton,
+    atlas,
+    texture,
+    animationName: animation,
+    loop,
+    skin,
+    timeScale
+  })
+  return spineSprite
 }
 
 async function parseChildren(root, parentNode, data: ProjectData, evalInit = '') {
@@ -121,27 +137,11 @@ async function parseChildren(root, parentNode, data: ProjectData, evalInit = '')
     renderNode = label
   } else if (tag === 'SpineSkeleton') {
     const { data, skin, animation, loop = true, timeScale = 1 } = props
-    const key = parseStringFromValue(data)
-    const skelData = spineAssets.find((item) => item.key === key)
-    // console.log('SpineSkeleton', skelData, key)
-    const { atlas, skeleton } = skelData.value
-    await new Promise((resolve) => {
-      cc.loader.load([skeleton, atlas], () => { }, () => {
-        // console.log('Cocos loaded spine assets', skeleton, atlas, timeScale);
-        return resolve(null)
-      })
-    })
-    const node = SkeletonAnimation.createWithJsonFile(skeleton, atlas, timeScale)
-    if (skin) {
-      node.setSkin(skin)
-    }
-    if (animation) {
-      node.setAnimation(0, animation, loop)
-    }
+    const node = await loadSpine(data, animation, loop, skin, timeScale, spineAssets)
     renderNode = node
   } else if (tag === 'DragonBonesComp') {
     const { data, animation, playTimes = 0, timeScale = 1 } = props
-    const node: any = await loadDragonBones(data, animation, playTimes, dragonBonesAssets)
+    const node = await loadDragonBones(data, animation, playTimes, dragonBonesAssets)
     // console.log('loadDragonBones', node, timeScale);
     node._armatureDisplay.animation.timeScale = timeScale
     if (animation)

@@ -1,12 +1,12 @@
-import { PixiArmatureDisplay, PixiFactory } from "dragonbones-pixijs"
-import { Application, Assets } from "pixi.js"
+import { Spine } from "@esotericsoftware/spine-pixi-v8"
+import { Application } from "pixi.js"
 
-export class PixiDragonBonesSprite extends cc.Sprite {
+export class PixiSpineSprite extends cc.Sprite {
   _canvas: any
   _pixiApp: Application
   _texture: cc.Texture2D
   _config
-  _armatureDisplay: PixiArmatureDisplay
+  _armatureDisplay: Spine
   constructor(config) {
     super()
     super.ctor() // always call this for compatibility with cocos2dx JS Javascript class system
@@ -40,22 +40,19 @@ export class PixiDragonBonesSprite extends cc.Sprite {
   }
 
   _setupArmature() {
-    const { key, skeleton, atlas, texture, playTimes, animationName, scale = 1 } = this._config
-    const factory = PixiFactory.factory
-    const dragonData = factory.parseDragonBonesData(Assets.get(skeleton), key)
-    factory.parseTextureAtlasData(Assets.get(atlas), Assets.get(texture), key)
-    const { armatureNames } = dragonData
-    const armatureName = armatureNames[0]
-    const display = factory.buildArmatureDisplay(armatureName, key)
+    const { key, skeleton, atlas, texture, loop, skin, timeScale, animationName } = this._config
+    const display = Spine.from({ skeleton: `ske${key}`, atlas: `texJson${key}` })
     if (!display) {
-      console.error('Cannot build armature:', armatureName)
+      console.error('Cannot build armature:', key)
       return
     }
-
-    display.animation.play(animationName, playTimes)
+    if (skin) {
+      display.skeleton.setSkin(skin)
+    }
+    display.state.setAnimation(0, animationName, loop)
     display.x = this._canvas.width / 2
-    display.y = this._canvas.height / 2
-    display.scale.set(scale)
+    display.y = this._canvas.height
+    display.state.timeScale = timeScale
 
     this._pixiApp.stage.addChild(display)
     this._armatureDisplay = display
@@ -74,6 +71,6 @@ export class PixiDragonBonesSprite extends cc.Sprite {
     // this.unschedule(this.updateTexture);
     this._pixiApp.destroy(true, { children: true })
     this._canvas.remove()
-     super.onExit()
+    super.onExit()
   }
 }
