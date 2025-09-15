@@ -1,4 +1,4 @@
-import { parseInt } from "lodash";
+import { parseInt } from "lodash-es";
 
 export function parseEval(evalInit: string) {
   return (v: string) => eval(evalInit + v)

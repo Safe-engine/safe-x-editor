@@ -175,8 +175,10 @@ export async function loadSceneViewPixi(app, selectedEditingComponent = [], data
   createPixiRoot(app, data.designResolution)
   const parentNode = app.stage.children[0]
   // console.log('loadSceneView:', selectedEditingComponent, parentNode)
+  const { width, height } = data.designResolution
+  const init = `const width = ${width};const height = ${height};`
   for (let index = 0; index < selectedEditingComponent.length; index++) {
     const element = selectedEditingComponent[index]
-    await parseChildren(app, element, parentNode, data)
+    await parseChildren(app, element, parentNode, data, init)
   }
 }

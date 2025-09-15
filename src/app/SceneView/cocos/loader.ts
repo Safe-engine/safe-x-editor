@@ -191,8 +191,10 @@ export async function loadSceneViewCocos(selectedEditingComponent = [], data: Pr
   const { designResolution } = data
   const drawLayer = getDrawLayer(designResolution)
   // console.log('loadSceneView:', selectedEditingComponent, parentNode)
+  const { width, height } = designResolution
+  const init = `const width = ${width};const height = ${height};`
   for (let index = 0; index < selectedEditingComponent.length; index++) {
     const element = selectedEditingComponent[index]
-    await parseChildren(element, drawLayer, data)
+    await parseChildren(element, drawLayer, data, init)
   }
 }
