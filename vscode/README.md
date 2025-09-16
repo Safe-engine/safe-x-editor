@@ -19,6 +19,7 @@ A Visual Studio Code extension that help moving and edit scene in safex game:
 - **Keys Binding**  
 
 - `Ctrl/Cmd + S`: Save scene
+- `Ctrl/Cmd + D`: Duplicate node
 - `X`: Lock/Unlock move X
 - `Y`: Lock/Unlock move Y
 - `Keep left mouse and move`: Move node

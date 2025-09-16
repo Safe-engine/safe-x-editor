@@ -163,7 +163,7 @@ export function getAction(draft: AppState) {
             newNode.props = { string: 'Label' }
             break;
           }
-          newNode.props = { string: 'Label', fontName: `{${key}}` }
+          newNode.props = { string: 'Label ' + key, font: `{${key}}` }
           break;
         case 'frame': {
           const type = name.split('/').pop().split('.')[0];
@@ -199,6 +199,14 @@ export function getAction(draft: AppState) {
       newNode.props.node = { xy: [width * 0.5, height * 0.5] }
       parentNode.children.push(newNode)
       draft.dragNode = {}
+      window.postMessage({ type: 'refresh' })
+    },
+    duplicateNode() {
+      const tree = new Tree(draft.componentTree, 'id', 'children')
+      const parent = tree.getParent(draft.selectedNodes[0])
+      const cloned = cloneDeep(draft.selectedNodes[0])
+      cloned.id = parent.id + '-' + parent.children.length
+      parent.children.push(cloned)
       window.postMessage({ type: 'refresh' })
     },
     deleteNodes() {

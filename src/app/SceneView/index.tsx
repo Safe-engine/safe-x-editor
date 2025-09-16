@@ -120,8 +120,10 @@ export default function SceneView() {
         return new Promise(resolve => {
           fetch(spriteSheet.value)
             .then(res => res.json())
-            .then(data => {
-              const sheet = new Spritesheet(spriteSheet.texture, data);
+            .then(async data => {
+              // console.log('load spriteSheet', data)
+              const texture = await Assets.load(spriteSheet.texture)
+              const sheet = new Spritesheet(texture, data);
               return sheet.parse();
             }).then(resolve);
         })
@@ -288,8 +290,8 @@ export default function SceneView() {
     // setPosition({ x, y });
     const scene = isPixi ? pixiAppRef.current.stage : cc.director.getRunningScene()
     const drawLayer = scene.children[0];
-    const dx = (event.clientX - positionStart.x) / scale * moveSpeed * (isPixi ? 0.33 : 1);
-    const dy = (event.clientY - positionStart.y) / scale * (isPixi ? moveSpeed * 0.33 : -moveSpeed);
+    const dx = (event.clientX - positionStart.x) * (isPixi ? 1 : 1);
+    const dy = (event.clientY - positionStart.y) * (isPixi ? 1 : -1);
     setPositionStart({ x: event.clientX, y: event.clientY });
     // console.log('selectedEditingComponent', selectedEditingComponent, selectedPaths)
     if (!selectedPaths.length || isMiddleMouse) {
@@ -310,7 +312,7 @@ export default function SceneView() {
       }
       return;
     }
-    updateNodes(dx, dy);
+    updateNodes(dx * moveSpeed, dy * moveSpeed);
   }
 
   function updateNodes(dx, dy) {

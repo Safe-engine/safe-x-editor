@@ -9,7 +9,7 @@ import { TreeItem } from './TreeItem';
 
 export default function NodeTree() {
   const actions = useActions();
-  const { selectEditMultiNodes, createNode, arrangeNode } = actions
+  const { selectEditMultiNodes, createNode, duplicateNode, arrangeNode } = actions
   const treeData = useSelector(selectComponentTree);
   const filePath = useSelector(selectSelectedFilePath);
   const rootPath = useSelector(selectRootFolder);
@@ -60,6 +60,16 @@ export default function NodeTree() {
         event.preventDefault();
         console.log('Detected Ctrl+Y or Command+Y');
         redoEdit(actions)
+        return
+      }
+      const isDuplicateShortcut = (
+        (isMac && event.metaKey && event.key === 'd') ||
+        (!isMac && event.ctrlKey && event.key === 'd')
+      );
+      if (isDuplicateShortcut) {
+        event.preventDefault();
+        console.log('Detected Ctrl+D or Command+D');
+        duplicateNode()
         return
       }
     }
