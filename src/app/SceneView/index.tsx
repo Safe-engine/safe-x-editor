@@ -1,6 +1,6 @@
 import clsx from 'clsx';
 import { round } from 'lodash';
-import { Assets, Point, Spritesheet } from 'pixi.js';
+import { Assets, Point } from 'pixi.js';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Input from '../../base/Input';
 import { getLastMoveSpeed, getLastSceneScale, getLastSceneX, getLastSceneY, setLastMoveSpeed, setLastSceneScale, setLastSceneX, setLastSceneY } from '../../data/AppData';
@@ -117,16 +117,17 @@ export default function SceneView() {
     if (isPixi) {
       Promise.all(Object.values(spriteSheetAssets).map((spriteSheet) => {
         // console.log('load spriteSheetAssets', spriteSheet)
-        return new Promise(resolve => {
-          fetch(spriteSheet.value)
-            .then(res => res.json())
-            .then(async data => {
-              // console.log('load spriteSheet', data)
-              const texture = await Assets.load(spriteSheet.texture)
-              const sheet = new Spritesheet(texture, data);
-              return sheet.parse();
-            }).then(resolve);
-        })
+        return Assets.load(spriteSheet.value)
+        // return new Promise(resolve => {
+        //   fetch(spriteSheet.value)
+        //     .then(res => res.json())
+        //     .then(async data => {
+        //       // console.log('load spriteSheet', data)
+        //       const texture = await Assets.load(spriteSheet.texture)
+        //       const sheet = new Spritesheet(texture, data);
+        //       return sheet.parse();
+        //     }).then(resolve);
+        // })
       })).then(() => {
         createPixiApp(designResolution).then(app => {
           Assets.load((window as any).arrowPng)

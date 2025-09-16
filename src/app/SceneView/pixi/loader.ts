@@ -90,9 +90,9 @@ async function parseChildren(app, root, parentNode, data: ProjectData, evalInit 
       renderNode = sprite
     } else {
       const spriteFrame = spriteFramesAssets.find((item) => item.key === frameName)
-      // console.log('spriteFrame loaded:', utils.TextureCache, Loader.shared.resources)
-      // const texture = utils.TextureCache[spriteFrame.value];
-      renderNode = Sprite.from(spriteFrame.value)
+      // console.log('spriteFrame loaded:', spriteFrame.value, Assets.get(spriteFrame.value))
+      const texture = Assets.get(spriteFrame.value);
+      renderNode = Sprite.from(texture)
     }
   } else if (tag === 'LabelComp' || 'RichTextComp' === tag) {
     // Load font and apply to text node
@@ -156,7 +156,7 @@ async function parseChildren(app, root, parentNode, data: ProjectData, evalInit 
     }
     if (renderNode instanceof Sprite) {
       renderNode.anchor.x = anchorX
-      renderNode.anchor.x = anchorY
+      renderNode.anchor.y = anchorY
     }
   }
   // console.log('renderNode:', renderNode);
