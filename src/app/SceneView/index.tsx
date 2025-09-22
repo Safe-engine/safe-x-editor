@@ -1,11 +1,9 @@
-import clsx from 'clsx';
 import { round } from 'lodash';
 import { Assets, Point } from 'pixi.js';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import Input from '../../base/Input';
+import NumberInput from '../../base/NumberInput';
 import { getLastMoveSpeed, getLastSceneScale, getLastSceneX, getLastSceneY, setLastMoveSpeed, setLastSceneScale, setLastSceneX, setLastSceneY } from '../../data/AppData';
 import { getCurrentNode, getNodePosition, Vec2 } from '../../helper/node';
-import { handleChangeNumber } from '../../helper/utils';
 import { useActions, useSelector } from '../../states/app.context';
 import { selectAssets, selectComponentsCache, selectComponentTree, selectDesignResolution, selectIsPixi, selectRootFolder, selectSelectedEditingPath, selectSelectedNodes, selectSelectedPaths } from '../../states/app.selectors';
 import { getArrowNode, getDrawNode, getHorizonArrow, getVerticalArrow, loadSceneViewCocos, onStart } from './cocos';
@@ -404,31 +402,46 @@ export default function SceneView() {
 
   return (
     <div className='w-full h-full'>
-      <div className='inline-block space-x-1 p-1 text-white items-center justify-start'>
-        <span className={clsx('cursor-pointer select-none', { 'line-through decoration-red-500 decoration-2': lockX })}
-          onClick={() => setLockX(!lockX)}
-        >X:</span>
-        <Input
-          readOnly={lockX}
-          value={lastX}
-          onChange={handleChangeNumber(setLastX)}
-        />
-        <span className={clsx('cursor-pointer select-none', { 'line-through decoration-red-500 decoration-2': lockY })}
-          onClick={() => setLockY(!lockY)}
-        >Y:</span>
-        <Input
-          readOnly={lockY}
-          value={lastY}
-          onChange={handleChangeNumber(setLastY)}
-        />
-        Scale:<Input
+      <div className='flex space-x-1 p-1items-center justify-start'>
+        <NumberInput
+          step={0.05}
+          label="Scale"
           value={scale}
-          onChange={handleChangeNumber(setScale)}
+          min={0.1}
+          max={2}
+          onChange={(value) => {
+            updateParentNode('scale', value, setScale, setLastSceneScale);
+            setMoveSpeed(1 / value)
+          }}
         />
-        Move Speed:<Input
-          className='w-16'
+        <NumberInput
+          label="X"
+          min={-1000}
+          max={1000}
+          value={lastX}
+          onChange={(value) => {
+            updateParentNode('x', value, setLastX, setLastSceneX);
+          }}
+        />
+        <NumberInput
+          label="Y"
+          min={-1000}
+          max={1000}
+          value={lastY}
+          onChange={(value) => {
+            updateParentNode('y', value, setLastY, setLastSceneY);
+          }}
+        />
+        <NumberInput
+          label="Move Speed"
+          min={0.1}
+          max={20}
+          step={0.1}
           value={moveSpeed}
-          onChange={handleChangeNumber(setMoveSpeed)}
+          onChange={(value) => {
+            setMoveSpeed(value)
+            setLastMoveSpeed(value)
+          }}
         />
       </div>
       <hr />

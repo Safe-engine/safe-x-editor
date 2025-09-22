@@ -3,9 +3,10 @@ import { useEffect, useMemo } from 'react'
 import { useActions, useSelector } from '../states/app.context'
 import { selectAssets, selectDesignResolution } from '../states/app.selectors'
 import AssetsPanel from './AssetsPanel'
-import NodeTree from './NodeTree'
-import SceneView from './SceneView'
 import './globals.css'
+import NodeTree from './NodeTree'
+import PropertiesPanel from './PropertiesPanel'
+import SceneView from './SceneView'
 
 export function App() {
   const { getFiles, loadComponent } = useActions()
@@ -60,9 +61,9 @@ export function App() {
             }
           </Allotment>
         </Allotment.Pane>
-        {/* <Allotment.Pane snap minSize={200} maxSize={400}>
+        <Allotment.Pane snap minSize={280} maxSize={360}>
           <PropertiesPanel />
-        </Allotment.Pane> */}
+        </Allotment.Pane>
       </Allotment>
     </main>
   )

@@ -84,11 +84,6 @@ export const selectEditingComponent = createSelector(
   }
 );
 
-export const selectSelectedNode = createSelector(
-  selectApp,
-  (appState) => appState.selectedNodes[0]
-);
-
 export const selectAssets = createSelector(
   selectApp,
   (appState) => appState.assets
