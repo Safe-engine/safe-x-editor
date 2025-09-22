@@ -27,6 +27,7 @@ export interface ProjectData {
   spineAssets: SkeletonAnimationAsset[]
   componentsCache: { [key: string]: any }
   designResolution: { width: number; height: number }
+  previewScrollView?: boolean
 }
 const _htmlTextParser = new HtmlTextParser()
 
@@ -170,12 +171,12 @@ async function parseChildren(root, parentNode, data: ProjectData, evalInit = '')
     rich.ignoreContentAdaptWithSize(false)
     renderNode = rich
   } else if ('ScrollViewComp' === tag) {
-    const { viewSize, contentSize, direction, isScrollToTop, debug } = props
+    const { viewSize, contentSize, direction, isScrollToTop } = props
     // console.log('ScrollViewComp', props)
     // console.log('viewSize', parseSize(viewSize))
     // console.log('contentSize', parseSize(contentSize))
     // console.log('direction', parseDirection(direction))
-    if (debug === undefined) {
+    if (data.previewScrollView) {
       const node = new cc.ScrollView(parseSize(viewSize))
       node.setContentSize(parseSize(contentSize))
       node.setViewSize(parseSize(viewSize))
