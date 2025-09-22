@@ -32,7 +32,7 @@ const getAttributeProps = (openingElement, fileOrigin) => {
   const props = {};
   openingElement?.attributes.forEach(att => {
     const [start, end] = att.range;
-    const [key, value] = fileOrigin.substring(start, end).split('=');
+    const [key, ...values] = fileOrigin.substring(start, end).split('=');
     if (key === 'node') {
       // console.log(att);
       const { properties } = att.value.expression
@@ -48,7 +48,7 @@ const getAttributeProps = (openingElement, fileOrigin) => {
         props[key][p.key.name] = parseValue(p.value);
       })
     } else {
-      props[key] = getPropValue(value);
+      props[key] = getPropValue(values.join('='));
     }
     // console.log(props[key])
   });

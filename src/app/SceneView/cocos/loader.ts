@@ -1,6 +1,7 @@
 import { Assets } from "pixi.js"
 import { getNodePosition, parseIntFromValue, parseStringFromValue } from "../../../helper/node"
 import { getDrawLayer } from "./cocos"
+import { HtmlTextParser } from "./html-text-parser"
 import { PixiDragonBonesSprite } from "./PixiDragonBonesSprite"
 import { PixiSpineSprite } from "./PixiSpineSprite"
 
@@ -27,6 +28,7 @@ export interface ProjectData {
   componentsCache: { [key: string]: any }
   designResolution: { width: number; height: number }
 }
+const _htmlTextParser = new HtmlTextParser()
 
 function loadSprite(filePath: string): Promise<cc.Sprite> {
   return new Promise((resolve, reject) => {
@@ -121,7 +123,7 @@ async function parseChildren(root, parentNode, data: ProjectData, evalInit = '')
       const frame = cc.spriteFrameCache.getSpriteFrame(spriteFrame.value)
       renderNode = new cc.Sprite(frame)
     }
-  } else if (tag === 'LabelComp' || 'RichTextComp' === tag) {
+  } else if (tag === 'LabelComp') {
     const { string, font = '', size } = props
     let foundFont = fontAssets.find((item) => item.key === parseStringFromValue(font))
     if (!foundFont) {
@@ -134,7 +136,40 @@ async function parseChildren(root, parentNode, data: ProjectData, evalInit = '')
     const label = new ccui.Text(string, fontName, fontSize)
     // console.log('LabelComp:', fontSize, foundFont)
     label.setTextVerticalAlignment(cc.VERTICAL_TEXT_ALIGNMENT_BOTTOM)
+    label.ignoreContentAdaptWithSize(false)
     renderNode = label
+  } else if ('RichTextComp' === tag) {
+    const { string, font = '', size } = props
+     console.log('RichTextComp', props)
+    let foundFont = fontAssets.find((item) => item.key === parseStringFromValue(font))
+    if (!foundFont) {
+      foundFont = fontAssets.find((item) => item.key === 'defaultFont')
+    }
+    const filePath = cc.path.join(rootFolder, 'res', `${foundFont.value}`)
+    const fontName = cc.path.basename(filePath, '.ttf')
+    await loadFont(foundFont.value)
+    const fontSize = size ? parseIntFromValue(size) : 64
+    const rich = new ccui.RichText()
+    const newTextArray = _htmlTextParser.parse(string)
+    // console.log(newTextArray)
+    for (let index = 0; index < newTextArray.length; index++) {
+      const { style = {}, text } = newTextArray[index]
+      // const fontName = cc.path.basename(this.props.font || foundFont.value, '.ttf')
+      if (style.outline) {
+        // console.log('richText', richText, (ccui as any).RichElementCustomNode)
+        const label = new ccui.Text(text, fontName, fontSize)
+        label.enableOutline(cc.hexToColor(style.outline.color), style.outline.width || 3)
+        const customElem = new (ccui as any).RichElementCustomNode.create(1, cc.color(255, 0, 0), 255, label)
+        rich.pushBackElement(customElem)
+      } else {
+        const color = style.color ? cc.hexToColor(style.color) : cc.Color.WHITE
+        const richText = ccui.RichElementText.create(index, color, 255, text, fontName, fontSize)
+        rich.pushBackElement(richText)
+      }
+    }
+    // console.log('RichComp:', fontSize, foundFont)
+    rich.ignoreContentAdaptWithSize(false)
+    renderNode = rich
   } else if (tag === 'SpineSkeleton') {
     const { data, skin, animation, loop = true, timeScale = 1 } = props
     const node = await loadSpine(data, animation, loop, skin, timeScale, spineAssets)
@@ -158,7 +193,7 @@ async function parseChildren(root, parentNode, data: ProjectData, evalInit = '')
   if (renderNode !== parentNode && !renderNode.parent) {
     parentNode.addChild(renderNode)
     const { node = {} } = props
-    const { scaleX = 1, scaleY = 1, scale = 1, rotation = 0 } = node
+    const { scaleX = 1, scaleY = 1, scale = 1, rotation = 0, w, h } = node
     if (node.position || node.xy) {
       const { x, y } = getNodePosition(node, evalInit)
       renderNode.x = x
@@ -175,6 +210,12 @@ async function parseChildren(root, parentNode, data: ProjectData, evalInit = '')
     }
     if (rotation !== 0) {
       renderNode.rotation = rotation
+    }
+    if (w) {
+      renderNode.width = w
+    }
+    if (h) {
+      renderNode.height = h
     }
   }
   // console.log('renderNode:', renderNode);
