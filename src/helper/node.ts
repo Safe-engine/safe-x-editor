@@ -9,6 +9,19 @@ export function parseVec2(position = 'Vec2(0,0)', evalInit) {
   return { x, y };
 }
 
+export function parseSize(sizeString = 'Size(0,0)', evalInit = '') {
+  const [width = 10, height = 10] = parseStringFromValue(sizeString).replace('Size(', '').replace(')', '').split(',').map(parseEval(evalInit));
+  return cc.size(width, height);
+}
+
+export function parseDirection(direction: string) {
+  return [
+    "{ScrollViewDirection.NONE}",
+    "{ScrollViewDirection.HORIZONTAL}",
+    "{ScrollViewDirection.VERTICAL}",
+    "{ScrollViewDirection.BOTH}"].indexOf(direction)
+}
+
 export function Vec2({ x = 0, y = 0 }) {
   return `Vec2(${Math.round(x)},${Math.round(y)})`;
 }

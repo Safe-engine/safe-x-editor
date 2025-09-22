@@ -1,5 +1,5 @@
 import { Assets } from "pixi.js"
-import { getNodePosition, parseIntFromValue, parseStringFromValue } from "../../../helper/node"
+import { getNodePosition, parseDirection, parseIntFromValue, parseSize, parseStringFromValue } from "../../../helper/node"
 import { getDrawLayer } from "./cocos"
 import { HtmlTextParser } from "./html-text-parser"
 import { PixiDragonBonesSprite } from "./PixiDragonBonesSprite"
@@ -140,7 +140,6 @@ async function parseChildren(root, parentNode, data: ProjectData, evalInit = '')
     renderNode = label
   } else if ('RichTextComp' === tag) {
     const { string, font = '', size } = props
-     console.log('RichTextComp', props)
     let foundFont = fontAssets.find((item) => item.key === parseStringFromValue(font))
     if (!foundFont) {
       foundFont = fontAssets.find((item) => item.key === 'defaultFont')
@@ -170,6 +169,42 @@ async function parseChildren(root, parentNode, data: ProjectData, evalInit = '')
     // console.log('RichComp:', fontSize, foundFont)
     rich.ignoreContentAdaptWithSize(false)
     renderNode = rich
+  } else if ('ScrollViewComp' === tag) {
+    const { viewSize, contentSize, direction, isScrollToTop, debug } = props
+    // console.log('ScrollViewComp', props)
+    // console.log('viewSize', parseSize(viewSize))
+    // console.log('contentSize', parseSize(contentSize))
+    // console.log('direction', parseDirection(direction))
+    if (debug === undefined) {
+      const node = new cc.ScrollView(parseSize(viewSize))
+      node.setContentSize(parseSize(contentSize))
+      node.setViewSize(parseSize(viewSize))
+      node.setDirection(parseDirection(direction))
+      if (isScrollToTop)
+        node.setContentOffset(cc.p(0, parseSize(viewSize).height - parseSize(contentSize).height))
+      renderNode = node
+    } else {
+      const drawNode = new cc.DrawNode()
+      const { width, height } = parseSize(contentSize)
+      drawNode.drawRect(
+        cc.p(0, 0),
+        cc.p(width, height),
+        cc.color(175, 85, 255, 155),
+        0,
+        cc.color(227, 11, 93, 0),
+      )
+      {
+        const { width, height } = parseSize(viewSize)
+        drawNode.drawRect(
+          cc.p(0, 0),
+          cc.p(width, height),
+          cc.color(255, 185, 199, 55),
+          4,
+          cc.color(227, 11, 93, 255),
+        )
+      }
+      renderNode = drawNode
+    }
   } else if (tag === 'SpineSkeleton') {
     const { data, skin, animation, loop = true, timeScale = 1 } = props
     const node = await loadSpine(data, animation, loop, skin, timeScale, spineAssets)

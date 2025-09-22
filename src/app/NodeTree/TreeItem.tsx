@@ -3,11 +3,11 @@ import { get } from "lodash";
 import { useState } from "react";
 import { NodeRendererProps } from "react-arborist";
 import { AiFillFolderOpen } from "react-icons/ai";
+import { FaChevronDown, FaChevronRight } from "react-icons/fa";
 import { RiBox3Line } from "react-icons/ri";
 import { Box, Center, HStack } from "../../base/Stack";
 import { useSelector } from "../../states/app.context";
 import { selectSelectedEditingClassNamePath } from "../../states/app.selectors";
-
 function renderIcon(data: any) {
   if (data.isDirectory) {
     return <AiFillFolderOpen color="white" />;
@@ -42,6 +42,10 @@ export function TreeItem({ node, style, dragHandle }: NodeRendererProps<any>) {
     // openMenu(node, { x: e.clientX, y: e.clientY });
   };
 
+  function handleToggle() {
+    node.toggle()
+  }
+
   return <HStack ref={dragHandle}
     className={clsx(
       'hover:cursor-pointer hover:bg-gray-500',
@@ -54,7 +58,12 @@ export function TreeItem({ node, style, dragHandle }: NodeRendererProps<any>) {
     onContextMenu={(e) => handleContextMenu(e, node.data)}
   >
     <Center>
-      <Box style={style} className="m-auto">{renderIcon(node.data)}</Box>
+      <Box style={style} className="m-auto">
+        {!!node.data.children.length && <div>
+          {node.isOpen ? <FaChevronDown onClick={handleToggle} /> : <FaChevronRight onClick={handleToggle} />}
+        </div>}
+        {renderIcon(node.data)}
+      </Box>
       <Box className={clsx(node.isSelected ? 'text-yellow-400' : 'text-white')}>{node.data.tag}</Box>
       {renderName(node)}
     </Center>
