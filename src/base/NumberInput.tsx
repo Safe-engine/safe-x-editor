@@ -48,7 +48,7 @@ const NumberInput = ({
 
   return (
     <div className={clsx('space-x-2 flex', { 'w-full': isFullWidth })}>
-      <div className='text-white'>{label}</div>
+      <div className='text-white w-12 text-sm'>{label}</div>
       <div className='flex rounded-md bg-green-300'>
         {isShowButton && (
           <FaMinus className='my-auto'
