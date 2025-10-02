@@ -98,3 +98,8 @@ export const selectDragNodePath = createSelector(
   selectApp,
   (appState) => appState.dragNode
 );
+
+export const selectPreviewAsset = createSelector(
+  selectApp,
+  (appState) => appState.previewAsset
+);

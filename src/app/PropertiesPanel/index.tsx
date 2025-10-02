@@ -1,6 +1,7 @@
 import pathUtils from 'path-browserify';
 import { useSelector } from '../../states/app.context';
 import { selectSelectedFilePath } from '../../states/app.selectors';
+import AssetPreview from './AssetPreview';
 import NodeProps from './NodeProps';
 
 export default function PropertiesPanel() {
@@ -22,6 +23,8 @@ export default function PropertiesPanel() {
         <div className='w-full'>
           <div className='py-1 text-orange-50 font-bold text-center border-cool-gray-300 border-b'>Components</div>
           <NodeProps />
+          <div className='py-1 text-orange-50 font-bold text-center border-cool-gray-300 border-b'>Preview</div>
+          <AssetPreview />
         </div>
       </div>
     </div>

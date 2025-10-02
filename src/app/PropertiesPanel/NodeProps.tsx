@@ -114,7 +114,7 @@ function NodeProps() {
   return (<div className='p-1'>
     <div className='text-orange-600'>[Node]</div>
     <div className="w-full max-w-md p-4 bg-gray-700 rounded-lg shadow-sm">
-      <h3 className="text-lg font-semibold mb-3">Node Properties</h3>
+      <h3 className="text-lg font-semibold mb-3 text-blue-100">Node Properties</h3>
       {/* X / Y row */}
       <div className="flex gap-3 mb-3">
         <div className="flex-1">
@@ -136,7 +136,7 @@ function NodeProps() {
             aria-pressed={whLinked}
             title={whLinked ? 'Unlink width/height' : 'Link width/height'}
           >
-            {whLinked ? <FaLink /> : <FaUnlink />}
+            {whLinked ? <FaLink color='green'/> : <FaUnlink color='orange'/>}
           </button>
         </div>
         <div className="flex-1">
@@ -150,7 +150,7 @@ function NodeProps() {
         </div>
         <div className="flex items-center gap-2">
           <div className="flex flex-col items-center">
-            <span className="text-xs text-gray-500 mb-1">Link</span>
+            <span className="text-xs text-gray-200 mb-1">Link</span>
             {/* switch */}
             <label className="relative inline-flex items-center cursor-pointer">
               <input

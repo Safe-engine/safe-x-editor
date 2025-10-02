@@ -51,7 +51,7 @@ export class PixiSpineSprite extends cc.Sprite {
     }
     display.state.setAnimation(0, animationName, loop)
     display.x = this._canvas.width / 2
-    display.y = this._canvas.height
+    display.y = this._canvas.height / 2
     display.state.timeScale = timeScale
 
     this._pixiApp.stage.addChild(display)

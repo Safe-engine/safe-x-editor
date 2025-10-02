@@ -83,8 +83,8 @@ async function loadSpine(dataName: string, animation, loop, skin, timeScale, spi
   const { atlas, skeleton, texture } = data.value
   Assets.add({ alias: `ske${key}`, src: skeleton })
   Assets.add({ alias: `texJson${key}`, src: atlas })
-  await Assets.load([`ske${key}`, `texJson${key}`, texture])
-  // console.log('resources:', resources)
+  await Assets.load([`ske${key}`, `texJson${key}`])
+  console.log('resources:', texture)
   const spineSprite = new PixiSpineSprite({
     key,
     skeleton,
@@ -95,7 +95,9 @@ async function loadSpine(dataName: string, animation, loop, skin, timeScale, spi
     skin,
     timeScale
   })
-  return spineSprite
+  const node = new cc.Node()
+  node.addChild(spineSprite)
+  return node
 }
 
 async function parseChildren(root, parentNode, data: ProjectData, evalInit = '') {

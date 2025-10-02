@@ -2,7 +2,7 @@ import { Application, Container, Graphics, Point, Sprite } from 'pixi.js';
 import { getLastSceneScale, getLastSceneX, getLastSceneY } from "../../../data/AppData";
 
 export async function createPixiApp(options: any = {}) {
-  const canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
+  const canvas = document.getElementById(options.canvasId || 'gameCanvas') as HTMLCanvasElement;
   const width = options.width || 800;
   const height = options.height || 600;
   const app = new Application()

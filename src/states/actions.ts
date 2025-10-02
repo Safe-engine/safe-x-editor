@@ -221,6 +221,9 @@ export function getAction(draft: AppState) {
       draft.selectedPaths = []
       draft.selectedNodes = []
       window.postMessage({ type: 'refresh' })
+    },
+    setPreviewAssets(asset) {
+      draft.previewAsset = asset
     }
   }
   return actions

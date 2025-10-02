@@ -53,14 +53,14 @@ async function loadDragonBones(dataName: string, dragonBonesAssets) {
 async function loadPixiSpine(dataName: string, spinesAssets) {
   const key = parseStringFromValue(dataName)
   const data = spinesAssets.find((item) => item.key === key)
+  console.log('loadPixiSpine:', data)
   const { atlas, skeleton, texture } = data.value
-  // console.log('loadPixiSpine:', data)
   Assets.add({ alias: `ske${key}`, src: skeleton })
   Assets.add({ alias: `texJson${key}`, src: atlas })
   await Assets.load([`ske${key}`, `texJson${key}`, texture])
   // console.log('resources:', resources)
   const spine = Spine.from({ skeleton: `ske${key}`, atlas: `texJson${key}` })
-  // console.log('spine:', spine)
+  console.log('spine:', spine)
   return spine
 }
 

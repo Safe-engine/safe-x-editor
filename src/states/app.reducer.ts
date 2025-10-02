@@ -13,6 +13,7 @@ export const initialState = {
   filesData: [],
   componentTree: [],
   componentsCache: [],
+  previewAsset: {} as any,
   assets: {
     fontAssets: [],
     assetsTextureList: [],
