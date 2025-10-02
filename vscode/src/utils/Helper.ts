@@ -23,6 +23,7 @@ export const getTreeData = (treeData: any[]) => {
       isDirectory: currentNode.type === 'directory',
       children: getTreeData(currentNode.children),
       custom: currentNode.custom,
+      type: 'component',
     }
   ));
   return ret as TreeNode<TreeViewData, 'id', 'items'>[];

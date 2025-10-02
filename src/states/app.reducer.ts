@@ -1,4 +1,5 @@
 import { produce } from 'immer';
+import { AssetTabs } from '../helper/constants';
 import { getAction } from './actions';
 
 export const initialState = {
@@ -13,6 +14,7 @@ export const initialState = {
   filesData: [],
   componentTree: [],
   componentsCache: [],
+  selectedTab: AssetTabs.components,
   previewAsset: {} as any,
   assets: {
     fontAssets: [],

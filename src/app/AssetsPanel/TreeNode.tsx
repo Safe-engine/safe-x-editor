@@ -3,6 +3,7 @@ import { NodeRendererProps } from "react-arborist";
 import { AiFillFolder, AiFillFolderOpen } from "react-icons/ai";
 import { FaFont } from "react-icons/fa";
 import { GiSkeletonInside } from "react-icons/gi";
+import { IoMdCube } from "react-icons/io";
 import { SiSpine } from "react-icons/si";
 import { Box, Center, HStack } from "../../base/Stack";
 import { useActions } from "../../states/app.context";
@@ -31,6 +32,9 @@ function renderIcon(node: any) {
   if (data.isDirectory) {
     return isOpen ? <AiFillFolderOpen color="white" /> : <AiFillFolder color="white" />;
   }
+  if (data.type === 'component') {
+    return <IoMdCube color="navy" />;
+  }
   if (data.type === 'dragonBones') {
     return <GiSkeletonInside color="blue" />;
   }
@@ -55,7 +59,7 @@ function renderIcon(node: any) {
 
 function getNodeName(data) {
   const { key = '', name, isDirectory, type } = data
-  if (type === 'frame') {
+  if (type === 'frame' || type === 'component') {
     return name
   }
   return isDirectory ? name : key.replaceAll('sf_', '').replaceAll('db_', '').replaceAll('_json', '');

@@ -224,6 +224,9 @@ export function getAction(draft: AppState) {
     },
     setPreviewAssets(asset) {
       draft.previewAsset = asset
+    },
+    setSelectedTab(tab) {
+      draft.selectedTab = tab
     }
   }
   return actions

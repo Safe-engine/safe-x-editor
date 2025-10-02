@@ -220,3 +220,8 @@ export const textAlignsList = [
   'left',
   'right',
 ];
+
+export enum AssetTabs {
+  components,
+  res
+}

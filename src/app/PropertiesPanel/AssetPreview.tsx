@@ -20,13 +20,13 @@ function AssetPreview() {
     setTimeout(() => {
       createPixiApp({ canvasId: 'previewCanvas', backgroundColor: 0x506260 }).then(app => {
         appRef.current = app
-        console.log('createPixiApp:', appRef.current.stage)
+        // console.log('createPixiApp:', appRef.current.stage)
       })
     }, 100)
   }, [canvasRef.current])
 
   useEffect(() => {
-    console.log('loadPixiSpine:', value, appRef.current)
+    // console.log('loadPixiSpine:', value, appRef.current)
     if (!value || !appRef.current) return;
     async function loadSpine() {
       const { atlas, skeleton, texture } = value
@@ -58,14 +58,14 @@ function AssetPreview() {
   function onSelectAnimation(name) {
     if (!value || !appRef.current) return;
     setSelectedAnimation(name)
-    console.log('onSelectAnimation:', appRef.current)
+    // console.log('onSelectAnimation:', appRef.current)
     appRef.current.stage.children[0].state.setAnimation(0, name, true)
   }
 
   function onSelectSkin(name) {
     if (!value || !appRef.current) return;
     setSelectedSkin(name)
-    console.log('onSelectSkin:', appRef.current)
+    // console.log('onSelectSkin:', appRef.current)
     appRef.current.stage.children[0].state.setSkin(name)
   }
 

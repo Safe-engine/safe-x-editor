@@ -3,6 +3,7 @@
  */
 import Tree from '@colin-luo/tree';
 import { createSelector } from 'reselect';
+import { AssetTabs } from '../helper/constants';
 import { pathListToTree } from '../helper/tree';
 import { AppState, initialState } from './app.reducer';
 
@@ -91,7 +92,7 @@ export const selectAssets = createSelector(
 
 export const selectAssetsTree = createSelector(
   selectApp,
-  (appState) => pathListToTree(appState.assets),
+  (appState) => appState.selectedTab === AssetTabs.components ? appState.filesData : pathListToTree(appState.assets),
 );
 
 export const selectDragNodePath = createSelector(
@@ -102,4 +103,9 @@ export const selectDragNodePath = createSelector(
 export const selectPreviewAsset = createSelector(
   selectApp,
   (appState) => appState.previewAsset
+);
+
+export const selectSelectedTab = createSelector(
+  selectApp,
+  (appState) => appState.selectedTab
 );
