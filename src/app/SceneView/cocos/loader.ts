@@ -269,7 +269,7 @@ export async function loadSceneViewCocos(selectedEditingComponent = [], data: Pr
   if (!cc.director || !cc.director.getRunningScene() || !root) return
   const { designResolution } = data
   const drawLayer = getDrawLayer(designResolution)
-  // console.log('loadSceneView:', selectedEditingComponent, parentNode)
+  // console.log('loadSceneView:', selectedEditingComponent, drawLayer)
   const { width, height } = designResolution
   const init = `const width = ${width};const height = ${height};`
   for (let index = 0; index < selectedEditingComponent.length; index++) {

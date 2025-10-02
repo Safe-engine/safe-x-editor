@@ -38,15 +38,15 @@ export function getAction(draft: AppState) {
       draft.isPixi = isPixi
     },
     loadComponent(path: string) {
-      // if (draft.filePath !== path)
-      draft.filePath = path
+      if (draft.filePath !== path)
+        draft.filePath = path
     },
-    loadComponentSuccess(data) {
+    loadComponentSuccess(path, data) {
       const { treeData, name } = data
       draft.componentTree = [treeData]
       draft.componentPropTypes = draft.componentTree[0].props
       draft.editingClassNamePath = ''
-      draft.editingPath = name
+      draft.editingPath = path
       draft.componentsCache[name] = treeData
     },
     selectEditingTagNode(path: string) {

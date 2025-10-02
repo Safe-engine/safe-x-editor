@@ -16,8 +16,8 @@ export default function AssetsPanel() {
 
   useEffect(() => {
     const lastFile = getLastLoadedFile()
+    // console.log('treeData Files', treeData)
     if (treeData[1] && lastFile && selectedTab === AssetTabs.components) {
-      console.log('treeData Files', treeData)
       const node = treeRef.current.get(lastFile)
       // console.log('getLastLoadedFile node', node)
       treeRef.current.select(node)
@@ -61,7 +61,7 @@ export default function AssetsPanel() {
           height={window.innerHeight - 25}
           ref={treeRef}
           data={treeData}
-          idAccessor="path"
+          idAccessor={(d) => d.path + d.id}
           onSelect={(nodes) => {
             // console.log('nodes', nodes);
             if (nodes[0])

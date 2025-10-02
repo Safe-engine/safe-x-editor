@@ -7,7 +7,7 @@ function getVsCodeApi() {
   }
   return {
     postMessage: (message: any) => {
-      console.log('Dev mode postMessage', message);
+      // console.log('Dev mode postMessage', message);
       fetch('http://localhost:7498', {
         method: 'POST',
         headers: {

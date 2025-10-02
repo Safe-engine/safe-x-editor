@@ -26,7 +26,7 @@ function getResponse(message, panel, filePath) {
   const { key, payload } = message;
   switch (key) {
     case LOAD_COMPONENT_REQUEST: {
-      payload.path = filePath; // Đảm bảo đường dẫn đúng
+      // payload.path = filePath; // Đảm bảo đường dẫn đúng
       return loadComponent(payload)
     }
     case GET_FOLDER_FILES: {
@@ -34,7 +34,7 @@ function getResponse(message, panel, filePath) {
       return getFilesInFolder(payload, panel)
     }
     case GEN_COMPONENT_REQUEST: {
-      payload.filePath = filePath;
+      // payload.filePath = filePath;
       return updateComponentTag(payload)
     }
   }

@@ -23,7 +23,7 @@ export function createMiddleware(dispatch: Dispatch<any>) {
         key: LOAD_COMPONENT_REQUEST,
         path,
       })
-      loadComponentSuccess(data)
+      loadComponentSuccess(path, data)
     },
   }
   return middlewares
