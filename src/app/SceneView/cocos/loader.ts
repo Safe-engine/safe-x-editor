@@ -3,7 +3,7 @@ import { getNodePosition, parseDirection, parseIntFromValue, parseSize, parseStr
 import { getDrawLayer } from "./cocos"
 import { HtmlTextParser } from "./html-text-parser"
 import { PixiDragonBonesSprite } from "./PixiDragonBonesSprite"
-import { PixiSpineSprite } from "./PixiSpineSprite"
+import { SkeletonAnimation } from "./spine-cocos/CCSkeletonAnimation"
 
 interface AssetData {
   key: string
@@ -77,27 +77,32 @@ async function loadDragonBones(dataName: string, animation, playTimes, dragonBon
   return dragon
 }
 
-async function loadSpine(dataName: string, animation, loop, skin, timeScale, spineAssets) {
-  const key = parseStringFromValue(dataName)
-  const data = spineAssets.find((item) => item.key === key)
-  const { atlas, skeleton, texture } = data.value
-  Assets.add({ alias: `ske${key}`, src: skeleton })
-  Assets.add({ alias: `texJson${key}`, src: atlas })
-  await Assets.load([`ske${key}`, `texJson${key}`])
-  console.log('resources:', texture)
-  const spineSprite = new PixiSpineSprite({
-    key,
-    skeleton,
-    atlas,
-    texture,
-    animationName: animation,
-    loop,
-    skin,
-    timeScale
+async function loadSpine(dataName: string, animation, loop = true, skin, timeScale, spineAssets): Promise<SkeletonAnimation> {
+  return new Promise((resolve, reject) => {
+    const key = parseStringFromValue(dataName)
+    const data = spineAssets.find((item) => item.key === key)
+    const { atlas, skeleton, texture } = data.value
+    cc.loader.load([atlas, skeleton], function (err, texture) {
+      if (err) {
+        cc.log('Failed to load file:', skeleton, err)
+        reject(err)
+        return
+      }
+      let node: SkeletonAnimation
+      if (skeleton.endsWith('.json')) {
+        node = SkeletonAnimation.createWithJsonFile(skeleton, atlas, timeScale)
+      } else {
+        node = SkeletonAnimation.createWithBinaryFile(skeleton, atlas, timeScale)
+      }
+      if (skin) {
+        node.setSkin(skin)
+      }
+      if (animation) {
+        node.setAnimation(0, animation, loop)
+      }
+      resolve(node)
+    })
   })
-  const node = new cc.Node()
-  node.addChild(spineSprite)
-  return node
 }
 
 async function parseChildren(root, parentNode, data: ProjectData, evalInit = '') {
@@ -158,10 +163,10 @@ async function parseChildren(root, parentNode, data: ProjectData, evalInit = '')
       const { style = {}, text } = newTextArray[index]
       // const fontName = cc.path.basename(this.props.font || foundFont.value, '.ttf')
       if (style.outline) {
-        // console.log('richText', richText, (ccui as any).RichElementCustomNode)
+        // console.log('richText', richText, ccui.RichElementCustomNode)
         const label = new ccui.Text(text, fontName, fontSize)
         label.enableOutline(cc.hexToColor(style.outline.color), style.outline.width || 3)
-        const customElem = new (ccui as any).RichElementCustomNode.create(1, cc.color(255, 0, 0), 255, label)
+        const customElem = ccui.RichElementCustomNode.create(1, cc.color(255, 0, 0), 255, label)
         rich.pushBackElement(customElem)
       } else {
         const color = style.color ? cc.hexToColor(style.color) : cc.Color.WHITE

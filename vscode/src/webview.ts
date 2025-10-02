@@ -9,13 +9,9 @@ export function getEditorWebview(context: vscode.ExtensionContext, filePath: str
   const indexHtml = path.join(context.extensionPath, 'media', 'index.html')
   const arrowPng = path.join(context.extensionPath, 'media', 'Ico_arrow.png')
   const cocosLib = path.join(context.extensionPath, 'media', 'vendor/cocos2d-3.17.js')
-  const dragonBonesLib = path.join(context.extensionPath, 'media', 'vendor/dragonBones.min.js')
-  const pixiLib = path.join(context.extensionPath, 'media', 'vendor/pixi.min.js')
   const html = readFileSync(indexHtml, 'utf-8')
-  return html.replace('REPLACE_FILE_PATH', filePath)
+  return html
     .replace('REPLACE_ROOT_PROJECT', rootProject)
     .replace('Ico_arrow.png', panel.webview.asWebviewUri(vscode.Uri.file(arrowPng)).toString())
     .replace('vendor/cocos2d-3.17.js', panel.webview.asWebviewUri(vscode.Uri.file(cocosLib)).toString())
-    .replace('vendor/dragonBones.min.js', panel.webview.asWebviewUri(vscode.Uri.file(dragonBonesLib)).toString())
-    .replace('vendor/pixi.min.js', panel.webview.asWebviewUri(vscode.Uri.file(pixiLib)).toString())
 }
