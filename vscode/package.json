@@ -4,7 +4,7 @@
   "description": "edit for safex components",
   "author": "antn9x",
   "publisher": "antn9x",
-  "version": "0.7.3",
+  "version": "0.8.1",
   "engines": {
     "vscode": "^1.100.0"
   },
@@ -26,22 +26,13 @@
     "commands": [
       {
         "command": "safex.editSettings",
-        "title": "Safex: Edit Project Settings"
+        "title": "Safex Editor: Edit Project Settings"
       },
       {
         "command": "safexEditor.openSafex",
-        "title": "Edit safex component"
+        "title": "Safex Editor: Open Scene Editor"
       }
-    ],
-    "menus": {
-      "explorer/context": [
-        {
-          "command": "safexEditor.openSafex",
-          "when": "resourceExtname == .tsx",
-          "group": "navigation"
-        }
-      ]
-    }
+    ]
   },
   "scripts": {
     "deploy": "vsce package --allow-missing-repository",

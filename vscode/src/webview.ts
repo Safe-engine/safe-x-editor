@@ -2,7 +2,7 @@ import { readFileSync } from "fs";
 import path from "path";
 import * as vscode from 'vscode';
 
-export function getEditorWebview(context: vscode.ExtensionContext, filePath: string, panel: vscode.WebviewPanel) {
+export function getEditorWebview(context: vscode.ExtensionContext, panel: vscode.WebviewPanel) {
   // console.log('getEditorWebview', filePath)
   const folders = vscode.workspace.workspaceFolders;
   const rootProject = folders[0].uri.fsPath

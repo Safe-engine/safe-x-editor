@@ -175,25 +175,6 @@ function NodeProps() {
       <div className="mb-1">
         <NumberInput label="Rotation" value={rotation} onChange={(v) => setRotation(Number(v))} step={1} />
       </div>
-      {/* preview / summary */}
-      <div className="mt-4 p-3 bg-gray-50 rounded-md text-sm text-gray-700">
-        <div className="flex justify-between">
-          <span>Position</span>
-          <span>{`(${x}, ${y})`}</span>
-        </div>
-        <div className="flex justify-between">
-          <span>Size</span>
-          <span>{`${w} × ${h}`}</span>
-        </div>
-        <div className="flex justify-between">
-          <span>Scale</span>
-          <span>{`${scaleX} × ${scaleY}`}</span>
-        </div>
-        <div className="flex justify-between">
-          <span>Rotation</span>
-          <span>{rotation}°</span>
-        </div>
-      </div>
     </div>
   </div>);
 }

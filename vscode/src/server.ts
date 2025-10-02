@@ -22,7 +22,7 @@ function getProjectPath(filePath) {
   throw new Error('Không tìm thấy package.json trong cây thư mục');
 }
 
-function getResponse(message, panel, filePath) {
+function getResponse(message, panel, projectPath) {
   const { key, payload } = message;
   switch (key) {
     case LOAD_COMPONENT_REQUEST: {
@@ -30,7 +30,7 @@ function getResponse(message, panel, filePath) {
       return loadComponent(payload)
     }
     case GET_FOLDER_FILES: {
-      payload.src = getProjectPath(filePath);
+      payload.src = projectPath;
       return getFilesInFolder(payload, panel)
     }
     case GEN_COMPONENT_REQUEST: {
@@ -40,7 +40,7 @@ function getResponse(message, panel, filePath) {
   }
 }
 
-export function startServer(filePath) {
+export function startServer(projectPath) {
   console.log('Starting server...');
   createServer((req, res) => {
     const shouldContinue = corsMiddleware(req, res);
@@ -55,14 +55,14 @@ export function startServer(filePath) {
       try {
         const json = JSON.parse(body);
         // console.log('Received JSON:', json);
-        const rootPath = getProjectPath(filePath);
+        const rootPath = projectPath;
         const port = getDevPort(rootPath);
         const mockPanel = {
           webview: {
             asWebviewUri: (uri: vscode.Uri) => uri.fsPath.replace(rootPath + '/res', 'http://localhost:' + port), // Giả lập phương thức để trả về đường dẫn file
           }
         }
-        const response = await getResponse(json, mockPanel, filePath);
+        const response = await getResponse(json, mockPanel, projectPath);
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify(response));
       } catch (e) {

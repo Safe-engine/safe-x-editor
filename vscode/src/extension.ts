@@ -10,7 +10,7 @@ let panel: vscode.WebviewPanel | undefined;
 function createOrShowWebview(context: vscode.ExtensionContext, uri: vscode.Uri) {
   if (panel) {
     // Nếu đã tồn tại thì chỉ cần hiện lại
-    panel.webview.postMessage({ type: 'changeFilePath', filePath: uri.fsPath });
+    panel.webview.postMessage({ type: 'reLoad' });
     return;
   }
   // Nếu chưa có thì tạo mới
@@ -24,9 +24,10 @@ function createOrShowWebview(context: vscode.ExtensionContext, uri: vscode.Uri) 
     }
   );
 
-  panel.webview.html = getEditorWebview(context, uri.fsPath, panel);
+  panel.webview.html = getEditorWebview(context, panel);
   Router(panel, context)
-  startServer(uri.fsPath); // test only
+  const [projectPath] = vscode.workspace.workspaceFolders
+  startServer(projectPath); // test only
   // Khi panel bị dispose (user đóng), set biến về undefined
   panel.onDidDispose(() => {
     panel = undefined;
