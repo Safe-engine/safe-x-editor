@@ -20,7 +20,8 @@ export default function AssetsPanel() {
     if (treeData[1] && lastFile && selectedTab === AssetTabs.components) {
       const node = treeRef.current.get(lastFile)
       // console.log('getLastLoadedFile node', node)
-      treeRef.current.select(node)
+      if (node)
+        treeRef.current.select(node)
     }
   }, [treeData])
 

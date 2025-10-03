@@ -22,7 +22,7 @@
  THE SOFTWARE.
  ****************************************************************************/
 
-import { Texture } from '@esotericsoftware/spine-core'
+import { Texture } from '@esotericsoftware/spine-core';
 
 export const SkeletonTexture = function () {
   // Texture.call(this, image);
@@ -33,7 +33,11 @@ cc.extend(SkeletonTexture.prototype, {
   _texture: null,
 
   setRealTexture: function (tex) {
-    this._texture = tex
+    if (tex && typeof tex.getWebGLTexture === 'function') {
+      this._texture = tex.getWebGLTexture();
+    } else {
+      this._texture = tex
+    }
   },
 
   getRealTexture: function () {
@@ -41,7 +45,7 @@ cc.extend(SkeletonTexture.prototype, {
   },
 
   setFilters: function (minFilter, magFilter) {
-    if (cc._renderType === cc.game.RENDER_TYPE_WEBGL) {
+    if (cc._renderType === cc.game.RENDER_TYPE_WEBGL && this._texture) {
       const gl = cc._renderContext
       this.bind()
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, minFilter)
@@ -58,10 +62,10 @@ cc.extend(SkeletonTexture.prototype, {
     }
   },
 
-  dispose: function () {},
+  dispose: function () { },
 
   bind: function () {
-    if (cc._renderType === cc.game.RENDER_TYPE_WEBGL) {
+    if (cc._renderType === cc.game.RENDER_TYPE_WEBGL && this._texture) {
       cc.glBindTexture2D(this._texture)
     }
   },

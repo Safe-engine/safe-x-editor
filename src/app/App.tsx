@@ -18,8 +18,8 @@ export function App() {
   }, [])
 
   useEffect(() => {
-    console.log('file path', (window as any).filePath)
-    loadComponent((window as any).filePath)
+    // console.log('file path', (window as any).filePath)
+    // loadComponent((window as any).filePath)
     const listener = event => {
       const message = event.data;
       if (message.type === 'reLoad') {

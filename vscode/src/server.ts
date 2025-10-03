@@ -40,7 +40,7 @@ function getResponse(message, panel, projectPath) {
   }
 }
 
-export function startServer(projectPath) {
+export function startServer(projectPath: string) {
   console.log('Starting server...');
   createServer((req, res) => {
     const shouldContinue = corsMiddleware(req, res);

@@ -143,7 +143,7 @@ export default function SceneView() {
         showFPS: true,
         frameRate: 60,
         id: "gameCanvas",
-        renderMode: 1
+        renderMode: 2
       }, onStart(designResolution));
     }, 50);
     return () => clearTimeout(timeout);

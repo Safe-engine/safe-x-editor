@@ -27,7 +27,7 @@ function createOrShowWebview(context: vscode.ExtensionContext, uri: vscode.Uri) 
   panel.webview.html = getEditorWebview(context, panel);
   Router(panel, context)
   const [projectPath] = vscode.workspace.workspaceFolders
-  startServer(projectPath); // test only
+  startServer(projectPath.uri.fsPath); // test only
   // Khi panel bị dispose (user đóng), set biến về undefined
   panel.onDidDispose(() => {
     panel = undefined;
