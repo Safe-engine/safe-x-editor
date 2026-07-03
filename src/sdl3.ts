@@ -88,6 +88,7 @@ let lowMemoryCallback: VoidCallback | null = null
 let orientationCallback: OrientationCallback | null = null
 let terminateCallback: VoidCallback | null = null
 let hiddenTextInput: HTMLInputElement | null = null
+let assetRoot = ''
 
 function ensureHiddenTextInput(): HTMLInputElement {
   if (hiddenTextInput) return hiddenTextInput
@@ -185,13 +186,26 @@ function requireGl(): WebGLRenderingContext {
   return gl
 }
 
+export function setAssetRoot(root: string): void {
+  assetRoot = root.replace(/\\/g, '/').replace(/\/+$/, '')
+}
+
+function fileUrl(path: string): string {
+  const normalized = path.replace(/\\/g, '/')
+  const absolutePath = normalized.startsWith('/') ? normalized : `/${normalized}`
+  return `file://${absolutePath.split('/').map(encodeURIComponent).join('/')}`
+}
+
 function assetUrl(path: string): string {
-  const normalized = path.replace(/\\/g, '/').replace(/^\.?\//, '')
+  const slashNormalized = path.replace(/\\/g, '/')
+  const appRootAsset = slashNormalized.startsWith('/') && !slashNormalized.startsWith('//')
+  const normalized = slashNormalized.replace(/^\.?\//, '')
   const nestedAbsoluteUrl = normalized.match(/^https?:\/\/[^/]+\/(https?:\/\/.+)$/)
   if (nestedAbsoluteUrl) return nestedAbsoluteUrl[1]
-  if (/^(https?:|data:|blob:)/.test(normalized)) return normalized
+  if (/^(https?:|file:|data:|blob:)/.test(normalized)) return normalized
   if (normalized.startsWith('//')) return `${window.location.protocol}${normalized}`
   const publicPath = normalized.startsWith('res/') ? normalized.slice('res/'.length) : normalized
+  if (assetRoot && !appRootAsset) return fileUrl(`${assetRoot}/${publicPath}`)
   return `${publicPath}`
 }
 

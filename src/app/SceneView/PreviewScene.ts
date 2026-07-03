@@ -1,6 +1,6 @@
 import { Button, Label, loadAll, Node, Scene, Sprite } from '@safe-engine/sdl'
 import { cloneDeep, first, isNumber, parseInt, set } from 'lodash-es'
-import { getViewportMetrics } from 'sdl3'
+import { getViewportMetrics, setAssetRoot } from 'sdl3'
 import { normalizeNodeProps } from 'helper/node'
 import { sendRequest } from '../app.ipc'
 import { arrow } from './assets'
@@ -291,6 +291,7 @@ export class PreviewScene extends Scene {
 
   async loadProjectData() {
     const rootProject = getLastRootFolder()
+    if (rootProject) setAssetRoot(`${rootProject}/res`)
     const data: any = await sendRequest({
       key: 'GET_FOLDER_FILES',
       src: rootProject,

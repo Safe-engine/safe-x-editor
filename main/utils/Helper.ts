@@ -50,7 +50,7 @@ function filterTreeFunction(currentNode: DirectoryTree) {
     return true;
   }
   const content = fs.readFileSync(path);
-  if (content.indexOf('extends ComponentX') !== -1 || content.indexOf('extends SceneComponent') !== -1) {
+  if (content.indexOf('extends ComponentX') !== -1 || content.indexOf('extends Scene') !== -1) {
     return true;
   }
   return false;
