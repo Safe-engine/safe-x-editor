@@ -591,7 +591,7 @@ function AssetPreview() {
   if (!hasPreview) return null
 
   return (
-    <div className="w-full h-1/3 border-t shrink-0 overflow-hidden">
+    <div className="flex h-[320px] w-full shrink-0 flex-col items-center justify-center overflow-hidden border-t">
       <div style={{ display: isAnimationType ? 'block' : 'none' }}>
         <div>
           <div className="flex flex-wrap items-center gap-2">
@@ -600,7 +600,7 @@ function AssetPreview() {
             <div className="text-blue-100 my-auto text-sm">Skin</div>
             <SelectBox items={skinsList} selected={selectedSkin} setSelected={onSelectSkin} />
           </div>
-          <div className="overflow-hidden">
+          <div className="flex justify-center overflow-hidden">
             <div className="relative inline-block">
               <canvas
                 className="block max-w-full"
@@ -618,7 +618,7 @@ function AssetPreview() {
         </div>
       </div>
       {isImagePreviewType && (
-        <div className="my-auto">
+        <div className="flex w-full justify-center">
           <div
             ref={imageViewportRef}
             className="relative inline-block overflow-hidden shadow-md select-none touch-none"

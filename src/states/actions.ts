@@ -1,4 +1,5 @@
 import Tree from '@colin-luo/tree'
+import { pathListToTree } from 'helper/tree'
 import { Dispatch } from 'react'
 import { AppState } from './app.reducer'
 
@@ -10,7 +11,7 @@ export function getAction(draft: AppState) {
     getFilesSuccess(data) {
       const { componentsTree, resourceTree, componentsCache, assets, designedResolution, isPixi } = data
       draft.filesData = componentsTree[0].children
-      draft.resourceFilesData = resourceTree[0]?.children || []
+      draft.resourceFilesData = pathListToTree(assets) || []
       draft.assets = assets
       draft.componentsCache = componentsCache
       draft.settings.designedResolution = designedResolution

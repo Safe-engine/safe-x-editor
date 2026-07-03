@@ -15,6 +15,7 @@ export default function NodeTree() {
   const rootPath = useSelector(selectRootFolder);
   const selectedPaths = useSelector(selectSelectedPaths);
   const [selectedTreeItem, setSelectedTreeItem] = useState<any>({});
+  const [treeHeight, setTreeHeight] = useState(() => Math.max(0, window.innerHeight - 32));
 
   useEffect(() => {
     if (treeData && treeData[0]) {
@@ -35,6 +36,14 @@ export default function NodeTree() {
       }
     }
   }, [treeData, filePath]);
+
+  useEffect(() => {
+    function updateTreeHeight() {
+      setTreeHeight(Math.max(0, window.innerHeight - 32));
+    }
+    window.addEventListener('resize', updateTreeHeight);
+    return () => window.removeEventListener('resize', updateTreeHeight);
+  }, []);
 
   function onItemClick(node) {
     console.log('onItemClick node', node.data)
@@ -87,6 +96,8 @@ export default function NodeTree() {
       <Tree
         className='px-1 py-1'
         data={treeData[0]?.tag === 'SceneComponent' ? treeData[0].children : treeData}
+        height={treeHeight}
+        width="100%"
         selection={selectedPaths[0]}
         onSelect={
           onSelectNodes

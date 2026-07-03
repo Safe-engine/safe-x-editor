@@ -7,20 +7,61 @@ import { useEffect, useRef, useState } from 'react'
 import { Tree, TreeApi } from 'react-arborist'
 import { ADD_NEW_STATE, CREATE_ACTION, DELETE_COMPONENT, GET_FOLDER_FILES, NEW_COMPONENT, RE_NAME_COMPONENT } from 'shared/constant.message'
 import { useActions, useSelector } from 'states/app.context'
-import { selectFilesData, selectResourceFilesData } from 'states/app.selectors'
+import { selectFilesData, selectPreviewAsset, selectResourceFilesData, selectRootFolder } from 'states/app.selectors'
 import { AssetTypeBlock } from '../../components/common'
 import AssetPreview from './AssetPreview'
 
 const textureExtensions = new Set(['.png', '.jpg', '.jpeg', '.webp', '.gif', '.bmp', '.svg']);
+const PANEL_HEADER_HEIGHT = 32;
+const ASSET_PREVIEW_HEIGHT = 320;
 
 function fileUrl(path: string) {
   const normalized = path.replace(/\\/g, '/');
   return `file://${normalized.split('/').map(encodeURIComponent).join('/')}`;
 }
 
+function resourceFileUrl(path = '', rootFolder = getLastRootFolder()) {
+  if (!path) return '';
+  if (/^[a-z][a-z0-9+.-]*:/i.test(path)) return path;
+  if (path.startsWith('/')) return fileUrl(path);
+  const normalized = path.replace(/\\/g, '/').replace(/^res\//, '');
+  return fileUrl(rootFolder ? `${rootFolder}/res/${normalized}` : normalized);
+}
+
 function isTexture(data: any) {
   const extension = data.extension || data.name?.match(/\.[^.]+$/)?.[0];
-  return data.type === 'resource' && !data.isDirectory && textureExtensions.has(extension?.toLowerCase());
+  return !data.isDirectory && textureExtensions.has(extension?.toLowerCase());
+}
+
+function getPreviewAsset(data: any, rootFolder: string) {
+  if (data.type === 'spriteFrame') {
+    return {
+      ...data,
+      value: resourceFileUrl(data.value || data.path, rootFolder),
+    };
+  }
+  if (data.type === 'frame') {
+    return {
+      ...data,
+      texture: resourceFileUrl(data.texture, rootFolder),
+    };
+  }
+  if (data.type === 'spine' || data.type === 'dragonBones') {
+    return {
+      ...data,
+      value: Object.entries(data.value || {}).reduce((result, [key, value]) => {
+        result[key] = typeof value === 'string' ? resourceFileUrl(value, rootFolder) : value
+        return result
+      }, {}),
+    };
+  }
+  if (!isTexture(data)) return null;
+  return {
+    key: data.path,
+    name: data.name,
+    type: 'texture',
+    value: resourceFileUrl(data.value || data.path, rootFolder),
+  };
 }
 
 export default function AssetsPanel() {
@@ -32,10 +73,15 @@ export default function AssetsPanel() {
   const [createPath, setCreatePath] = useState('');
   const treeData = useSelector(selectFilesData);
   const resourceTreeData = useSelector(selectResourceFilesData);
+  const rootFolder = useSelector(selectRootFolder);
   const [openCreateComponent, setOpenCreateComponent] = useState(false);
   const [isOpenNewState, setOpenNewState] = useState(false);
   const [selectedTab, setSelectedTab] = useState('components');
   const selectedTreeData = selectedTab === 'res' ? resourceTreeData : treeData;
+  const previewAsset = useSelector(selectPreviewAsset);
+  const showPreview = selectedTab === 'res' && Boolean(previewAsset?.type);
+  const [panelHeight, setPanelHeight] = useState(() => Math.max(0, window.innerHeight - PANEL_HEADER_HEIGHT));
+  const treeHeight = Math.max(0, panelHeight - (showPreview ? ASSET_PREVIEW_HEIGHT : 0));
 
   useEffect(() => {
     function getFilesCB(data) {
@@ -62,24 +108,31 @@ export default function AssetsPanel() {
     }
   }, [treeData])
 
+  useEffect(() => {
+    function updatePanelHeight() {
+      setPanelHeight(Math.max(0, window.innerHeight - PANEL_HEADER_HEIGHT));
+    }
+    window.addEventListener('resize', updatePanelHeight);
+    return () => window.removeEventListener('resize', updatePanelHeight);
+  }, []);
+
   function onItemClick(node) {
     console.log('onItemClick', node);
     const { id: key, path, isDirectory, type } = node.data;
+    if (selectedTab === 'res') {
+      if (isDirectory) {
+        node.toggle()
+      } else {
+        setPreviewAsset(getPreviewAsset(node.data, rootFolder))
+      }
+      return
+    }
     if (isDirectory) {
       if (type === 'resource') {
         node.toggle()
       } else {
         toggleFolder(key)
       }
-    } else if (type === 'resource') {
-      setPreviewAsset(isTexture(node.data)
-        ? {
-          key: path,
-          name: node.data.name,
-          type: 'texture',
-          value: fileUrl(path),
-        }
-        : null)
     } else {
       setLastLoadedFile(path)
       loadComponent(path);
@@ -145,6 +198,8 @@ export default function AssetsPanel() {
           className='px-1 py-1'
           ref={treeRef}
           data={selectedTreeData}
+          height={treeHeight}
+          width="100%"
           onSelect={(nodes) => {
             // console.log('nodes', nodes);
             if (nodes[0])
@@ -157,7 +212,7 @@ export default function AssetsPanel() {
         >
           {TreeNode}
         </Tree>
-       <AssetPreview />
+        {selectedTab === 'res' && <AssetPreview />}
       </div>
     </div>
   )

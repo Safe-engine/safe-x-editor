@@ -1,5 +1,6 @@
 import { Box, Center, HStack } from "base/Stack";
 import clsx from "clsx";
+import { getLastRootFolder } from "data/AppData";
 import { useState } from "react";
 import { NodeRendererProps } from "react-arborist";
 import { AiFillFolderOpen } from "react-icons/ai";
@@ -12,17 +13,31 @@ function fileUrl(path: string) {
   return `file://${normalized.split('/').map(encodeURIComponent).join('/')}`;
 }
 
-function isTexture(data: any) {
+function imageUrl(path?: string) {
+  if (!path) return '';
+  if (/^[a-z][a-z0-9+.-]*:/i.test(path)) return path;
+  if (path.startsWith('/')) return fileUrl(path);
+  const rootFolder = getLastRootFolder();
+  const normalized = path.replace(/\\/g, '/').replace(/^res\//, '');
+  return fileUrl(rootFolder ? `${rootFolder}/res/${normalized}` : normalized);
+}
+
+function getTextureIconSrc(data: any) {
+  if (data.isDirectory) return '';
+  if (data.type === 'spriteFrame') return imageUrl(data.value);
+  if (data.type === 'frame') return imageUrl(data.texture);
   const extension = data.extension || data.name?.match(/\.[^.]+$/)?.[0];
-  return data.type === 'resource' && !data.isDirectory && textureExtensions.has(extension?.toLowerCase());
+  if (textureExtensions.has(extension?.toLowerCase())) return imageUrl(data.value || data.path);
+  return '';
 }
 
 function renderIcon(data: any) {
   if (data.isDirectory) {
     return <AiFillFolderOpen color="#d6d6d6" />;
   }
-  if (isTexture(data)) {
-    return <img className="h-4 w-4 rounded-sm object-cover" src={fileUrl(data.path)} />;
+  const textureIconSrc = getTextureIconSrc(data);
+  if (textureIconSrc) {
+    return <img className="h-4 w-4 rounded-sm object-cover" src={textureIconSrc} alt="" />;
   }
   return <CiImageOn color="#9fb7ff" />;
 }
