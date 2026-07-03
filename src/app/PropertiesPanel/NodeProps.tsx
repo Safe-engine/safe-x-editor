@@ -163,11 +163,15 @@ function NodeHeader({ selectedNode }) {
         <div className='h-3.5 w-3.5 rounded-full bg-[#dcdcdc]' />
       </div>
       <div className='min-w-0 flex-1'>
-        <div className='truncate text-[12px] font-bold text-[#f0f0f0]'>{selectedNode.tag || selectedNode.name}</div>
-        <div className='mt-1 flex min-w-0 gap-2 text-[10px] font-semibold uppercase tracking-wide text-[#d5d5d5]'>
-          <span className='truncate'>Tag: {selectedNode.tag || 'Untagged'}</span>
-          <span className='truncate'>Layer: {selectedNode.layer || 'Default'}</span>
+        <div className='truncate text-[12px] font-bold text-[#f0f0f0]'>{selectedNode.tag}
+          <span className='truncate'>: {selectedNode.props?.node?.name || ''}</span>
         </div>
+        <div className='mt-1 flex min-w-0 gap-2 text-[10px] font-semibold uppercase tracking-wide text-[#d5d5d5]'>
+          <span className='truncate'>Tag: {selectedNode.props?.node?.tag || 'default'}</span>
+        </div>
+      </div>
+      <div className='mt-1 flex min-w-0 gap-2 text-[10px] font-semibold uppercase tracking-wide text-[#d5d5d5]'>
+        Active
       </div>
       <input className='ml-2 h-3.5 w-3.5 accent-[#6aa7ff]' type='checkbox' checked readOnly />
     </div>
@@ -311,11 +315,6 @@ function NodeProps() {
     )}
     {components.map((component, index) => (
       <InspectorSection key={`${component.tag}-${index}`} title={component.tag || `Component ${index + 1}`}>
-        <Field
-          label='Tag'
-          value={component.tag}
-          onChange={(tag) => updateComponent(index, { tag })}
-        />
         {Object.entries(component.props || {}).map(([key, value]) => (
           <Field
             key={`${component.tag}-${index}-${key}`}

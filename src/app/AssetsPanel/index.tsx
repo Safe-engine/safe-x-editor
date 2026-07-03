@@ -7,20 +7,35 @@ import { useEffect, useRef, useState } from 'react'
 import { Tree, TreeApi } from 'react-arborist'
 import { ADD_NEW_STATE, CREATE_ACTION, DELETE_COMPONENT, GET_FOLDER_FILES, NEW_COMPONENT, RE_NAME_COMPONENT } from 'shared/constant.message'
 import { useActions, useSelector } from 'states/app.context'
-import { selectFilesData } from 'states/app.selectors'
+import { selectFilesData, selectResourceFilesData } from 'states/app.selectors'
 import { AssetTypeBlock } from '../../components/common'
+import AssetPreview from './AssetPreview'
+
+const textureExtensions = new Set(['.png', '.jpg', '.jpeg', '.webp', '.gif', '.bmp', '.svg']);
+
+function fileUrl(path: string) {
+  const normalized = path.replace(/\\/g, '/');
+  return `file://${normalized.split('/').map(encodeURIComponent).join('/')}`;
+}
+
+function isTexture(data: any) {
+  const extension = data.extension || data.name?.match(/\.[^.]+$/)?.[0];
+  return data.type === 'resource' && !data.isDirectory && textureExtensions.has(extension?.toLowerCase());
+}
 
 export default function AssetsPanel() {
-  const { getFiles, loadComponent, toggleFolder } = useActions();
+  const { getFiles, loadComponent, setPreviewAsset, toggleFolder } = useActions();
   const treeRef = useRef<TreeApi<any>>(null)
   const [isOpen, setOpen] = useState(false);
   const [openConfirmDeleteComponent, setOpenConfirmDeleteComponent] = useState(false);
   const [openRenameComponent, setOpenRenameComponent] = useState(false);
   const [createPath, setCreatePath] = useState('');
   const treeData = useSelector(selectFilesData);
+  const resourceTreeData = useSelector(selectResourceFilesData);
   const [openCreateComponent, setOpenCreateComponent] = useState(false);
   const [isOpenNewState, setOpenNewState] = useState(false);
   const [selectedTab, setSelectedTab] = useState('components');
+  const selectedTreeData = selectedTab === 'res' ? resourceTreeData : treeData;
 
   useEffect(() => {
     function getFilesCB(data) {
@@ -49,9 +64,22 @@ export default function AssetsPanel() {
 
   function onItemClick(node) {
     console.log('onItemClick', node);
-    const { id: key, path, isDirectory } = node.data;
+    const { id: key, path, isDirectory, type } = node.data;
     if (isDirectory) {
-      toggleFolder(key)
+      if (type === 'resource') {
+        node.toggle()
+      } else {
+        toggleFolder(key)
+      }
+    } else if (type === 'resource') {
+      setPreviewAsset(isTexture(node.data)
+        ? {
+          key: path,
+          name: node.data.name,
+          type: 'texture',
+          value: fileUrl(path),
+        }
+        : null)
     } else {
       setLastLoadedFile(path)
       loadComponent(path);
@@ -105,10 +133,6 @@ export default function AssetsPanel() {
   return (
     <div className='h-screen w-full min-w-0 bg-[#252525] text-[#dcdcdc]'>
       <div className='flex h-8 border-b border-[#151515] bg-[#202020]'>
-        {/* <AssetTypeBlock
-          onClick={changeSelected('scenes')}
-          className={clsx({ 'bg-[#303846] text-[#f0f0f0] border-b-[#4a90e2]': selectedTab === 'scenes' })}
-        >Scene</AssetTypeBlock> */}
         <AssetTypeBlock onClick={changeSelected('components')}
           className={clsx({ 'bg-[#303846] text-[#f0f0f0] border-b-[#4a90e2]': selectedTab === 'components' })}
         >Components</AssetTypeBlock>
@@ -120,7 +144,7 @@ export default function AssetsPanel() {
         <Tree
           className='px-1 py-1'
           ref={treeRef}
-          data={treeData}
+          data={selectedTreeData}
           onSelect={(nodes) => {
             // console.log('nodes', nodes);
             if (nodes[0])
@@ -133,12 +157,7 @@ export default function AssetsPanel() {
         >
           {TreeNode}
         </Tree>
-        {/* <ContextMenu
-          ref={contextMenuRef}
-          dataSource={contextMenuFilesItems}
-          width={200}
-          target='#hierarchyFiles .dx-treeview-item'
-          onItemClick={contextMenuItemClick} /> */}
+       <AssetPreview />
       </div>
     </div>
   )

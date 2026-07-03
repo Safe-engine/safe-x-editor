@@ -8,8 +8,9 @@ export function getAction(draft: AppState) {
       draft.rootFolder = src.replace(/\\/g, '/')
     },
     getFilesSuccess(data) {
-      const { componentsTree, componentsCache, assets, designedResolution, isPixi } = data
+      const { componentsTree, resourceTree, componentsCache, assets, designedResolution, isPixi } = data
       draft.filesData = componentsTree[0].children
+      draft.resourceFilesData = resourceTree[0]?.children || []
       draft.assets = assets
       draft.componentsCache = componentsCache
       draft.settings.designedResolution = designedResolution
@@ -18,6 +19,9 @@ export function getAction(draft: AppState) {
     loadComponent(path: string) {
       // if (draft.filePath !== path)
       draft.filePath = path
+    },
+    setPreviewAsset(data: any) {
+      draft.previewAsset = data
     },
     loadComponentSuccess(data) {
       const { treeData, name } = data

@@ -5,9 +5,24 @@ import { NodeRendererProps } from "react-arborist";
 import { AiFillFolderOpen } from "react-icons/ai";
 import { CiImageOn } from 'react-icons/ci';
 
+const textureExtensions = new Set(['.png', '.jpg', '.jpeg', '.webp', '.gif', '.bmp', '.svg']);
+
+function fileUrl(path: string) {
+  const normalized = path.replace(/\\/g, '/');
+  return `file://${normalized.split('/').map(encodeURIComponent).join('/')}`;
+}
+
+function isTexture(data: any) {
+  const extension = data.extension || data.name?.match(/\.[^.]+$/)?.[0];
+  return data.type === 'resource' && !data.isDirectory && textureExtensions.has(extension?.toLowerCase());
+}
+
 function renderIcon(data: any) {
   if (data.isDirectory) {
     return <AiFillFolderOpen color="#d6d6d6" />;
+  }
+  if (isTexture(data)) {
+    return <img className="h-4 w-4 rounded-sm object-cover" src={fileUrl(data.path)} />;
   }
   return <CiImageOn color="#9fb7ff" />;
 }

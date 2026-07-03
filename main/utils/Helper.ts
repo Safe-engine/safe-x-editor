@@ -13,7 +13,7 @@ export interface TreeViewData {
   items?: TreeViewData[];
 }
 
-export const getTreeData = (treeData: any[]) => {
+export const getTreeData = (treeData: any[], type = 'component') => {
   const tree = new Tree(treeData, 'path', 'children');
   const ret: any = tree.mapNodes((currentNode) => (
     {
@@ -21,9 +21,10 @@ export const getTreeData = (treeData: any[]) => {
       name: currentNode.name,
       path: currentNode.path,
       isDirectory: currentNode.type === 'directory',
-      children: getTreeData(currentNode.children),
+      children: getTreeData(currentNode.children, type),
       custom: currentNode.custom,
-      type: 'component',
+      extension: currentNode.extension,
+      type,
     }
   ));
   return ret as TreeNode<TreeViewData, 'id', 'items'>[];
@@ -45,6 +46,9 @@ function filterTreeFunction(currentNode: DirectoryTree) {
   if (type === 'directory') {
     if (path.includes('norender')) return false
     return !children.every(isEmptyFolder);
+  }
+  if (pathUtil.basename(path) === '.DS_Store') {
+    return false;
   }
   if (filterType === 'images') {
     return true;

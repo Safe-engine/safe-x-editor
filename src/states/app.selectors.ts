@@ -27,6 +27,11 @@ export const selectFilesData = createSelector(
   (appState) => appState.filesData
 );
 
+export const selectResourceFilesData = createSelector(
+  selectApp,
+  (appState) => appState.resourceFilesData
+);
+
 export const selectSelectedFilePath = createSelector(
   selectApp,
   (appState) => appState.filePath
@@ -96,4 +101,9 @@ export const selectSelectedNode = createSelector(
 export const selectAssets = createSelector(
   selectApp,
   (appState) => appState.assets
+);
+
+export const selectPreviewAsset = createSelector(
+  selectApp,
+  (appState) => appState.previewAsset
 );
