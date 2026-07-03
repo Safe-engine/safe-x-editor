@@ -7,7 +7,11 @@ export class GlobalData {
   static currentClassName: string = '';
   static cbMethodParamsMap: any = {};
   static objectTypeMap: any = {};
+  static customHasRenderComponents: string[] = [];
   static customNoRenderComponents: string[] = [];
+  static spineAnimations: { [key: string]: any } = {};
+  static designedResolution?: { width: number; height: number };
+  static staticPropsMap: { [key: string]: any } = {};
   static jsonAssetsMap: { [key: string]: string } = {}
   static cbParamsMap: { [key: string]: number } = {
     onCollisionEnter: 2,
@@ -38,4 +42,5 @@ export class GlobalData {
     ScrollViewComp: { bounceEnabled: true },
   };
   static importPaths: any = {};
+  static componentsCache: { [key: string]: any } = {};
 }

@@ -40,6 +40,8 @@ export async function getClassesMetaData(srcDir: string, idDebug = false) {
           const { name: className } = id
           if (parseValue(superClass) === 'NoRenderComponentX') {
             GlobalData.customNoRenderComponents.push(className)
+          } else {
+            GlobalData.customHasRenderComponents.push(className)
           }
           body.body.forEach(d => {
             const { type } = d

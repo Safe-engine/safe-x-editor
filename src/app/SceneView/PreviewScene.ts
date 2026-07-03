@@ -4,7 +4,7 @@ import { getViewportMetrics } from 'sdl3'
 import { normalizeNodeProps } from 'helper/node'
 import { sendRequest } from '../app.ipc'
 import { arrow } from './assets'
-import { getLastSceneScale, getLastSceneX, getLastSceneY, setLastSceneScale, setLastSceneX, setLastSceneY } from 'data/AppData'
+import { getLastRootFolder, getLastSceneScale, getLastSceneX, getLastSceneY, setLastSceneScale, setLastSceneX, setLastSceneY } from 'data/AppData'
 import { GlobalState } from 'data/GloablState'
 import { loadSceneViewSdl, preloadSdlAssets, RectRender } from './loader'
 import { getCurrentNode } from './utils'
@@ -290,9 +290,10 @@ export class PreviewScene extends Scene {
   }
 
   async loadProjectData() {
+    const rootProject = getLastRootFolder()
     const data: any = await sendRequest({
       key: 'GET_FOLDER_FILES',
-      src: 'REPLACE_ROOT_PROJECT',
+      src: rootProject,
     })
     const { designedResolution, assets, componentsCache, colors, defaultProps, jsonCaches, staticPropsMap, enumsList, ...rest } = data
     GlobalState.data = {

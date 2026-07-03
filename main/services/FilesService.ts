@@ -1,106 +1,93 @@
-import { safexTemplateDir, sceneTemplate } from '@@/helper/constant';
-import { getResolutionSettings } from '@@/helper/settings';
-import { readFileContent, renderMustacheFile } from '@@/helper/string.util';
-import { GlobalData } from '@@/parser/global';
-import { getClassesMetaData } from '@@/parser/metadata';
-import {
-  filterTree,
-  getTreeData
-} from '@@/utils/Helper';
-import { getJSXBlock, getListTagUsed } from '@@/utils/ParseData';
-import { spliceString } from '@@/utils/StringHelper';
-import { parse } from '@typescript-eslint/typescript-estree';
+import { filterTree, getTreeData } from '@@/utils/Helper';
 import DirectoryTree from 'directory-tree';
-import { existsSync, readFileSync, writeFileSync } from 'fs';
-import { copySync } from 'fs-extra';
-import dir from 'node-dir';
-import { join } from 'path';
-import rimraf from 'rimraf';
-import { syncResConst } from './TerminalService';
-import { parseAssetsSrcFile } from './assets';
+import { existsSync, readdirSync, readFileSync, rmSync } from 'fs';
+import { join } from 'path/posix';
+import { WebviewView, workspace } from 'vscode';
+import { getResolutionSettings } from '../helper/settings';
+import { loadSpineFile } from '../helper/spine';
+import { GlobalData } from '../parser/global';
+import { getClassesMetaData } from '../parser/metadata';
+import { parseAssetsSrcFile, parseEnums, parseJsonCache } from './assets';
+import { loadComponent } from './ComponentService';
 
-export const getFilesInFolder = async ({ src, exclude = [] }) => {
-  const packageJson = join(src, 'package.json');
+export const getFilesInFolder = async ({ src }, panel: WebviewView) => {
+  const packageJson = join(src, 'package.json').replace(/\\/g, '/');
+  // console.log('getFilesInFolder', src, packageJson)
   if (!existsSync(packageJson)) {
     throw Error('No package.json.');
   }
   const content = readFileSync(packageJson, 'utf-8');
-  if (!content.includes("safe-x")) {
+  if (!content.includes("@safe-engine")) {
     throw Error('Not Safex project.');
   }
-  GlobalData.rootProject = src
-  syncResConst()
-  const componentsCache = await getClassesMetaData(src, true)
-  // setupEditorFiles(src)
+  GlobalData.rootProject = src;
+  await getClassesMetaData(src);
+  const assetsTSFolder = join(src, 'src', 'assets');
+  const assetsTextureList = parseAssetsSrcFile(join(assetsTSFolder, 'TextureAssets.ts'), panel);
+  const fontAssets = parseAssetsSrcFile(join(assetsTSFolder, 'FontAssets.ts'), panel);
+  const jsonAssets = parseAssetsSrcFile(join(assetsTSFolder, 'JsonAssets.ts'), panel);
+  const spriteSheetAssets = parseAssetsSrcFile(join(assetsTSFolder, 'SpriteSheetAssets.ts'), panel);
+  const dragonBonesAssets = parseAssetsSrcFile(join(assetsTSFolder, 'DragonBonesAssets.ts'), panel);
+  const spineAssets = parseAssetsSrcFile(join(assetsTSFolder, 'SpineAssets.ts'), panel);
+  const spriteFramesAssets = parseAssetsSrcFile(join(assetsTSFolder, 'SpriteFrames.ts'));
+  const colors = parseAssetsSrcFile(join(src, 'src', 'helper', 'constant.ts'), panel, true);
+  const jsonCaches = parseJsonCache(join(src, 'src', 'data', 'JsonCache.ts'), jsonAssets);
+  const enumsList = parseEnums(join(src, 'src', 'helper', 'constant.ts'), jsonAssets);
+  const designedResolution = getResolutionSettings(src);
+  GlobalData.designedResolution = designedResolution;
+  // console.log('spineAssets', JSON.stringify(spineAssets, null, 2));
+  spineAssets.forEach(({ key, value }) => {
+    const { skeleton, atlas } = value;
+    const data = loadSpineFile(skeleton.replace(/\\/g, '/'), atlas);
+    GlobalData.spineAnimations[key] = {
+      animations: data?.animations.map(({ name }) => name),
+      skins: data?.skins.map(({ name }) => name),
+    };
+  });
+  const componentsCache = {};
+  const files = await readdirSync(join(src, 'src', 'components'), { recursive: true }) as string[];
+  // console.log(files, 'files');
+  const components = files
+    .filter(file => file.endsWith('.tsx'))
+    .map(async file => {
+      const filePath = join(src, 'src', 'components', file);
+      const { name, treeData } = await loadComponent({ path: filePath });
+      componentsCache[name] = treeData;
+      return filePath;
+    });
+  await Promise.all(components);
   const jsxOption: DirectoryTree.DirectoryTreeOptions = {
     extensions: /\.tsx$/,
-    exclude,
+    exclude: [],
     attributes: ['type', 'extension'],
-  }
-  const components = DirectoryTree(join(src, 'src'), jsxOption);
-  const assetsTSFolder = join(src, 'src', 'assets')
-  const assetsTextureList = parseAssetsSrcFile(join(assetsTSFolder, 'TextureAssets.ts'));
-  const fontAssets = parseAssetsSrcFile(join(assetsTSFolder, 'FontAssets.ts'));
-  const spriteSheetAssets = parseAssetsSrcFile(join(assetsTSFolder, 'SpriteSheetAssets.ts'));
-  const spriteFramesAssets = parseAssetsSrcFile(join(assetsTSFolder, 'SpriteFrames.ts'));
-  const designedResolution = getResolutionSettings(src)
-  // console.log('components', JSON.stringify(components, null, 2));
+  };
+  GlobalData.componentsCache = componentsCache;
+  const config = workspace.getConfiguration('safexEditor');
+  const defaultProps = config.get<object>('defaultProps');
   return {
-    isPixi: content.includes('@safe-engine/pixi'),
-    componentsTree: getTreeData(filterTree([components])),
-    componentsCache,
+    componentsTree: getTreeData(filterTree([DirectoryTree(join(src, 'src'), jsxOption)])),
+    colors,
+    enumsList,
     assets: {
       assetsTextureList,
       fontAssets,
+      jsonAssets,
       spriteSheetAssets,
       spriteFramesAssets,
+      dragonBonesAssets,
+      spineAssets
     },
+    componentsCache,
+    defaultProps,
+    jsonCaches,
+    staticPropsMap: GlobalData.staticPropsMap,
     designedResolution
   };
 };
 
-export const checkFileExist = (filePath) => existsSync(filePath);
+export const checkFileExist = async ({ folderPath }) => existsSync(folderPath);
 
-export const deleteFolder = (data) => {
-  rimraf.sync(data);
+export const deleteFolder = async ({ path, folderPath }) => {
+  rmSync(path || folderPath, { recursive: true, force: true });
+  return true;
 };
-
-export const dirPathPromise = (componentPath) =>
-  new Promise<any>((resole, reject) => {
-    dir.paths(componentPath, (error, paths) => {
-      if (error) {
-        reject(error);
-      }
-      resole(paths);
-    });
-  });
-
-function setupEditorFiles(src: string) {
-  const desDir = join(src, 'src', '.safex')
-  copySync(join(safexTemplateDir, 'editor.ts'), join(desDir, 'editor.ts'))
-  copySync(join(safexTemplateDir, 'editor.html'), join(desDir, 'editor.html'))
-  copySync(join(safexTemplateDir, 'Boot.tsx'), join(desDir, 'Boot.tsx'))
-  const editorSceneFile = join(desDir, 'EditingScene.tsx')
-  const template = readFileContent(sceneTemplate);
-  const content = renderMustacheFile(template, {})
-  writeFileSync(editorSceneFile, content)
-}
-
-export function updateEditorJSX(jsxString: string) {
-  const editorSceneFile = join(GlobalData.rootProject, 'src', '.safex', 'EditingScene.tsx')
-  const input = readFileContent(editorSceneFile);
-  const parsed = parse(input, { jsx: true, range: true });
-  const jsxBlock = getJSXBlock(parsed);
-  const [start, end] = jsxBlock.range;
-  let content = jsxString.includes('SceneComponent') ? jsxString :
-    `<SceneComponent>\n      ${jsxString}\n      </SceneComponent>`
-  const tagUsed = getListTagUsed(parsed)
-  content = spliceString(input, start, end - start, content)
-  tagUsed.forEach(tag => {
-    const importLine = GlobalData.importPaths[tag]
-    if (importLine && !input.includes(importLine)) {
-      content = `${importLine}\n${content}`
-    }
-  })
-  writeFileSync(editorSceneFile, content);
-}

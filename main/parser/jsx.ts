@@ -1,12 +1,12 @@
-import { collidersCompList, noRenderList } from "@@/utils/constants";
 import { camelCase, upperFirst } from "lodash";
 import { renderMustacheFile } from "../helper/string.util";
 import { createSetter } from "../helper/utils";
+import { collidersCompList, renderList } from "../utils/constants";
 import { parseValue } from "./ast";
 import { GlobalData } from "./global";
 
-function isNoRender(name) {
-  return [...GlobalData.customNoRenderComponents, ...noRenderList].includes(name);
+export function hasRender(name) {
+  return [...GlobalData.customHasRenderComponents, ...renderList].includes(name);
 }
 
 const nameCount = {}
@@ -59,7 +59,7 @@ export function praseJSXElement(jsx) {
       refs += `\nauto ${classVar} = ${compVar}->addComponent<${GlobalData.currentClassName}>();`
     }
     const params = attributesToParams(componentName, attributes)
-    if (isNoRender(componentName)) {
+    if (!hasRender(componentName)) {
       if (isCollideComp) {
         const colliderParams = attributesToParams('Collider', attributes)
         ret += `\n${parentVar}->addComponent<Collider>(${colliderParams});`
@@ -103,7 +103,7 @@ export function praseJSXElement(jsx) {
         }
       }
     })
-    if (parentVar && !isNoRender(componentName)) {
+    if (parentVar && hasRender(componentName)) {
       ret += `\n${parentVar}->node->addChild(${compVar}->node);`
     }
     children.forEach(element => {

@@ -9,6 +9,9 @@
       ],
       "@shared/*": [
         "../src/shared/*"
+      ],
+      "vscode": [
+        "./shims/vscode"
       ]
     },
     "lib": [

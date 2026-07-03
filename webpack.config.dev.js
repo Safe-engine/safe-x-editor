@@ -1,7 +1,10 @@
 const path = require('path')
 const createElectronReloadWebpackPlugin = require('webpack-electron-reload')
 const TsconfigPathsPlugin = require('tsconfig-paths-webpack-plugin')
-const { dependencies: externals } = require('./package.json')
+const {
+  dependencies = {},
+  devDependencies = {},
+} = require('./package.json')
 const CopyPlugin = require("copy-webpack-plugin");
 const ElectronReloadWebpackPlugin = createElectronReloadWebpackPlugin({
   // Path to `package.json` file with main field set to main process file path, or just main process file path
@@ -27,7 +30,7 @@ module.exports = {
     __dirname: false,
     __filename: false,
   },
-  externals: [...Object.keys(externals || {})],
+  externals: [...Object.keys(dependencies), ...Object.keys(devDependencies)],
   plugins: [
     new CopyPlugin({
       patterns: [
@@ -52,8 +55,18 @@ module.exports = {
     extensions: ['.ts', '.js'],
     plugins: [PathsPlugin],
     alias: {
-      'handlebars': 'handlebars/dist/handlebars.js'
+      'handlebars': 'handlebars/dist/handlebars.js',
+      vscode: path.join(__dirname, 'main/shims/vscode.ts')
     },
   },
   mode: 'development',
+  watchOptions: {
+    poll: 1000,
+    ignored: [
+      '**/node_modules/**',
+      '**/build/**',
+      '**/dist/**',
+      '**/output/**',
+    ],
+  },
 }
