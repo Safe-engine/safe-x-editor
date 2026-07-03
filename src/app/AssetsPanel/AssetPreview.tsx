@@ -625,7 +625,7 @@ function AssetPreview() {
             style={{ width: `${PREVIEW_SIZE}px`, height: `${PREVIEW_SIZE}px` }}
           >
             <div className="pointer-events-none absolute z-10 rounded bg-slate-950/70 px-2 py-1 text-xs text-sky-100">
-              {type === 'frame' ? `${frameInfo.w}x${frameInfo.h}` : name}
+              {type === 'frame' ? `${frameInfo.w}x${frameInfo.h}` : `${width}x${height}`}
             </div>
             <div className="pointer-events-none absolute right-0 z-10 rounded bg-slate-950/70 px-2 py-1 text-xs text-sky-100">
               {imageZoomPercent}%

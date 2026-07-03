@@ -32,7 +32,6 @@
     "."
   ],
   "exclude": [
-    "./template/safex",
     "../src"
   ]
 }

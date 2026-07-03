@@ -1,4 +1,4 @@
-import { filterImages, filterTree, getTreeData } from '@@/utils/Helper';
+import { filterTree, getTreeData } from '@@/utils/Helper';
 import DirectoryTree from 'directory-tree';
 import { existsSync, readdirSync, readFileSync, rmSync } from 'fs';
 import { join } from 'path/posix';
@@ -62,16 +62,11 @@ export const getFilesInFolder = async ({ src }, panel: WebviewView) => {
     exclude: [],
     attributes: ['type', 'extension'],
   };
-  const resourcePath = join(src, 'res');
-  const resourceTree = existsSync(resourcePath)
-    ? getTreeData(filterImages([DirectoryTree(resourcePath, { attributes: ['type', 'extension'] })]), 'resource')
-    : [];
   GlobalData.componentsCache = componentsCache;
   const config = workspace.getConfiguration('safexEditor');
   const defaultProps = config.get<object>('defaultProps');
   return {
     componentsTree: getTreeData(filterTree([DirectoryTree(join(src, 'src'), jsxOption)])),
-    resourceTree,
     colors,
     enumsList,
     assets: {

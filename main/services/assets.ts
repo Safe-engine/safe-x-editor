@@ -1,3 +1,4 @@
+import { GlobalData } from "@@/parser/global";
 import ESTraverse from "estraverse";
 import { readFileSync } from 'fs';
 import { existsSync } from 'fs-extra';
@@ -30,22 +31,21 @@ function getTexturePath(base, relativePath: string) {
 
 export function parseAssets(parsed, panel?: WebviewView, isColor = false) {
   const ret = [];
-  const base = workspace.workspaceFolders[0].uri;
+  const base = GlobalData.rootProject;
   ESTraverse.traverse(parsed, {
     enter: function (node, parent) {
       if (node.type === 'VariableDeclarator') {
-        // console.log(node);
         const { name } = node.id as any;
         if (node.id.type === 'Identifier' && node.init.type === 'Literal') {
           if (isColor) { return; }
           // console.log(node.init.properties)
           const relativePath = node.init.value as string;
-          const fileUri = Uri.joinPath(base, 'res', relativePath);
+          const fileUri = join(base, 'res', relativePath);
           let size;
           if (relativePath.endsWith('.png') || relativePath.endsWith('.jpg')) {
-            if (existsSync(fileUri.fsPath)) {
-              const { width, height } = sizeOf(readFileSync(fileUri.fsPath));
-              // console.log(fileUri.fsPath, width, height);
+            if (existsSync(fileUri)) {
+              const { width, height } = sizeOf(readFileSync(fileUri));
+              // console.log(fileUri, width, height);
               size = { width, height };
             }
           }
@@ -62,10 +62,10 @@ export function parseAssets(parsed, panel?: WebviewView, isColor = false) {
           ret.push({
             size,
             path: relativePath,
-            json: getJsonData(relativePath, fileUri.fsPath),
+            json: getJsonData(relativePath, fileUri),
             key: name,
             texture: getViewPath(panel, texturePath),
-            value: panel.webview.asWebviewUri(fileUri).toString()
+            value: fileUri
           });
         } else if ('CallExpression' === node.init.type) {
           ret.push({

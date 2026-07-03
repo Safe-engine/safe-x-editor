@@ -32,11 +32,6 @@ module.exports = {
   },
   externals: [...Object.keys(dependencies), ...Object.keys(devDependencies)],
   plugins: [
-    new CopyPlugin({
-      patterns: [
-        { from: "main/template/safex", to: "../template/safex" },
-      ],
-    }),
     // Call created plugin here
     ElectronReloadWebpackPlugin(),
     // If your config `target` is different from recommended one then you should also specify it like this `ElectronReloadWebpackPlugin('electron-renderer')`
