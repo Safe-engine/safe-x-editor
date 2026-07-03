@@ -30,14 +30,14 @@ function ColorPicker({ dataKey = '', title = '', type, value = '', onChange, onD
   return <div>
     <Popover className='relative'>
       <Popover.Button>
-        <div className='flex space-x-2 capitalize '>
+          <div className='flex items-center space-x-2 text-[12px] capitalize text-[#dcdcdc]'>
           {
             title !== ' ' &&
-            <div className='w-20 text-left'>
+            <div className='w-20 text-left text-[#c8c8c8]'>
               {title || type}
             </div>
           }
-          <div className={`${value.replace(type, 'bg')} w-4 h-4 border border-black`}>
+          <div className={`${value.replace(type, 'bg')} w-4 h-4 border border-[#111] text-center text-[10px]`}>
             {value ? ''
               : 'X'
             }
@@ -53,23 +53,23 @@ function ColorPicker({ dataKey = '', title = '', type, value = '', onChange, onD
         leaveFrom='opacity-100 translate-y-0'
         leaveTo='opacity-0 translate-y-1'
       >
-        <Popover.Panel className='absolute z-10 p-1 bg-white border border-black rounded-sm'>
+        <Popover.Panel className='absolute z-10 rounded-sm border border-[#111] bg-[#252525] p-2 text-[11px] text-[#dcdcdc] shadow-lg'>
           {({ close }) => (
             <div className=''>
-              <div className='w-full flex mb-1 border-b border-b-black'>
+              <div className='mb-1 flex w-full border-b border-b-[#333] pb-1'>
                 <span className='w-14 capitalize'>
                   recent:
                 </span>
                 <div
-                  className={`bg-white w-4 h-4 cursor-pointer ml-px border border-black text-center`}
+                  className={`ml-px h-4 w-4 cursor-pointer border border-[#111] bg-white text-center text-black`}
                   onClick={onClickClearColor(close)}
                 >X</div>
                 <div
-                  className={`bg-black w-4 h-4 cursor-pointer ml-px border border-black`}
+                  className={`ml-px h-4 w-4 cursor-pointer border border-[#111] bg-black`}
                   onClick={onClickColor(`${type}-black`, close)}
                 />
                 <div
-                  className={`bg-white w-4 h-4 cursor-pointer ml-px border border-black`}
+                  className={`ml-px h-4 w-4 cursor-pointer border border-[#111] bg-white`}
                   onClick={onClickColor(`${type}-white`, close)}
                 />
               </div>
@@ -81,7 +81,7 @@ function ColorPicker({ dataKey = '', title = '', type, value = '', onChange, onD
                     </span>
                     {darknessList.map(darkness => <div
                       key={`${color}_${darkness}`}
-                      className={`bg-${color}-${darkness} w-4 h-4 cursor-pointer ml-px border border-black`}
+                      className={`bg-${color}-${darkness} ml-px h-4 w-4 cursor-pointer border border-[#111]`}
                       onClick={onClickColor(`${type}-${color}-${darkness}`, close)} />)}
                   </div>)
                 }

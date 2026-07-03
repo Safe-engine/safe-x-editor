@@ -10,22 +10,22 @@ import { selectSelectedEditingClassNamePath } from "states/app.selectors";
 
 function renderIcon(data: any) {
   if (data.isDirectory) {
-    return <AiFillFolderOpen color="white" />;
+    return <AiFillFolderOpen color="#d6d6d6" />;
   }
-  return <RiBox3Line color="#001177" />;
+  return <RiBox3Line color="#9fb7ff" />;
 }
 
 function renderName(node: any) {
   if (node.data.name)
-    return <Box className={clsx(node.isSelected ? 'text-yellow-500' : 'text-yellow-600')}>{node.data.name}</Box>
+    return <Box className={clsx('truncate text-[11px]', node.isSelected ? 'text-[#ffffff]' : 'text-[#b8b8b8]')}>{node.data.name}</Box>
   const spriteFrame = get(node, 'data.props.spriteFrame')
   if (spriteFrame)
-    return <Box className={clsx(node.isSelected ? 'text-yellow-500' : 'text-blue-400')}>
+    return <Box className={clsx('truncate text-[11px]', node.isSelected ? 'text-[#ffffff]' : 'text-[#9fb7ff]')}>
       {spriteFrame.replace('{sf_', '').replace('}', '')}
     </Box>
   const string = get(node, 'data.props.string')
   if (string)
-    return <Box className={clsx(node.isSelected ? 'text-yellow-500' : 'text-green-400')}>
+    return <Box className={clsx('truncate text-[11px]', node.isSelected ? 'text-[#ffffff]' : 'text-[#86d386]')}>
       {string}
     </Box>
 }
@@ -43,9 +43,10 @@ export function TreeItem({ node, style, dragHandle }: NodeRendererProps<any>) {
   };
 
   return <HStack ref={dragHandle}
+    style={style}
     className={clsx(
-      'hover:cursor-pointer hover:bg-gray-500',
-      node.isSelected && 'bg-gray-500'
+      'h-full items-center rounded-sm px-1 text-[12px] text-[#d6d6d6] hover:cursor-pointer hover:bg-[#303846]',
+      node.isSelected && 'bg-[#304766] text-[#f0f0f0]'
     )}
     onDoubleClick={() => {
       setTempName(node.data.name)
@@ -54,8 +55,8 @@ export function TreeItem({ node, style, dragHandle }: NodeRendererProps<any>) {
     onContextMenu={(e) => handleContextMenu(e, node.data)}
   >
     <Center>
-      <Box style={style} className="m-auto">{renderIcon(node.data)}</Box>
-      <Box className={clsx(node.isSelected ? 'text-yellow-400' : 'text-white')}>{node.data.tag}</Box>
+      <Box className="m-auto w-4 shrink-0">{renderIcon(node.data)}</Box>
+      <Box className={clsx('truncate font-semibold', node.isSelected ? 'text-[#ffffff]' : 'text-[#d6d6d6]')}>{node.data.tag}</Box>
       {renderName(node)}
     </Center>
   </HStack >

@@ -25,17 +25,17 @@ function ComboBox({ title, items, onChange, value, onCreateNew }) {
   return (
     <Combobox value={value} onChange={onChange}>
       <div className="relative mt-1">
-        <div>
+        <div className="text-[12px] text-[#c8c8c8]">
           {title}
         </div>
-        <div className="relative w-full text-left bg-white shadow-md cursor-default focus:outline-none focus-visible:ring-2 focus-visible:ring-opacity-75 focus-visible:ring-white focus-visible:ring-offset-teal-300 focus-visible:ring-offset-2 sm:text-sm overflow-hidden">
+        <div className="relative w-full cursor-default overflow-hidden rounded-sm border border-[#111] bg-[#151515] text-left shadow-inner focus:outline-none focus-visible:border-[#4a90e2]">
           <Combobox.Input
-            className="w-full border-none focus:ring-0 py-2 pl-3 pr-10 text-sm leading-5 text-gray-900"
+            className="h-7 w-full border-none bg-transparent py-1 pl-2 pr-8 text-[12px] leading-5 text-[#e2e2e2] outline-none focus:ring-0"
             onChange={onChangeInput}
           />
           <Combobox.Button className="absolute inset-y-0 right-0 flex items-center pr-2">
             <TbSelector
-              className="w-5 h-5 text-gray-400"
+              className="w-4 h-4 text-[#8f8f8f]"
               aria-hidden="true"
             />
           </Combobox.Button>
@@ -47,9 +47,9 @@ function ComboBox({ title, items, onChange, value, onCreateNew }) {
           leaveTo="opacity-0"
           afterLeave={() => setQuery('')}
         >
-          <Combobox.Options className="absolute w-full py-1 mt-1 overflow-auto text-base bg-white rounded-md shadow-lg max-h-60 ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
+          <Combobox.Options className="absolute mt-1 max-h-60 w-full overflow-auto rounded-sm border border-[#111] bg-[#252525] py-1 text-[12px] text-[#dcdcdc] shadow-lg focus:outline-none">
             {filteredItems.length === 0 && query !== '' && onCreateNew ? (
-              <div className="cursor-pointer select-none relative py-2 px-4 text-gray-700" onClick={onClickNew}>
+              <div className="relative cursor-pointer select-none px-3 py-1.5 text-[#dcdcdc] hover:bg-[#304766]" onClick={onClickNew}>
                 Create New
               </div>
             ) : (
@@ -57,7 +57,7 @@ function ComboBox({ title, items, onChange, value, onCreateNew }) {
                 <Combobox.Option
                   key={item}
                   className={({ active }) =>
-                    `cursor-default select-none relative py-2 pl-10 pr-4 ${active ? 'text-white bg-teal-600' : 'text-gray-900'
+                    `cursor-default select-none relative py-1.5 pl-8 pr-3 ${active ? 'bg-[#304766] text-white' : 'text-[#dcdcdc]'
                     }`
                   }
                   value={item}
@@ -72,10 +72,10 @@ function ComboBox({ title, items, onChange, value, onCreateNew }) {
                       </span>
                       {selected ? (
                         <span
-                          className={`absolute inset-y-0 left-0 flex items-center pl-3 ${active ? 'text-white' : 'text-teal-600'
+                          className={`absolute inset-y-0 left-0 flex items-center pl-2 ${active ? 'text-white' : 'text-[#9fb7ff]'
                             }`}
                         >
-                          <IoMdCheckmark className="w-5 h-5" aria-hidden="true" />
+                          <IoMdCheckmark className="w-4 h-4" aria-hidden="true" />
                         </span>
                       ) : null}
                     </>

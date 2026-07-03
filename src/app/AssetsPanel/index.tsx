@@ -103,22 +103,22 @@ export default function AssetsPanel() {
   }
 
   return (
-    <div className=''>
-      <div className='flex w-[280px] space-x-1'>
+    <div className='h-screen w-full min-w-0 bg-[#252525] text-[#dcdcdc]'>
+      <div className='flex h-8 border-b border-[#151515] bg-[#202020]'>
         {/* <AssetTypeBlock
           onClick={changeSelected('scenes')}
-          className={clsx({ 'bg-orange-600': selectedTab === 'scenes' })}
+          className={clsx({ 'bg-[#303846] text-[#f0f0f0] border-b-[#4a90e2]': selectedTab === 'scenes' })}
         >Scene</AssetTypeBlock> */}
         <AssetTypeBlock onClick={changeSelected('components')}
-          className={clsx({ 'bg-orange-600': selectedTab === 'components' })}
+          className={clsx({ 'bg-[#303846] text-[#f0f0f0] border-b-[#4a90e2]': selectedTab === 'components' })}
         >Components</AssetTypeBlock>
         <AssetTypeBlock onClick={changeSelected('res')}
-          className={clsx({ 'bg-orange-600': selectedTab === 'res' })}
+          className={clsx({ 'bg-[#303846] text-[#f0f0f0] border-b-[#4a90e2]': selectedTab === 'res' })}
         >Resources</AssetTypeBlock>
       </div>
-      <hr />
-      <div className='flex h-screen'>
+      <div className='h-[calc(100vh-2rem)] overflow-hidden'>
         <Tree
+          className='px-1 py-1'
           ref={treeRef}
           data={treeData}
           onSelect={(nodes) => {

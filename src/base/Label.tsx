@@ -1,6 +1,5 @@
 import tw from 'tailwind-styled-components';
 
-const Label = tw.label`rounded-lg border-transparent
-appearance-none border`
+const Label = tw.label`appearance-none rounded-sm border border-transparent text-[#dcdcdc]`
 
 export default Label;

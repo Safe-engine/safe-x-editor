@@ -18,9 +18,9 @@ function Radio({
   name,
   onChange,
 }: Props) {
-  return <Label className='cursor-pointer'>
+  return <Label className='cursor-pointer text-[12px] text-[#dcdcdc]'>
     <input
-      className="rounded-md pl-2 ml-2 cursor-pointer"
+      className="ml-2 cursor-pointer accent-[#6aa7ff]"
       type="radio"
       name={name}
       value={value}

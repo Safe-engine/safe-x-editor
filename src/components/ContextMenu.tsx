@@ -41,13 +41,13 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
   return (
     <div
       ref={menuRef}
-      className="fixed z-50 bg-white border border-gray-300 shadow-lg rounded-md w-40"
+      className="fixed z-50 w-40 rounded-sm border border-[#111] bg-[#252525] py-1 text-[12px] text-[#dcdcdc] shadow-lg"
       style={{ top: y, left: x }}
     >
       {actions.map((action, i) => (
         <div
           key={i}
-          className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm"
+          className="cursor-pointer px-3 py-1.5 hover:bg-[#304766] hover:text-[#ffffff]"
           onClick={(e) => {
             e.stopPropagation()
             action.onClick()

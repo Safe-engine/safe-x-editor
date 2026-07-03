@@ -26,7 +26,7 @@ function DropDown({
     <div>
       {title}
     </div>
-    <Menu.Button className='border border-green-800 bg-green-600 py-1 px-2 rounded-md'>
+    <Menu.Button className='h-7 rounded-sm border border-[#111] bg-[#151515] px-2 py-1 text-[12px] text-[#e2e2e2] shadow-inner'>
       {value}
     </Menu.Button>
     <Transition
@@ -38,14 +38,14 @@ function DropDown({
       leaveFrom="transform opacity-100 scale-100"
       leaveTo="transform opacity-0 scale-95"
     >
-      <Menu.Items className='absolute right-0 w-56 mt-2 origin-top-right bg-white divide-y divide-gray-100 rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none'>
+      <Menu.Items className='absolute right-0 z-20 mt-2 w-56 origin-top-right rounded-sm border border-[#111] bg-[#252525] py-1 text-[12px] shadow-lg focus:outline-none'>
         <div className="px-1 py-1 ">
           {items.map(it =>
             <Menu.Item key={it}>
               {({ active }) => (
                 <div
                   onClick={onClickMenu(it)}
-                  className={clsx('cursor-pointer', active ? 'bg-violet-500 text-white' : 'text-gray-900')}
+                  className={clsx('cursor-pointer px-3 py-1.5', active ? 'bg-[#304766] text-white' : 'text-[#dcdcdc]')}
                 >{it}</div>
               )}
             </Menu.Item>

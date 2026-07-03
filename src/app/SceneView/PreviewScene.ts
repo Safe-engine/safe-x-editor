@@ -284,6 +284,8 @@ export class PreviewScene extends Scene {
         }
       } else if (message.type === 'changeSelectPath') {
         this.changeSelectPath(message.selectPaths)
+      } else if (message.type === 'updateSelectedNode') {
+        void this.updateSelectedNode(message.component, message.updated)
       }
     }
     window.addEventListener('message', listener)
@@ -531,6 +533,39 @@ export class PreviewScene extends Scene {
     await loadSceneViewSdl({ name: this.editingComponentName, treeData: this.editingComponent }, GlobalState.data, this.drawNode)
     this.syncEditingFlag()
     this.updateArrowPosition()
+  }
+
+  getEditingNodeByPath(editingPath = '') {
+    const childrenIndex = this.getChildrenIndex(editingPath)
+    const indexes = [...childrenIndex]
+    let editNode = getEditingRoot(this.editingComponent, indexes)
+    indexes.forEach((index) => {
+      if (!editNode) return
+      const { tag } = editNode
+      const componentChildrenNum = getComponentChildrenNum(tag)
+      if (editNode.children?.[index - componentChildrenNum]) editNode = editNode.children[index - componentChildrenNum]
+    })
+    return editNode
+  }
+
+  async reloadEditingComponent() {
+    this.drawNode.destroy()
+    this.createDrawNode()
+    await loadSceneViewSdl({ name: this.editingComponentName, treeData: this.editingComponent }, GlobalState.data, this.drawNode)
+    this.syncEditingFlag()
+    this.updateArrowPosition()
+  }
+
+  async updateSelectedNode(component: string, updated: any) {
+    if (!component || !this.editingPaths[0]) return
+    this.pushUndoHistory()
+    for (const editingPath of this.editingPaths) {
+      const editNode = this.getEditingNodeByPath(editingPath)
+      if (!editNode) continue
+      editNode[component] = Array.isArray(updated) ? cloneDeep(updated) : { ...editNode[component], ...cloneDeep(updated) }
+      if (component === 'props') normalizeNodeProps(editNode.props)
+    }
+    await this.reloadEditingComponent()
   }
 
   async undoEdit() {

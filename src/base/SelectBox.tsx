@@ -14,11 +14,11 @@ function SelectBox({ items, selected, setSelected }: Props) {
   return (
     <Listbox value={selected} onChange={setSelected}>
       <div className="relative mx-1">
-        <Listbox.Button className="relative w-full py-1 pl-3 pr-10 text-left bg-white rounded-lg shadow-md cursor-default focus:outline-none focus-visible:ring-2 focus-visible:ring-opacity-75 focus-visible:ring-white focus-visible:ring-offset-orange-300 focus-visible:ring-offset-2 focus-visible:border-indigo-500 sm:text-sm">
+        <Listbox.Button className="relative h-7 w-full cursor-default rounded-sm border border-[#111] bg-[#151515] py-1 pl-2 pr-8 text-left text-[12px] text-[#e2e2e2] shadow-inner focus:outline-none focus-visible:border-[#4a90e2]">
           <span className="block truncate">{selected}</span>
           <span className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
             <LuChevronDown
-              className="w-5 h-5 text-gray-400"
+              className="w-4 h-4 text-[#8f8f8f]"
               aria-hidden="true"
             />
           </span>
@@ -29,13 +29,13 @@ function SelectBox({ items, selected, setSelected }: Props) {
           leaveFrom="opacity-100"
           leaveTo="opacity-0"
         >
-          <Listbox.Options className="absolute z-20 py-1 mt-1 text-base bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
+          <Listbox.Options className="absolute z-20 mt-1 max-h-64 overflow-auto rounded-sm border border-[#111] bg-[#252525] py-1 text-[12px] text-[#dcdcdc] shadow-lg focus:outline-none">
             {items.map((person, personIdx) => (
               <Listbox.Option
                 key={personIdx}
                 className={({ active }) =>
-                  `${active ? 'text-amber-900 bg-amber-100' : 'text-gray-900'}
-                          cursor-default select-none relative py-2 pl-10 pr-4`
+                  `${active ? 'bg-[#304766] text-[#ffffff]' : 'text-[#dcdcdc]'}
+                          cursor-default select-none relative py-1.5 pl-8 pr-3`
                 }
                 value={person}
               >
@@ -49,11 +49,11 @@ function SelectBox({ items, selected, setSelected }: Props) {
                     </span>
                     {selected ? (
                       <span
-                        className={`${active ? 'text-amber-600' : 'text-amber-600'
+                        className={`${active ? 'text-[#ffffff]' : 'text-[#9fb7ff]'
                           }
-                                absolute inset-y-0 left-0 flex items-center pl-3`}
+                                absolute inset-y-0 left-0 flex items-center pl-2`}
                       >
-                        <IoMdCheckmark className="w-5 h-5" aria-hidden="true" />
+                        <IoMdCheckmark className="w-4 h-4" aria-hidden="true" />
                       </span>
                     ) : null}
                   </>

@@ -3,9 +3,9 @@ import Input from './Input';
 import Label from './Label';
 import tw from 'tailwind-styled-components';
 
-const Textarea = tw.textarea`rounded-sm`;
+const Textarea = tw.textarea`min-h-16 rounded-sm border border-[#111] bg-[#151515] px-2 py-1 text-[12px] text-[#e2e2e2] outline-none focus:border-[#4a90e2]`;
 
-const HelperText = tw.div`text-red-600 my-1`;
+const HelperText = tw.div`my-1 text-[11px] text-[#ff6565]`;
 
 type Props = {
   required?: boolean;
@@ -32,9 +32,9 @@ function TextField({
   multiline,
   rowsMax,
 }: Props) {
-  return <div className="my-1">
-    <div className='flex'>
-      <span className='m-auto mr-2'>{label}</span>
+  return <div className="my-1 text-[#dcdcdc]">
+    <div className='flex items-center'>
+      <span className='mr-2 w-24 truncate text-[12px] text-[#c8c8c8]'>{label}</span>
       {multiline ?
         <Textarea className="mt-1"
           rows={rowsMax}

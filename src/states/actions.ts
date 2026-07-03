@@ -63,7 +63,7 @@ export function getAction(draft: AppState) {
         const path = draft.selectedPaths[index]
         const node = tree.getNode(path)
         if (node) {
-          node[component] = { ...node[component], ...updated }
+          node[component] = Array.isArray(updated) ? updated : { ...node[component], ...updated }
           draft.selectedNodes[index] = node
         }
       })

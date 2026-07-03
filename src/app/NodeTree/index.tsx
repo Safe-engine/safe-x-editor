@@ -74,16 +74,17 @@ export default function NodeTree() {
   }
 
   return (
-    <div className='h-screen' >
-      <div className='drive-header dx-treeview-item p-1'>
-        <div className='dx-treeview-item-content '>
-          <i className='dx-icon dx-icon-hierarchy'></i>
-          <span className='text-yellow-400 text-ellipsis overflow-hidden whitespace-nowrap text-left rtl'>{filePath.replace(rootPath, '')}&nbsp;</span>
+    <div className='h-screen bg-[#252525] text-[#dcdcdc]' >
+      <div className='flex h-8 items-center border-b border-[#151515] bg-[#202020] px-2'>
+        <div className='min-w-0 text-[11px] font-bold uppercase tracking-wide text-[#dcdcdc]'>
+          Hierarchy
+        </div>
+        <div className='ml-2 min-w-0 flex-1 truncate text-right text-[10px] text-[#8f8f8f]' title={filePath}>
+          {filePath.replace(rootPath, '')}&nbsp;
         </div>
       </div>
-      <hr />
       <Tree
-        className='p-1'
+        className='px-1 py-1'
         data={treeData[0]?.tag === 'SceneComponent' ? treeData[0].children : treeData}
         onSelect={
           onSelectNodes

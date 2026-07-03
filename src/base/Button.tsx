@@ -1,8 +1,8 @@
 import React, { ReactNode, useContext } from 'react'
 import tw from 'tailwind-styled-components';
 
-const Button = tw.button`py-2 px-4  bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-500 focus:ring-offset-indigo-200 text-white w-full transition ease-in duration-200 text-center text-base font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 rounded-lg`
+const Button = tw.button`h-8 w-full rounded-sm bg-[#333] px-3 text-center text-[11px] font-bold uppercase text-[#f3f3f3] shadow-inner transition hover:bg-[#3d3d3d] focus:outline-none focus:ring-1 focus:ring-[#4a90e2]`
 
-export const GreenButton = tw.button`py-2 px-4 bg-green-600 hover:bg-green-700 focus:ring-green-500 focus:ring-offset-indigo-200 text-white transition ease-in duration-200 text-center text-base font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 rounded-lg`
+export const GreenButton = tw.button`h-8 rounded-sm bg-[#304766] px-3 text-center text-[11px] font-bold uppercase text-[#f3f3f3] shadow-inner transition hover:bg-[#3a577d] focus:outline-none focus:ring-1 focus:ring-[#4a90e2]`
 
 export default Button;

@@ -14,7 +14,7 @@ function Checkbox({
   onChange,
 }: Props) {
   return <input
-    className='w-4 h-4 rounded-xl'
+    className='h-3.5 w-3.5 accent-[#6aa7ff]'
     type='checkbox'
     checked={checked}
     onChange={onChange}

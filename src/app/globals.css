@@ -3,5 +3,28 @@
 @tailwind utilities;
 
 :root {
-  --separator-border: rgba(128, 128, 128, 0.35);
+  --separator-border: #151515;
+  color-scheme: dark;
+}
+
+body {
+  background: #1e1e1e;
+}
+
+.split-view-view {
+  background: #252525;
+}
+
+.sash {
+  --sash-size: 4px;
+}
+
+.sash-horizontal,
+.sash-vertical {
+  background: #151515;
+}
+
+.sash-hover,
+.sash.active {
+  background: #4a90e2;
 }

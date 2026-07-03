@@ -7,9 +7,9 @@ import { CiImageOn } from 'react-icons/ci';
 
 function renderIcon(data: any) {
   if (data.isDirectory) {
-    return <AiFillFolderOpen color="white" />;
+    return <AiFillFolderOpen color="#d6d6d6" />;
   }
-  return <CiImageOn color="yellow" />;
+  return <CiImageOn color="#9fb7ff" />;
 }
 
 export function TreeNode({ node, style, dragHandle }: NodeRendererProps<any>) {
@@ -26,9 +26,10 @@ export function TreeNode({ node, style, dragHandle }: NodeRendererProps<any>) {
   };
 
   return <HStack ref={dragHandle}
+    style={style}
     className={clsx(
-      'hover:cursor-pointer hover:bg-gray-500',
-      node.isSelected && 'bg-gray-500'
+      'h-full items-center rounded-sm px-1 text-[12px] text-[#d6d6d6] hover:cursor-pointer hover:bg-[#303846]',
+      node.isSelected && 'bg-[#304766] text-[#f0f0f0]'
     )}
 
     onDoubleClick={() => {
@@ -38,8 +39,8 @@ export function TreeNode({ node, style, dragHandle }: NodeRendererProps<any>) {
     onContextMenu={(e) => handleContextMenu(e, node.data)}
   >
     <Center>
-      <Box style={style} className="m-auto">{renderIcon(node.data)}</Box>
-      <Box className={clsx(node.isSelected ? 'text-yellow-400' : 'text-white')}>{node.data.name}</Box>
+      <Box className="m-auto w-4 shrink-0">{renderIcon(node.data)}</Box>
+      <Box className={clsx('truncate', node.isSelected ? 'text-[#ffffff]' : 'text-[#d6d6d6]')}>{node.data.name}</Box>
     </Center>
   </HStack >
 }

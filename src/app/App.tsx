@@ -21,7 +21,7 @@ export function App() {
   const height = useMemo(() => designResolution.height, [designResolution])
 
   return (
-    <main className="bg-gray-600 h-screen">
+    <main className="h-screen bg-[#1e1e1e] text-[#dcdcdc]">
       <Allotment>
         <Allotment.Pane snap minSize={200} maxSize={250}>
           <AssetsPanel />

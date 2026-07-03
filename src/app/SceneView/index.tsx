@@ -26,8 +26,8 @@ export default function SceneView() {
   }, [selectedPaths])
 
   return (
-    <div className='w-full h-full'>
-      <canvas id="sdl-canvas"></canvas>
+    <div className='h-full w-full bg-[#1e1e1e]'>
+      <canvas id="sdl-canvas" className='block bg-[#1e1e1e]'></canvas>
     </div>
   )
 }

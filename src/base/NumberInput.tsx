@@ -47,9 +47,9 @@ const NumberInput = ({
   }
 
   return (
-    <div className={clsx('space-x-2 flex', { 'w-full': isFullWidth })}>
-      <div className='text-white'>{label}</div>
-      <div className='flex rounded-md bg-green-300'>
+    <div className={clsx('flex items-center space-x-2 text-[12px]', { 'w-full': isFullWidth })}>
+      <div className='text-[#c8c8c8]'>{label}</div>
+      <div className='flex h-7 items-center rounded-sm border border-[#111] bg-[#151515] text-[#e2e2e2]'>
         {isShowButton && (
           <FaMinus className='my-auto'
             onClick={onClickMinus}
@@ -58,7 +58,7 @@ const NumberInput = ({
         )}
         <input
           className={clsx(
-            'px-1',
+            'bg-transparent px-1 text-[#e2e2e2] outline-none',
             isShowButton ? 'w-16 text-center' : 'w-16',
           )}
           type="number"

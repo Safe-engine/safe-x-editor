@@ -21,7 +21,7 @@ function Modal({ children, onClose, isOpen, title }) {
   return <Transition appear show={isOpen} as={Fragment}>
     <Dialog
       as='div'
-      className='fixed inset-0 z-10 overflow-y-auto bg-black bg-opacity-50'
+      className='fixed inset-0 z-10 overflow-y-auto bg-black bg-opacity-60'
       onClose={onClose}
     >
       <div className='min-h-screen px-4 text-center'>
@@ -53,15 +53,15 @@ function Modal({ children, onClose, isOpen, title }) {
           leaveFrom='opacity-100 scale-100'
           leaveTo='opacity-0 scale-95'
         >
-          <div className='inline-block p-6 my-8 text-left align-middle transition-all transform bg-gray-100 shadow-xl rounded-2xl -translate-y-20 translate-x-5'>
+          <div className='inline-block my-8 min-w-[320px] border border-[#111] bg-[#252525] p-4 text-left align-middle text-[#dcdcdc] shadow-xl transition-all transform -translate-y-20 translate-x-5'>
             <Dialog.Title
               as='h3'
-              className='text-2xl font-bold leading-6 text-center uppercase'
+              className='border-b border-[#151515] pb-3 text-center text-[12px] font-bold uppercase tracking-wide text-[#f0f0f0]'
             >
               {title}
             </Dialog.Title>
-            <div className='absolute right-1 top-1 z-50 cursor-pointer' onClick={onClose}>
-              <BiXCircle className='w-8 h-8 text-gray-600' />
+            <div className='absolute right-2 top-2 z-50 cursor-pointer' onClick={onClose}>
+              <BiXCircle className='w-5 h-5 text-[#8f8f8f] hover:text-[#f0f0f0]' />
             </div>
             {children}
           </div>
