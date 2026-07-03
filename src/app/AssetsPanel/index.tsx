@@ -1,7 +1,7 @@
-import { ipcMain } from '@electron/remote'
 import { TreeNode } from 'app/AssetsPanel/TreeNode'
 import clsx from 'clsx'
 import { getLastLoadedFile, getLastRootFolder, setLastLoadedFile } from 'data/AppData'
+import { ipcMain } from 'helper/electronRemote'
 import pathUtils from 'path-browserify'
 import { useEffect, useRef, useState } from 'react'
 import { Tree, TreeApi } from 'react-arborist'

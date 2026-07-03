@@ -1,5 +1,5 @@
-import { ipcMain } from '@electron/remote';
 import { sendRequest } from 'app/app.ipc';
+import { ipcMain } from 'helper/electronRemote';
 import { useEffect, useState } from 'react';
 import { Tree } from 'react-arborist';
 import toast from 'react-hot-toast';

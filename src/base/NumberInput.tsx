@@ -1,6 +1,6 @@
 import clsx from 'clsx';
 import { handleChangeNumber } from "helper/utils";
-import lodash from 'lodash';
+import { round } from 'lodash-es';
 import { FaMinus, FaPlus } from "react-icons/fa";
 
 type Props = {
@@ -65,7 +65,7 @@ const NumberInput = ({
           step={step}
           min={`${min}`}
           max={`${max}`}
-          value={value && lodash.round(value, 2)}
+          value={value && round(value, 2)}
           defaultValue={defaultValue}
           onChange={handleChangeNumber(onChangeValue)}
         />

@@ -13,8 +13,8 @@ export function createMiddleware(dispatch: Dispatch<any>) {
         key: GET_FOLDER_FILES,
         src,
       })
-      if (data.error) {
-        toast.error(data.message)
+      if (!data || data.error) {
+        toast.error(data?.message || 'Unable to load project files')
         return
       }
       setLastRootFolder(src)

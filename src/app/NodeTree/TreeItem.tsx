@@ -1,6 +1,6 @@
 import { Box, Center, HStack } from "base/Stack";
 import clsx from "clsx";
-import { get } from "lodash";
+import { get } from "lodash-es";
 import { useState } from "react";
 import { NodeRendererProps } from "react-arborist";
 import { AiFillFolderOpen } from "react-icons/ai";

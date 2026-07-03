@@ -1,4 +1,4 @@
-import { dialog, getCurrentWindow } from '@electron/remote';
+import { dialog, getCurrentWindow } from 'helper/electronRemote';
 import { useRef } from 'react';
 import { FaRegFolderOpen } from "react-icons/fa6";
 import Button from './Button';
