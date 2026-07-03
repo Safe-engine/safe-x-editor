@@ -81,11 +81,13 @@ export function parseAssets(parsed, panel?: WebviewView, isColor = false) {
           let path;
           node.init.properties.forEach((p: any) => {
             if (p.type === 'Property' && p.value.type === 'Literal') {
+              const key = p.key.value ?? p.key.name;
+              if (!key) { return; }
               const base = workspace.workspaceFolders[0].uri;
               const fileUri = Uri.joinPath(base, 'res', p.value.value as string);
               // console.log(fileUri.fsPath);
-              obj[p.key.value] = getViewPath(panel, fileUri);
-              if (p.key.value === 'atlas') {
+              obj[key] = getViewPath(panel, fileUri);
+              if (key === 'atlas') {
                 path = p.value.value as string;
               }
             }

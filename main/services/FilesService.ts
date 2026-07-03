@@ -38,10 +38,11 @@ export const getFilesInFolder = async ({ src }, panel: WebviewView) => {
   // console.log('spineAssets', JSON.stringify(spineAssets, null, 2));
   spineAssets.forEach(({ key, value }) => {
     const { skeleton, atlas } = value;
+    if (!skeleton) { return; }
     const data = loadSpineFile(skeleton.replace(/\\/g, '/'), atlas);
     GlobalData.spineAnimations[key] = {
-      animations: data?.animations.map(({ name }) => name),
-      skins: data?.skins.map(({ name }) => name),
+      animations: data?.animations?.map(({ name }) => name),
+      skins: data?.skins?.map(({ name }) => name),
     };
   });
   const componentsCache = {};
