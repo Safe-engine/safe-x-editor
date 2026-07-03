@@ -1,6 +1,6 @@
-import { Button, Label, loadAll, Node, Scene, Sprite } from '@safe-engine/sdl'
+import { Label, loadAll, Node, Scene, Sprite } from '@safe-engine/sdl'
 import { cloneDeep, first, isNumber, parseInt, set } from 'lodash-es'
-import { getViewportMetrics, setAssetRoot } from 'sdl3'
+import { setAssetRoot } from 'sdl3'
 import { normalizeNodeProps } from 'helper/node'
 import { sendRequest } from '../app.ipc'
 import { arrow } from './assets'
@@ -92,7 +92,6 @@ export class PreviewScene extends Scene {
   static readonly ARROW_HIT_RADIUS = 32
   static readonly SELECTION_ANCHOR_SIZE = 16
   static readonly MARQUEE_DRAG_THRESHOLD = 4
-  static readonly QUESTION_OVERLAY_SIZE = 5000
 
   arrowContainerNode: Node
   arrowSpriteHorizonNode: Node
@@ -100,8 +99,7 @@ export class PreviewScene extends Scene {
   selectionBorderNode: Node
   selectionAnchorNode: Node
   marqueeSelectionNode: Node
-  questionContainerNode: Node
-  questionContentNode: Node
+  saveDialogNode?: HTMLDivElement
   drawNode: Node
   borderNode: Node
   isEditing = false
@@ -116,6 +114,7 @@ export class PreviewScene extends Scene {
   undoStack: HistoryEntry[] = []
   redoStack: HistoryEntry[] = []
   loadedComponentSnapshot = ''
+  pendingLoadPath = ''
   didCaptureDragHistory = false
   lastTouch?: { x: number; y: number }
   activeArrowAxis?: 'x' | 'y' | 'move'
@@ -135,7 +134,6 @@ export class PreviewScene extends Scene {
     this.createArrows()
     this.createMarqueeSelection()
     this.createSaveDialog()
-    window.addEventListener('resize', () => this.updateQuestionContainerLayout())
     this.keyboardHandler()
     this.mouseHandler()
     this.messageHandler()
@@ -266,24 +264,21 @@ export class PreviewScene extends Scene {
   messageHandler() {
     const listener = (event) => {
       const message = event.data
-      this.updateQuestionContainerLayout()
       if (message.type === 'reLoad') {
         if (this.isEditing) {
-          this.updateQuestionContainerLayout()
-          this.questionContainerNode.active = true
+          this.showSaveDialog(GlobalState.filePath)
         } else {
           void this.loadComponent(GlobalState.filePath)
         }
       } else if (message.type === 'changeFilePath') {
         GlobalState.tempFilePath = message.filePath
         if (this.isEditing) {
-          this.updateQuestionContainerLayout()
-          this.questionContainerNode.active = true
+          this.showSaveDialog(GlobalState.tempFilePath)
         } else {
           void this.loadComponent(GlobalState.tempFilePath)
         }
       } else if (message.type === 'changeSelectPath') {
-        this.changeSelectPath(message.selectPaths)
+        this.changeSelectPath(message.selectPaths, false)
       } else if (message.type === 'updateSelectedNode') {
         void this.updateSelectedNode(message.component, message.updated)
       }
@@ -327,20 +322,7 @@ export class PreviewScene extends Scene {
     setLastSceneScale(value)
     this.borderNode.scale = value
     this.drawNode.scale = value
-    this.updateQuestionContainerLayout()
     this.updateArrowPosition()
-  }
-
-  updateQuestionContainerLayout() {
-    if (!this.questionContainerNode || !this.questionContentNode) return
-    const overlayHalf = PreviewScene.QUESTION_OVERLAY_SIZE / 2
-    const [logicalWidth, logicalHeight] = getViewportMetrics()
-    this.questionContainerNode.x = -overlayHalf
-    this.questionContainerNode.y = -overlayHalf
-    this.questionContainerNode.scale = 1
-    this.questionContentNode.x = overlayHalf + logicalWidth / 2
-    this.questionContentNode.y = overlayHalf + logicalHeight / 2
-    this.questionContentNode.scale = this.drawNode?.scaleX ?? 1
   }
 
   createBorder() {
@@ -435,52 +417,89 @@ export class PreviewScene extends Scene {
   }
 
   createSaveDialog() {
-    const questionContainer = createNode('SaveQuestionText')
-    questionContainer.width = 500
-    questionContainer.height = 80
-    questionContainer.addComponent(new Label({ string: 'Do you want to save or reload?', font: Label.defaultFont, size: 36 }))
+    if (this.saveDialogNode) return
 
-    const lbSave = createNode('SaveButton')
-    lbSave.width = 120
-    lbSave.height = 60
-    lbSave.x = 150
-    lbSave.y = 120
-    lbSave.color = { r: 255, g: 0, b: 0, a: 255 }
-    lbSave.addComponent(new Label({ string: 'Save', font: Label.defaultFont, size: 36 }))
-    lbSave.addComponent(new Button({ onPress: () => void this.saveAndLoadTemp() }))
+    const dialog = document.createElement('div')
+    dialog.style.position = 'fixed'
+    dialog.style.inset = '0'
+    dialog.style.display = 'none'
+    dialog.style.alignItems = 'center'
+    dialog.style.justifyContent = 'center'
+    dialog.style.background = 'rgb(0 0 0 / 60%)'
+    dialog.style.zIndex = '2147483647'
 
-    const lbReload = createNode('ReloadButton')
-    lbReload.width = 160
-    lbReload.height = 60
-    lbReload.x = -150
-    lbReload.y = 120
-    lbReload.color = { r: 255, g: 0, b: 0, a: 255 }
-    lbReload.addComponent(new Label({ string: 'Reload', font: Label.defaultFont, size: 36 }))
-    lbReload.addComponent(new Button({ onPress: () => void this.loadComponent(GlobalState.tempFilePath) }))
+    const panel = document.createElement('div')
+    panel.style.width = 'min(360px, calc(100vw - 48px))'
+    panel.style.border = '1px solid #3c3c3c'
+    panel.style.borderRadius = '6px'
+    panel.style.background = '#252526'
+    panel.style.boxShadow = '0 16px 40px rgb(0 0 0 / 45%)'
+    panel.style.color = '#dcdcdc'
+    panel.style.padding = '18px'
+    panel.style.fontFamily = 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
 
-    questionContainer.addChild(lbSave)
-    questionContainer.addChild(lbReload)
+    const title = document.createElement('div')
+    title.textContent = 'Unsaved component changes'
+    title.style.fontSize = '16px'
+    title.style.fontWeight = '600'
+    title.style.marginBottom = '8px'
 
-    const bg = createNode('SaveQuestionOverlay')
-    bg.width = PreviewScene.QUESTION_OVERLAY_SIZE
-    bg.height = PreviewScene.QUESTION_OVERLAY_SIZE
-    bg.anchorX = 0
-    bg.anchorY = 0
-    bg.x = -(PreviewScene.QUESTION_OVERLAY_SIZE / 2)
-    bg.y = -(PreviewScene.QUESTION_OVERLAY_SIZE / 2)
-    bg.addComponent(new RectRender({ fillColor: { r: 0, g: 0, b: 0, a: 150 } }))
-    bg.addChild(questionContainer)
-    this.questionContainerNode = bg
-    this.questionContentNode = questionContainer
-    this.questionContainerNode.active = false
-    this.questionContainerNode.zIndex = Infinity
-    this.node.addChild(this.questionContainerNode)
-    this.updateQuestionContainerLayout()
+    const message = document.createElement('div')
+    message.textContent = 'Do you want to save before loading the component preview?'
+    message.style.fontSize = '13px'
+    message.style.lineHeight = '1.4'
+    message.style.color = '#c8c8c8'
+    message.style.marginBottom = '18px'
+
+    const actions = document.createElement('div')
+    actions.style.display = 'flex'
+    actions.style.justifyContent = 'flex-end'
+    actions.style.gap = '8px'
+
+    const reloadButton = this.createDialogButton('Reload', false, () => void this.loadComponent(this.pendingLoadPath || GlobalState.tempFilePath))
+    const saveButton = this.createDialogButton('Save', true, () => void this.saveAndLoadTemp())
+
+    actions.append(reloadButton, saveButton)
+    panel.append(title, message, actions)
+    dialog.append(panel)
+    document.body.append(dialog)
+    this.saveDialogNode = dialog
+  }
+
+  createDialogButton(label: string, primary: boolean, onClick: () => void) {
+    const button = document.createElement('button')
+    button.type = 'button'
+    button.textContent = label
+    button.style.minWidth = '82px'
+    button.style.height = '32px'
+    button.style.border = primary ? '1px solid #0e639c' : '1px solid #3c3c3c'
+    button.style.borderRadius = '4px'
+    button.style.background = primary ? '#0e639c' : '#2d2d30'
+    button.style.color = '#ffffff'
+    button.style.cursor = 'pointer'
+    button.style.fontSize = '13px'
+    button.addEventListener('click', onClick)
+    return button
+  }
+
+  showSaveDialog(path: string) {
+    this.pendingLoadPath = path
+    if (!this.saveDialogNode) this.createSaveDialog()
+    if (this.saveDialogNode) this.saveDialogNode.style.display = 'flex'
+  }
+
+  hideSaveDialog() {
+    if (this.saveDialogNode) this.saveDialogNode.style.display = 'none'
+    this.pendingLoadPath = ''
+  }
+
+  isSaveDialogVisible() {
+    return Boolean(this.saveDialogNode && this.saveDialogNode.style.display !== 'none')
   }
 
   async saveAndLoadTemp() {
     await this.saveComponent()
-    await this.loadComponent(GlobalState.tempFilePath)
+    await this.loadComponent(this.pendingLoadPath || GlobalState.tempFilePath)
   }
 
   async loadComponent(path: string) {
@@ -498,9 +517,8 @@ export class PreviewScene extends Scene {
     this.createDrawNode()
     await loadSceneViewSdl(data, GlobalState.data, this.drawNode)
     this.loadedComponentSnapshot = this.serializeEditingComponent()
-    this.questionContainerNode.active = false
+    this.hideSaveDialog()
     this.isEditing = false
-    this.updateQuestionContainerLayout()
     this.updateArrowPosition()
   }
 
@@ -625,6 +643,7 @@ export class PreviewScene extends Scene {
     const moveX = this.lockX ? 0 : mx
     const moveY = this.lockY ? 0 : my
     if (!this.editingPaths[0] || (!moveX && !moveY)) return false
+    const updatedNodes: Array<{ component: string; updated: any }> = []
     this.editingPaths.forEach((editingPath) => {
       const childrenIndex = this.getChildrenIndex(editingPath)
       const currentNode = getCurrentNode(this.drawNode, childrenIndex)
@@ -641,8 +660,10 @@ export class PreviewScene extends Scene {
       const ny = Math.round(currentNode.y)
       setNodePositionProps(editNode.props, nx, ny)
       normalizeNodeProps(editNode.props)
+      updatedNodes.push({ component: 'props', updated: editNode.props })
     })
     this.syncEditingFlag()
+    window.postMessage({ type: 'previewUpdateSelectedNodes', selectPaths: this.editingPaths, nodes: updatedNodes }, '*')
     return true
   }
 
@@ -683,9 +704,10 @@ export class PreviewScene extends Scene {
     this.syncEditingFlag()
   }
 
-  changeSelectPath(paths: string[]) {
+  changeSelectPath(paths: string[], notify = true) {
     this.editingPaths = [...new Set(paths.map((path) => this.getEditablePath(path)).filter(Boolean))]
     this.updateArrowPosition()
+    if (notify) window.postMessage({ type: 'previewSelectPaths', selectPaths: this.editingPaths }, '*')
   }
 
   getCombinedBoundsFromPaths(paths: string[]) {
@@ -852,7 +874,7 @@ export class PreviewScene extends Scene {
   }
 
   onTouchStart(x: number, y: number) {
-    if (this.questionContainerNode.active) return
+    if (this.isSaveDialogVisible()) return
     this.lastTouch = { x, y }
     this.didCaptureDragHistory = false
     this.marqueeSelection = undefined
@@ -877,7 +899,7 @@ export class PreviewScene extends Scene {
   }
 
   onTouchMove(x: number, y: number) {
-    if (this.questionContainerNode.active) return
+    if (this.isSaveDialogVisible()) return
     const last = this.lastTouch ?? { x, y }
     const dx = x - last.x
     const dy = y - last.y
@@ -913,8 +935,12 @@ export class PreviewScene extends Scene {
       setLastSceneX(this.drawNode.x)
       setLastSceneY(this.drawNode.y)
     } else {
-      const moveX = this.activeArrowAxis === 'y' ? 0 : dx / this.drawNode.scaleX
-      const moveY = this.activeArrowAxis === 'x' ? 0 : dy / this.drawNode.scaleY
+      const selectedNode = getCurrentNode(this.drawNode, this.getChildrenIndex(this.editingPaths[0]))
+      const selectedParent = selectedNode.parent ?? this.drawNode
+      const parentScaleX = selectedParent.worldScaleX || this.drawNode.scaleX || 1
+      const parentScaleY = selectedParent.worldScaleY || this.drawNode.scaleY || 1
+      const moveX = this.activeArrowAxis === 'y' ? 0 : dx / parentScaleX
+      const moveY = this.activeArrowAxis === 'x' ? 0 : dy / parentScaleY
       if (!this.didCaptureDragHistory && this.canMoveSelectedNode(moveX, moveY)) {
         this.pushUndoHistory()
         this.didCaptureDragHistory = true

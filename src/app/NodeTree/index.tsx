@@ -5,7 +5,7 @@ import { Tree } from 'react-arborist';
 import toast from 'react-hot-toast';
 import { GEN_COMPONENT_REQUEST } from 'shared/constant.message';
 import { useActions, useSelector } from 'states/app.context';
-import { selectComponentTree, selectRootFolder, selectSelectedFilePath } from 'states/app.selectors';
+import { selectComponentTree, selectRootFolder, selectSelectedFilePath, selectSelectedPaths } from 'states/app.selectors';
 import { TreeItem } from './TreeItem';
 
 export default function NodeTree() {
@@ -13,6 +13,7 @@ export default function NodeTree() {
   const treeData = useSelector(selectComponentTree);
   const filePath = useSelector(selectSelectedFilePath);
   const rootPath = useSelector(selectRootFolder);
+  const selectedPaths = useSelector(selectSelectedPaths);
   const [selectedTreeItem, setSelectedTreeItem] = useState<any>({});
 
   useEffect(() => {
@@ -86,6 +87,7 @@ export default function NodeTree() {
       <Tree
         className='px-1 py-1'
         data={treeData[0]?.tag === 'SceneComponent' ? treeData[0].children : treeData}
+        selection={selectedPaths[0]}
         onSelect={
           onSelectNodes
           }

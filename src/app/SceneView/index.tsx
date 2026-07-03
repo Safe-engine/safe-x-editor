@@ -1,10 +1,11 @@
 import { Engine, loadScene } from '@safe-engine/sdl'
 import { useEffect, useRef } from 'react'
-import { useSelector } from 'states/app.context'
+import { useActions, useSelector } from 'states/app.context'
 import { selectSelectedFilePath, selectSelectedPaths } from 'states/app.selectors'
 import { PreviewScene } from './PreviewScene'
 
 export default function SceneView() {
+  const { selectEditMultiNodes, updateMultiNodes } = useActions()
   const selectedFilePath = useSelector(selectSelectedFilePath)
   const selectedPaths = useSelector(selectSelectedPaths)
   const didStartEngine = useRef(false)
@@ -15,6 +16,20 @@ export default function SceneView() {
     Engine.start('Safex SDL Preview', window.innerWidth, window.innerHeight, 'fixed-width')
     loadScene(PreviewScene)
   }, [])
+
+  useEffect(() => {
+    const listener = (event) => {
+      const message = event.data
+      if (message.type === 'previewSelectPaths') {
+        selectEditMultiNodes(message.selectPaths)
+      } else if (message.type === 'previewUpdateSelectedNodes') {
+        selectEditMultiNodes(message.selectPaths)
+        updateMultiNodes(message.nodes)
+      }
+    }
+    window.addEventListener('message', listener)
+    return () => window.removeEventListener('message', listener)
+  }, [selectEditMultiNodes, updateMultiNodes])
 
   useEffect(() => {
     if (!selectedFilePath) return

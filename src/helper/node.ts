@@ -13,7 +13,7 @@ export function Vec2({ x = 0, y = 0 }) {
 
 export function getNodePosition(node, evalInit = '') {
   if (!node) return { x: 0, y: 0 };
-  const { position, xy } = node;
+  const { position, xy, x: nodeX, y: nodeY } = node;
   if (position) {
     const { x, y } = parseVec2(position, evalInit);
     return { x, y };
@@ -21,6 +21,11 @@ export function getNodePosition(node, evalInit = '') {
     // console.log('getNodePosition', xy, evalInit)
     const [x, y] = xy.map(parseEval(evalInit));
     return { x, y };
+  } else if (nodeX !== undefined || nodeY !== undefined) {
+    return {
+      x: nodeX !== undefined ? parseEval(evalInit)(nodeX) : 0,
+      y: nodeY !== undefined ? parseEval(evalInit)(nodeY) : 0,
+    };
   }
   return { x: 0, y: 0 };
 }
