@@ -37,14 +37,32 @@ function parseNumbers(value = '') {
   return String(value).match(/-?\d+(\.\d+)?/g)?.map(Number) || []
 }
 
-function parseRect(value = '') {
+function parseRect(value: any = '') {
+  if (value && typeof value === 'object') {
+    return {
+      x: value.x || 0,
+      y: value.y || 0,
+      w: value.w ?? value.width ?? 0,
+      h: value.h ?? value.height ?? 0,
+    }
+  }
   const [x = 0, y = 0, w = 0, h = 0] = parseNumbers(value)
   return { x, y, w, h }
 }
 
-function parseSizeString(value = '') {
+function parseSizeString(value: any = '') {
+  if (value && typeof value === 'object') {
+    return {
+      w: value.w ?? value.width ?? 0,
+      h: value.h ?? value.height ?? 0,
+    }
+  }
   const [w = 0, h = 0] = parseNumbers(value)
   return { w, h }
+}
+
+function isRotatedFrame(value: any) {
+  return value === true || value === 'true'
 }
 
 class AssetPreviewScene extends Scene {
@@ -362,8 +380,12 @@ function AssetPreview() {
   const isAnimationType = isAnimationPreviewType(type)
   const isImagePreviewType = type === 'texture' || type === 'spriteFrame' || type === 'frame'
   const { width, height } = size
-  const frame = json?.frames?.[name]?.frame || { x: 0, y: 0 }
-  const frameInfo = frame.x !== undefined ? frame : parseRect(frame)
+  const frameEntry = json?.frames?.[name]
+  const frame = frameEntry?.frame || frameEntry || { x: 0, y: 0 }
+  const frameInfo = parseRect(frame)
+  const frameRotated = isRotatedFrame(frameEntry?.rotated) || isRotatedFrame(frame?.rotated)
+  const frameWidth = frameRotated ? frameInfo.h : frameInfo.w
+  const frameHeight = frameRotated ? frameInfo.w : frameInfo.h
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const sceneRef = useRef<AssetPreviewScene | null>(null)
   const imageViewportRef = useRef<HTMLDivElement | null>(null)
@@ -425,8 +447,8 @@ function AssetPreview() {
 
   useEffect(() => {
     if (!isImagePreviewType) return
-    const contentWidth = type === 'frame' ? frameInfo.w : width
-    const contentHeight = type === 'frame' ? frameInfo.h : height
+    const contentWidth = type === 'frame' ? frameWidth : width
+    const contentHeight = type === 'frame' ? frameHeight : height
     if (!contentWidth || !contentHeight) {
       setImageScale(1)
       setImageOffset({ x: 0, y: 0 })
@@ -442,7 +464,7 @@ function AssetPreview() {
       y: (PREVIEW_SIZE - contentHeight * fitScale) * 0.5,
     })
     setImageZoomPercent(round(fitScale * 100, 1))
-  }, [frameInfo.h, frameInfo.w, height, isImagePreviewType, key, type, width])
+  }, [frameHeight, frameWidth, height, isImagePreviewType, key, type, width])
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -625,7 +647,7 @@ function AssetPreview() {
             style={{ width: `${PREVIEW_SIZE}px`, height: `${PREVIEW_SIZE}px` }}
           >
             <div className="pointer-events-none absolute z-10 rounded bg-slate-950/70 px-2 py-1 text-xs text-sky-100">
-              {type === 'frame' ? `${frameInfo.w}x${frameInfo.h}` : `${width}x${height}`}
+              {type === 'frame' ? `${frameWidth}x${frameHeight}` : `${width}x${height}`}
             </div>
             <div className="pointer-events-none absolute right-0 z-10 rounded bg-slate-950/70 px-2 py-1 text-xs text-sky-100">
               {imageZoomPercent}%
@@ -638,7 +660,7 @@ function AssetPreview() {
               }}
             >
               {type === 'frame' ? (
-                <Sprite src={texture} rect={frameInfo} naturalSize={data.json.meta?.size || parseSizeString(data.json.metadata.size)} />
+                <Sprite src={texture} rect={frameInfo} naturalSize={parseSizeString(data.json?.meta?.size || data.json?.metadata?.size)} rotated={frameRotated} />
               ) : (
                 <img src={value} alt="preview" className="block max-h-[300px] max-w-[300px]" draggable={false} style={{ width, height }} />
               )}
@@ -649,7 +671,7 @@ function AssetPreview() {
       {type === 'frame' && (
         <div className="my-auto">
           <div className="block text-lime-100 text-sm">
-            {frameInfo.w}x{frameInfo.h}
+            {frameWidth}x{frameHeight}
           </div>
         </div>
       )}

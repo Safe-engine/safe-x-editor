@@ -3,23 +3,34 @@ type Props = {
   rect: { x: number; y: number; w: number; h: number }
   naturalSize: { w: number; h: number }
   className?: string
+  rotated?: boolean
 }
-export function Sprite({ src, rect, naturalSize, className = '' }: Props) {
+export function Sprite({ src, rect, naturalSize, className = '', rotated = false }: Props) {
+  const width = rotated ? rect.h : rect.w
+  const height = rotated ? rect.w : rect.h
+
   return (
     <div className={`relative ${className}`}>
       <div
-        className="bg-no-repeat"
+        className="overflow-hidden"
         style={{
-          // scale: 24 / rect.h,
-          width: rect.w,
-          height: rect.h,
-          backgroundImage: `url(${src})`,
-          backgroundPosition: `-${rect.x}px -${rect.y}px`,
-          backgroundSize: `${naturalSize.w}px ${naturalSize.h}px`,
-          // transform: `translate(-${rect.x}px, -${rect.y}px)`,
-          // translate: '-20px -24px',
+          width,
+          height,
         }}
-      />
+      >
+        <div
+          className="bg-no-repeat"
+          style={{
+            width: rect.w,
+            height: rect.h,
+            backgroundImage: `url(${src})`,
+            backgroundPosition: `-${rect.x}px -${rect.y}px`,
+            backgroundSize: `${naturalSize.w}px ${naturalSize.h}px`,
+            transform: rotated ? `translateY(${rect.w}px) rotate(-90deg)` : undefined,
+            transformOrigin: 'top left',
+          }}
+        />
+      </div>
     </div>
   )
 }

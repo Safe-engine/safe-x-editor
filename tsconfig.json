@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
     "baseUrl": "./src",
+    "outDir": "./build",
     "jsx": "react-jsx",
     "target": "ES6",
     "esModuleInterop": true,
