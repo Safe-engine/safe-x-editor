@@ -1,7 +1,5 @@
 import { AssetManager, ComponentX, Label, Node, ScrollView, SpineSkeleton, Sprite, TiledMap } from '@safe-engine/sdl'
 import { DragonBones } from '@safe-engine/sdl/lib/dragonbones'
-import { get } from 'lodash-es'
-import { drawRect } from 'sdl3'
 import { ProjectData } from 'data/GloablState'
 import {
   getNodePosition,
@@ -13,6 +11,8 @@ import {
   parseSize,
   parseStringFromValue,
 } from 'helper/node'
+import { get } from 'lodash-es'
+import { drawRect } from 'sdl3'
 import { getComponent } from './component'
 import { addQuotesToTernary } from './utils'
 
@@ -282,6 +282,11 @@ export function preloadSdlAssets(assets: any) {
   const group = AssetManager.createGroup()
   assets?.fontAssets?.forEach((font) => group.addFont(font.value, font.value, Label.defaultSize))
   assets?.assetsTextureList?.forEach((texture) => group.addTexture(texture.value, texture.value))
+  // assets?.spriteSheetAssets?.forEach((spriteSheet) => {
+  //   if (!spriteSheet.texture || !spriteSheet.json) return
+  //   group.addTexture(spriteSheet.texture, spriteSheet.texture)
+  //   spriteFrameCache.addAtlas(spriteSheet.texture, spriteSheet.json)
+  // })
   return group.preload().catch((error) => {
     console.warn('Failed to preload SDL preview assets', error)
   })

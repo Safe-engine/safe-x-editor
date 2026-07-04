@@ -2,7 +2,7 @@ import { filterTree, getTreeData } from '@@/utils/Helper';
 import DirectoryTree from 'directory-tree';
 import { existsSync, readdirSync, readFileSync, rmSync } from 'fs';
 import { join } from 'path/posix';
-import { WebviewView, workspace } from 'vscode';
+import { Uri, WebviewView, workspace } from 'vscode';
 import { getResolutionSettings } from '../helper/settings';
 import { loadSpineFile } from '../helper/spine';
 import { GlobalData } from '../parser/global';
@@ -21,11 +21,13 @@ export const getFilesInFolder = async ({ src }, panel: WebviewView) => {
     throw Error('Not Safex project.');
   }
   GlobalData.rootProject = src;
+  workspace.workspaceFolders = [{ uri: Uri.file(GlobalData.rootProject) }]
   await getClassesMetaData(src);
   const assetsTSFolder = join(src, 'src', 'assets');
   const assetsTextureList = parseAssetsSrcFile(join(assetsTSFolder, 'TextureAssets.ts'), panel);
   const fontAssets = parseAssetsSrcFile(join(assetsTSFolder, 'FontAssets.ts'), panel);
   const jsonAssets = parseAssetsSrcFile(join(assetsTSFolder, 'JsonAssets.ts'), panel);
+  const audioAssets = parseAssetsSrcFile(join(assetsTSFolder, 'AudioAssets.ts'), panel);
   const spriteSheetAssets = parseAssetsSrcFile(join(assetsTSFolder, 'SpriteSheetAssets.ts'), panel);
   const dragonBonesAssets = parseAssetsSrcFile(join(assetsTSFolder, 'DragonBonesAssets.ts'), panel);
   const spineAssets = parseAssetsSrcFile(join(assetsTSFolder, 'SpineAssets.ts'), panel);
@@ -73,6 +75,7 @@ export const getFilesInFolder = async ({ src }, panel: WebviewView) => {
       assetsTextureList,
       fontAssets,
       jsonAssets,
+      audioAssets,
       spriteSheetAssets,
       spriteFramesAssets,
       dragonBonesAssets,

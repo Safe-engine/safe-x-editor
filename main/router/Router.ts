@@ -2,6 +2,7 @@ import {
   duplicateComponent,
   loadComponent, renameComponent, updateComponentTag,
 } from '@@/services/ComponentService';
+import { createAsset } from '@@/services/AssetCreateService';
 import {
   checkFileExist,
   deleteFolder,
@@ -11,6 +12,7 @@ import { createI18n } from '@@/services/LanguageService';
 import {
   CHECK_FILE_EXIST,
   CREATE_I18N,
+  CREATE_ASSET_REQUEST,
   DELETE_COMPONENT,
   DUPLICATE_COMPONENT,
   GEN_COMPONENT_REQUEST,
@@ -50,4 +52,5 @@ export default function Router() {
   addListener(DELETE_COMPONENT, deleteFolder);
   addListener(GEN_COMPONENT_REQUEST, updateComponentTag);
   addListener(CREATE_I18N, createI18n);
+  addListener(CREATE_ASSET_REQUEST, createAsset);
 }

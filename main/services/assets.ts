@@ -5,7 +5,6 @@ import { existsSync } from 'fs-extra';
 import sizeOf from 'image-size';
 import { get } from "lodash";
 import { join } from 'path';
-import { parse } from "plist";
 import { Uri, WebviewView, workspace } from "vscode";
 import { parseValue } from "../parser/ast";
 import { parseFile } from "../transform";
@@ -15,11 +14,8 @@ export function getViewPath(panel: WebviewView, relativePath?: Uri) {
 }
 
 function getJsonData(filePath: string, absolutePath: string) {
+  console.log('getJsonData', filePath, absolutePath);
   if (filePath.endsWith('.json')) { return JSON.parse(readFileSync(absolutePath, 'utf-8')); }
-  if (filePath.endsWith('.plist')) {
-    const plist = parse(readFileSync(absolutePath, 'utf-8'));
-    return plist;
-  }
   return undefined;
 }
 
@@ -54,6 +50,7 @@ export function parseAssets(parsed, panel?: WebviewView, isColor = false) {
               size,
               path: relativePath,
               key: name,
+              json: getJsonData(relativePath, fileUri),
               value: relativePath
             });
             return;

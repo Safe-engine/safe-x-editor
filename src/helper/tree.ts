@@ -38,7 +38,7 @@ function createNode(path: string[], tree: TreeNode[], data, type: string) {
 }
 
 export function pathListToTree(data): TreeNode[] {
-  const { assetsTextureList = [], dragonBonesAssets = [], fontAssets = [], spineAssets = [], spriteSheetAssets = [] } = data
+  const { assetsTextureList = [], audioAssets = [], dragonBonesAssets = [], fontAssets = [], jsonAssets = [], spineAssets = [], spriteSheetAssets = [] } = data
   const tree: TreeNode[] = []
   for (let i = 0; i < assetsTextureList.length; i++) {
     const { path } = assetsTextureList[i]
@@ -49,6 +49,11 @@ export function pathListToTree(data): TreeNode[] {
     const { path } = dragonBonesAssets[i]
     const split: string[] = path.split('/')
     createNode(split, tree, dragonBonesAssets[i], 'dragonBones')
+  }
+  for (let i = 0; i < audioAssets.length; i++) {
+    const { path } = audioAssets[i]
+    const split: string[] = path.split('/')
+    createNode(split, tree, audioAssets[i], 'audio')
   }
   for (let i = 0; i < spineAssets.length; i++) {
     const { path } = spineAssets[i]
@@ -62,8 +67,10 @@ export function pathListToTree(data): TreeNode[] {
   }
   for (let i = 0; i < spriteSheetAssets.length; i++) {
     const { path, json } = spriteSheetAssets[i]
+    const frames = json?.frames
+    if (!frames) continue
     const split: string[] = path.split('/')
-    Object.keys(json.frames).forEach((frame) => {
+    Object.keys(frames).forEach((frame) => {
       createNode([...split, frame], tree, spriteSheetAssets[i], 'frame')
     })
   }

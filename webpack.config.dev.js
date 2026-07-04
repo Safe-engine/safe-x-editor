@@ -5,7 +5,6 @@ const {
   dependencies = {},
   devDependencies = {},
 } = require('./package.json')
-const CopyPlugin = require("copy-webpack-plugin");
 const ElectronReloadWebpackPlugin = createElectronReloadWebpackPlugin({
   // Path to `package.json` file with main field set to main process file path, or just main process file path
   path: path.join(__dirname, 'build/main/index.js'),

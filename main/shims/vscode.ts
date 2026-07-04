@@ -1,3 +1,4 @@
+import { GlobalData } from '@@/parser/global';
 import path from 'path';
 
 export class Uri {
@@ -35,7 +36,7 @@ export interface WebviewView {
 }
 
 export const workspace = {
-  workspaceFolders: [{ uri: Uri.file(process.cwd()) }],
+  workspaceFolders: [{ uri: Uri.file(GlobalData.rootProject) }],
   getConfiguration(_section?: string) {
     return {
       get<T = unknown>(_key?: string): T | undefined {

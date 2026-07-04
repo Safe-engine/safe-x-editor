@@ -15,6 +15,7 @@ export const initialState = {
   componentsCache: [],
   assets: {
     fontAssets: [],
+    audioAssets: [],
     assetsTextureList: [],
     spriteSheetAssets: [],
     spriteFramesAssets: [],
