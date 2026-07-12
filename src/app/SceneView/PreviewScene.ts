@@ -4,7 +4,7 @@ import { setAssetRoot } from 'sdl3'
 import { normalizeNodeProps } from 'helper/node'
 import { sendRequest } from '../app.ipc'
 import { arrow } from './assets'
-import { getLastRootFolder, getLastSceneScale, getLastSceneX, getLastSceneY, setLastSceneScale, setLastSceneX, setLastSceneY } from 'data/AppData'
+import { getLastLoadedFile, getLastRootFolder, getLastSceneScale, getLastSceneX, getLastSceneY, setLastSceneScale, setLastSceneX, setLastSceneY } from 'data/AppData'
 import { GlobalState } from 'data/GloablState'
 import { loadSceneViewSdl, preloadSdlAssets, RectRender } from './loader'
 import { getCurrentNode } from './utils'
@@ -38,6 +38,7 @@ function getComponentChildrenNum(tag: string) {
 }
 
 function getEditingRoot(editingComponent: any, indexes: number[]) {
+  if (!Array.isArray(editingComponent) || !editingComponent.length) return undefined
   const isSceneNode = first<any>(editingComponent)?.tag === 'SceneComponent'
   if (isSceneNode) {
     indexes.shift()
@@ -109,12 +110,13 @@ export class PreviewScene extends Scene {
   lockX = false
   lockY = false
   editingPaths: any[] = []
-  editingComponent: any[]
+  editingComponent: any[] = []
   editingComponentName = ''
   undoStack: HistoryEntry[] = []
   redoStack: HistoryEntry[] = []
   loadedComponentSnapshot = ''
   pendingLoadPath = ''
+  loadingPath = ''
   didCaptureDragHistory = false
   lastTouch?: { x: number; y: number }
   activeArrowAxis?: 'x' | 'y' | 'move'
@@ -137,7 +139,14 @@ export class PreviewScene extends Scene {
     this.keyboardHandler()
     this.mouseHandler()
     this.messageHandler()
+    await this.loadLastComponent()
     // this.loadComponent('/Users/antn/Documents/js-snake/client-snake/src/scene/Home.tsx')
+  }
+
+  async loadLastComponent() {
+    const lastLoadedFile = getLastLoadedFile()
+    if (!lastLoadedFile || GlobalState.filePath) return
+    await this.loadComponent(lastLoadedFile)
   }
 
   updateInputModifiers(modifiers: { shiftKey?: boolean; ctrlKey?: boolean; metaKey?: boolean }) {
@@ -504,22 +513,28 @@ export class PreviewScene extends Scene {
 
   async loadComponent(path: string) {
     if (!path) return
-    const data: any = await sendRequest({
-      key: 'LOAD_COMPONENT_REQUEST',
-      path,
-    })
-    GlobalState.filePath = path
-    this.editingComponentName = data.name ?? ''
-    this.editingComponent = Array.isArray(data.treeData) ? data.treeData : [data.treeData]
-    this.undoStack = []
-    this.redoStack = []
-    this.drawNode.destroy()
-    this.createDrawNode()
-    await loadSceneViewSdl(data, GlobalState.data, this.drawNode)
-    this.loadedComponentSnapshot = this.serializeEditingComponent()
-    this.hideSaveDialog()
-    this.isEditing = false
-    this.updateArrowPosition()
+    if (this.loadingPath === path) return
+    this.loadingPath = path
+    try {
+      const data: any = await sendRequest({
+        key: 'LOAD_COMPONENT_REQUEST',
+        path,
+      })
+      GlobalState.filePath = path
+      this.editingComponentName = data.name ?? ''
+      this.editingComponent = Array.isArray(data.treeData) ? data.treeData : [data.treeData]
+      this.undoStack = []
+      this.redoStack = []
+      this.drawNode.destroy()
+      this.createDrawNode()
+      await loadSceneViewSdl(data, GlobalState.data, this.drawNode)
+      this.loadedComponentSnapshot = this.serializeEditingComponent()
+      this.hideSaveDialog()
+      this.isEditing = false
+      this.updateArrowPosition()
+    } finally {
+      this.loadingPath = ''
+    }
   }
 
   serializeEditingComponent() {
@@ -617,6 +632,7 @@ export class PreviewScene extends Scene {
     const editablePathParts = pathParts.slice(0, rootPathLength)
     let pathIndex = rootPathLength
     let editNode = getEditingRoot(this.editingComponent, indexes)
+    if (!editNode) return ''
 
     for (const index of indexes) {
       if (!editNode) break
