@@ -595,7 +595,15 @@ export class PreviewScene extends Scene {
     for (const editingPath of this.editingPaths) {
       const editNode = this.getEditingNodeByPath(editingPath)
       if (!editNode) continue
-      editNode[component] = Array.isArray(updated) ? cloneDeep(updated) : { ...editNode[component], ...cloneDeep(updated) }
+      if (component === 'props' && updated.node) {
+        editNode.props = {
+          ...editNode.props,
+          ...cloneDeep(updated),
+          node: { ...editNode.props?.node, ...cloneDeep(updated.node) },
+        }
+      } else {
+        editNode[component] = Array.isArray(updated) ? cloneDeep(updated) : { ...editNode[component], ...cloneDeep(updated) }
+      }
       if (component === 'props') normalizeNodeProps(editNode.props)
     }
     await this.reloadEditingComponent()

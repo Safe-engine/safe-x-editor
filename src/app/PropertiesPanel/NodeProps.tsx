@@ -156,7 +156,7 @@ function PropGroup({ title, children }) {
   );
 }
 
-function NodeHeader({ selectedNode }) {
+function NodeHeader({ selectedNode, active, onActiveChange }) {
   return (
     <div className='flex min-h-14 items-center border-b border-[#151515] bg-[#242424] px-2 py-2'>
       <div className='mr-2 flex h-8 w-8 shrink-0 items-center justify-center bg-[#303030] text-[#dcdcdc]'>
@@ -173,7 +173,12 @@ function NodeHeader({ selectedNode }) {
       <div className='mt-1 flex min-w-0 gap-2 text-[10px] font-semibold uppercase tracking-wide text-[#d5d5d5]'>
         Active
       </div>
-      <input className='ml-2 h-3.5 w-3.5 accent-[#6aa7ff]' type='checkbox' checked readOnly />
+      <input
+        className='ml-2 h-3.5 w-3.5 accent-[#6aa7ff]'
+        type='checkbox'
+        checked={active}
+        onChange={(event) => onActiveChange(event.target.checked)}
+      />
     </div>
   );
 }
@@ -192,9 +197,13 @@ function NodeProps() {
   }
 
   function updateNodeProps(updated) {
-    updateProps({
+    const node = {
+      ...(selectedNode.props?.node || {}),
+      ...updated,
+    };
+    updateMultiNodes([{ component: 'props', updated: { node } }]);
+    updatePreview('props', {
       node: {
-        ...(selectedNode.props?.node || {}),
         ...updated,
       },
     });
@@ -248,7 +257,11 @@ function NodeProps() {
   const propEntries = Object.entries(props).filter(([key]) => key !== 'node');
 
   return (<div className='h-screen overflow-y-auto bg-[#252525] pb-4'>
-    <NodeHeader selectedNode={selectedNode} />
+    <NodeHeader
+      selectedNode={selectedNode}
+      active={node.active !== false}
+      onActiveChange={(active) => updateNodeProps({ active })}
+    />
     <InspectorSection title='Transform'>
       <AxisRow
         label='Position'
@@ -273,7 +286,7 @@ function NodeProps() {
         }}
       />
       {Object.entries(node)
-        .filter(([key]) => !['position', 'xy', 'x', 'y', 'z', 'rotation', 'scale', 'scaleX', 'scaleY', 'scaleZ'].includes(key))
+        .filter(([key]) => !['position', 'xy', 'x', 'y', 'z', 'rotation', 'scale', 'scaleX', 'scaleY', 'scaleZ', 'active'].includes(key))
         .map(([key, value]) => (
           <Field
             key={key}
