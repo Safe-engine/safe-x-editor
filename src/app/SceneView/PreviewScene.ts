@@ -1,11 +1,11 @@
-import { Label, loadAll, Node, Scene, Sprite } from '@safe-engine/sdl'
-import { cloneDeep, first, isNumber, parseInt, set } from 'lodash-es'
-import { setAssetRoot } from 'sdl3'
-import { normalizeNodeProps } from 'helper/node'
-import { sendRequest } from '../app.ipc'
-import { arrow } from './assets'
+import { Label, loadAll, Node, Scene, Sprite, Touch } from '@safe-engine/sdl'
 import { getLastLoadedFile, getLastRootFolder, getLastSceneScale, getLastSceneX, getLastSceneY, setLastSceneScale, setLastSceneX, setLastSceneY } from 'data/AppData'
 import { GlobalState } from 'data/GloablState'
+import { normalizeNodeProps } from 'helper/node'
+import { cloneDeep, first, isNumber, parseInt, set } from 'lodash-es'
+import { setAssetRoot } from 'sdl3'
+import { sendRequest } from '../app.ipc'
+import { arrow } from './assets'
 import { loadSceneViewSdl, preloadSdlAssets, RectRender } from './loader'
 import { getCurrentNode } from './utils'
 
@@ -119,6 +119,7 @@ export class PreviewScene extends Scene {
   loadingPath = ''
   didCaptureDragHistory = false
   lastTouch?: { x: number; y: number }
+  middleMouseSelectionPaths?: string[]
   activeArrowAxis?: 'x' | 'y' | 'move'
   marqueeSelection?: MarqueeSelection
 
@@ -250,20 +251,23 @@ export class PreviewScene extends Scene {
       { passive: false },
     )
     canvas?.addEventListener('pointerdown', (event) => {
-      this.isMiddleMouse = event.button === 1
-      this.updateInputModifiers(event)
-    })
+        this.isMiddleMouse = event.button === 1
+        if (this.isMiddleMouse) this.middleMouseSelectionPaths = [...this.editingPaths]
+        this.updateInputModifiers(event)
+    }, true)
     canvas?.addEventListener('pointermove', (event) => {
       this.updateInputModifiers(event)
     })
     canvas?.addEventListener('pointerup', () => {
       this.isMiddleMouse = false
+      this.middleMouseSelectionPaths = undefined
       this.isShiftPressed = false
       this.isMultiSelectModifierPressed = false
       this.lastTouch = undefined
     })
     canvas?.addEventListener('pointercancel', () => {
       this.isMiddleMouse = false
+      this.middleMouseSelectionPaths = undefined
       this.isShiftPressed = false
       this.isMultiSelectModifierPressed = false
       this.lastTouch = undefined
@@ -297,7 +301,8 @@ export class PreviewScene extends Scene {
 
   async loadProjectData() {
     const rootProject = getLastRootFolder()
-    if (rootProject) setAssetRoot(`${rootProject}/res`)
+    if (!rootProject) return
+    setAssetRoot(`${rootProject}/res`)
     const data: any = await sendRequest({
       key: 'GET_FOLDER_FILES',
       src: rootProject,
@@ -897,11 +902,17 @@ export class PreviewScene extends Scene {
     return undefined
   }
 
-  onTouchStart(x: number, y: number) {
+  onTouchStart(event: Touch) {
     if (this.isSaveDialogVisible()) return
+    const { x, y } = event
     this.lastTouch = { x, y }
     this.didCaptureDragHistory = false
     this.marqueeSelection = undefined
+    if (this.isMiddleMouse) {
+      this.activeArrowAxis = undefined
+      this.updateArrowOpacity()
+      return
+    }
     const isModifierSelecting = this.isMultiSelectModifierPressed && !this.isMiddleMouse
     this.activeArrowAxis = isModifierSelecting ? undefined : this.editingPaths[0] ? this.getActiveArrowAxis(x, y) : undefined
     if (this.isShiftPressed && !this.isMiddleMouse) {
@@ -915,15 +926,19 @@ export class PreviewScene extends Scene {
       const selectedPath = this.findSelectionPath(x, y)
       if (isModifierSelecting) {
         this.toggleSelectPath(selectedPath)
-      } else {
-        this.changeSelectPath(selectedPath ? [selectedPath] : [])
+      } else if (selectedPath) {
+        this.changeSelectPath([selectedPath])
       }
     }
     this.updateArrowOpacity()
   }
 
-  onTouchMove(x: number, y: number) {
+  onTouchMove(event: Touch) {
     if (this.isSaveDialogVisible()) return
+    const { x, y } = event
+    if (this.isMiddleMouse && this.middleMouseSelectionPaths && this.editingPaths.join(',') !== this.middleMouseSelectionPaths.join(',')) {
+      this.changeSelectPath(this.middleMouseSelectionPaths)
+    }
     const last = this.lastTouch ?? { x, y }
     const dx = x - last.x
     const dy = y - last.y

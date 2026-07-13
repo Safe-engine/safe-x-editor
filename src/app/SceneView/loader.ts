@@ -207,12 +207,19 @@ async function parseChildren(root, parentNode: Node, data: ProjectData, evalInit
       renderNode.addChild(contentNode)
     }
   } else if (tag === 'SpineSkeleton') {
-    const { data: spineData, skin, animation, loop = true, timeScale = 1 } = props
+    const { data: spineData, atlas: spineAtlas, skin, animation, loop = true, timeScale = 1 } = props
     const key = parseStringFromValue(spineData)
     const spineAsset = data.spineAssets?.find((item) => item.key === key)
-    if (spineAsset?.value) {
+    const atlasKey = parseStringFromValue(spineAtlas)
+    const atlasAsset = data.spineAssets?.find((item) => item.key === atlasKey)
+    const spineValue = spineAsset?.value
+    const spineConfig =
+      typeof spineValue === 'object' && spineValue
+        ? spineValue
+        : { skeleton: spineValue, atlas: atlasAsset?.value ?? atlasKey }
+    if (typeof spineConfig.skeleton === 'string' && typeof spineConfig.atlas === 'string') {
       const spineSkeleton = renderNode.addComponent(
-        new SpineSkeleton({ data: spineAsset.value, skin, animation, loop: parseBoolFromValue(loop) ?? true, timeScale }),
+        new SpineSkeleton({ data: spineConfig, skin, animation, loop: parseBoolFromValue(loop) ?? true, timeScale }),
       )
       await spineSkeleton.reload()
     }
