@@ -1,4 +1,5 @@
-import { Label, loadAll, Node, Scene, Sprite, Touch } from '@safe-engine/sdl'
+import { MeshAttachment, RegionAttachment } from '@esotericsoftware/spine-core'
+import { Label, loadAll, Node, Scene, SpineBonesControl, SpineSkeleton, Sprite, Touch } from '@safe-engine/sdl'
 import { getLastLoadedFile, getLastRootFolder, getLastSceneScale, getLastSceneX, getLastSceneY, setLastSceneScale, setLastSceneX, setLastSceneY } from 'data/AppData'
 import { GlobalState } from 'data/GloablState'
 import { normalizeNodeProps } from 'helper/node'
@@ -8,6 +9,7 @@ import { sendRequest } from '../app.ipc'
 import { arrow } from './assets'
 import { CircleRender } from './CircleRender'
 import { loadSceneViewSdl, preloadSdlAssets, RectRender } from './loader'
+import { SpineBonesControlRender } from './SpineBonesControlRender'
 import { createNode, getComponentChildrenNum, getCurrentNode, getEditingRoot, KEY, setNodePositionProps } from './utils'
 
 
@@ -28,6 +30,7 @@ export class PreviewScene extends Scene {
   selectionCornerNodes: Node[]
   rotationHandleNode: Node
   marqueeSelectionNode: Node
+  spineBonesControlNode: Node
   saveDialogNode?: HTMLDivElement
   drawNode: Node
   borderNode: Node
@@ -52,6 +55,7 @@ export class PreviewScene extends Scene {
   activeArrowAxis?: 'x' | 'y' | 'move' | 'anchor'
   activeResizeEdge?: ResizeHandle
   isRotating = false
+  activeSpineBonePoint?: { componentIndex: number; pointIndex: number }
   rotationDragStart?: { angle: number; rotation: number }
   marqueeSelection?: MarqueeSelection
 
@@ -67,6 +71,7 @@ export class PreviewScene extends Scene {
     this.createBorder()
     this.createDrawNode()
     this.createArrows()
+    this.createSpineBonesControl()
     this.createMarqueeSelection()
     this.createSaveDialog()
     this.keyboardHandler()
@@ -247,6 +252,8 @@ export class PreviewScene extends Scene {
         }
       } else if (message.type === 'changeSelectPath') {
         this.changeSelectPath(message.selectPaths, false)
+      } else if (message.type === 'focusPreviewNode') {
+        this.focusNode(message.path)
       } else if (message.type === 'reloadProjectData') {
         void this.loadProjectData().then(() => this.reloadEditingComponent())
       } else if (message.type === 'updateSelectedNode') {
@@ -383,6 +390,98 @@ export class PreviewScene extends Scene {
     arrowContainer.addChild(arrowSpriteVertical)
     this.node.addChild(arrowContainer)
     this.updateArrowOpacity()
+  }
+
+  createSpineBonesControl() {
+    const control = createNode('SpineBonesControlHandles')
+    control.zIndex = Infinity
+    control.addComponent(new SpineBonesControlRender({ getPoints: () => this.getSpineBoneControlPoints() }))
+    this.spineBonesControlNode = control
+    this.node.addChild(control)
+  }
+
+  getSpineBonesControl() {
+    if (this.editingPaths.length !== 1) return undefined
+    const editNode = this.getEditingNodeByPath(this.editingPaths[0])
+    const componentIndex = editNode?.components?.findIndex((component) => component.tag === 'SpineBonesControl') ?? -1
+    if (componentIndex < 0) return undefined
+    const points = editNode.components[componentIndex].props?.posList
+    if (!Array.isArray(points) && typeof points !== 'string') return undefined
+    const parsedPoints = Array.isArray(points)
+      ? points.map((point) => ({ x: Number(point?.x) || 0, y: Number(point?.y) || 0 }))
+      : points
+        .replace(/^\{|\}$/g, '')
+        .split(';')
+        .filter((point) => point.trim())
+        .map((point) => {
+          const [x = 0, y = 0] = point.replace('Vec2(', '').replace(')', '').split(',').map(Number)
+          return { x: Number.isFinite(x) ? x : 0, y: Number.isFinite(y) ? y : 0 }
+        })
+    return { componentIndex, points, parsedPoints }
+  }
+
+  getSpineBoneControlPoints() {
+    const control = this.getSpineBonesControl()
+    if (!control) return []
+    const node = this.getSpineBoneCoordinateNode()
+    if (!node) return []
+    const radians = (node.worldRotation * Math.PI) / 180
+    const cosine = Math.cos(radians)
+    const sine = Math.sin(radians)
+    return control.parsedPoints.map((point) => {
+      const x = point.x * node.worldScaleX
+      const y = point.y * node.worldScaleY
+      return { x: node.worldX + x * cosine - y * sine, y: node.worldY + x * sine + y * cosine }
+    })
+  }
+
+  getSpineBoneCoordinateNode() {
+    if (!this.editingPaths[0]) return undefined
+    let node: Node | undefined = getCurrentNode(this.drawNode, this.getChildrenIndex(this.editingPaths[0]))
+    while (node && !node.getComponent(SpineSkeleton)) node = node.parent
+    return node
+  }
+
+  getActiveSpineBonePoint(x: number, y: number) {
+    const control = this.getSpineBonesControl()
+    if (!control) return undefined
+    const pointIndex = this.getSpineBoneControlPoints().findIndex((point) => Math.hypot(x - point.x, y - point.y) <= 10)
+    return pointIndex < 0 ? undefined : { componentIndex: control.componentIndex, pointIndex }
+  }
+
+  moveSpineBonePoint(x: number, y: number) {
+    if (!this.activeSpineBonePoint || this.editingPaths.length !== 1) return false
+    const control = this.getSpineBonesControl()
+    if (!control || control.componentIndex !== this.activeSpineBonePoint.componentIndex) return false
+    const node = this.getSpineBoneCoordinateNode()
+    if (!node) return false
+    const radians = (-node.worldRotation * Math.PI) / 180
+    const dx = x - node.worldX
+    const dy = y - node.worldY
+    const localX = (dx * Math.cos(radians) - dy * Math.sin(radians)) / node.worldScaleX
+    const localY = (dx * Math.sin(radians) + dy * Math.cos(radians)) / node.worldScaleY
+    if (!Number.isFinite(localX) || !Number.isFinite(localY)) return false
+    const pointIndex = this.activeSpineBonePoint.pointIndex
+    control.parsedPoints[pointIndex] = { x: Math.round(localX), y: Math.round(localY) }
+    const editNode = this.getEditingNodeByPath(this.editingPaths[0])
+    const component = editNode?.components?.[control.componentIndex]
+    if (!component) return false
+    component.props = {
+      ...component.props,
+      posList: Array.isArray(control.points)
+        ? control.parsedPoints
+        : `${String(control.points).startsWith('{') ? '{' : ''}${control.parsedPoints.map((point) => `Vec2(${point.x},${point.y})`).join(';')}${String(control.points).endsWith('}') ? '}' : ''}`,
+    }
+    const currentNode = getCurrentNode(this.drawNode, this.getChildrenIndex(this.editingPaths[0]))
+    const liveControl = currentNode.getComponent(SpineBonesControl)
+    if (liveControl) liveControl.props.posList = control.parsedPoints
+    this.syncEditingFlag()
+    window.postMessage({
+      type: 'previewUpdateSelectedNodes',
+      selectPaths: this.editingPaths,
+      nodes: [{ component: 'components', updated: editNode.components }],
+    }, '*')
+    return true
   }
 
   createMarqueeSelection() {
@@ -827,6 +926,35 @@ export class PreviewScene extends Scene {
     if (notify) window.postMessage({ type: 'previewSelectPaths', selectPaths: this.editingPaths }, '*')
   }
 
+  focusNode(path: string) {
+    const editablePath = this.getEditablePath(path)
+    if (!editablePath) return
+    this.changeSelectPath([editablePath], false)
+    const currentNode = getCurrentNode(this.drawNode, this.getChildrenIndex(editablePath))
+    const nodeBounds = this.getNodeBounds(currentNode)
+    const nodeCenterX = nodeBounds ? (nodeBounds.left + nodeBounds.right) / 2 : currentNode.worldX
+    const nodeCenterY = nodeBounds ? (nodeBounds.top + nodeBounds.bottom) / 2 : currentNode.worldY
+    const canvas = document.querySelector<HTMLCanvasElement>('#sdl-canvas')
+    const canvasBounds = canvas?.getBoundingClientRect()
+    const previewBounds = canvas?.parentElement?.getBoundingClientRect()
+    const canvasScale = canvasBounds?.width ? this.logicalCanvasWidth / canvasBounds.width : 1
+    const previewCenterX = canvasBounds && previewBounds
+      ? (previewBounds.left + previewBounds.width / 2 - canvasBounds.left) * canvasScale
+      : this.logicalCanvasWidth / 2
+    const previewCenterY = canvasBounds && previewBounds
+      ? (previewBounds.top + previewBounds.height / 2 - canvasBounds.top) * canvasScale
+      : window.innerHeight / 2
+    const offsetX = previewCenterX - nodeCenterX
+    const offsetY = previewCenterY - nodeCenterY
+    this.drawNode.x += offsetX
+    this.drawNode.y += offsetY
+    this.borderNode.x = this.drawNode.x
+    this.borderNode.y = this.drawNode.y
+    setLastSceneX(this.drawNode.x)
+    setLastSceneY(this.drawNode.y)
+    this.updateArrowPosition()
+  }
+
   getCombinedBoundsFromPaths(paths: string[]) {
     let combinedBounds: SelectionBounds | undefined
     paths.forEach((path) => {
@@ -916,12 +1044,55 @@ export class PreviewScene extends Scene {
     if (!node.active) return undefined
     const width = node.width * (node.worldScaleX ?? 1)
     const height = node.height * (node.worldScaleY ?? 1)
-    if (!width || !height) return undefined
-    const x1 = node.worldX - node.anchorX * width
-    const y1 = node.worldY - node.anchorY * height
-    const x2 = x1 + width
-    const y2 = y1 + height
-    return this.getSelectionBounds(x1, y1, x2, y2)
+    if (width && height) {
+      const x1 = node.worldX - node.anchorX * width
+      const y1 = node.worldY - node.anchorY * height
+      const x2 = x1 + width
+      const y2 = y1 + height
+      return this.getSelectionBounds(x1, y1, x2, y2)
+    }
+    return this.getSpineSkeletonBounds(node)
+  }
+
+  getSpineSkeletonBounds(node: Node): SelectionBounds | undefined {
+    const skeleton = node.getComponent(SpineSkeleton)?.skeleton
+    if (!skeleton) return undefined
+    const radians = (node.worldRotation * Math.PI) / 180
+    const cosine = Math.cos(radians)
+    const sine = Math.sin(radians)
+    const scaleX = node.worldScaleX ?? 1
+    const scaleY = node.worldScaleY ?? 1
+    let result: SelectionBounds | undefined
+    const includeVertices = (vertices: Float32Array) => {
+      for (let index = 0; index < vertices.length; index += 2) {
+        const scaledX = vertices[index] * scaleX
+        const scaledY = vertices[index + 1] * scaleY
+        const x = node.worldX + scaledX * cosine - scaledY * sine
+        const y = node.worldY + scaledX * sine + scaledY * cosine
+        if (!result) {
+          result = { left: x, top: y, right: x, bottom: y }
+          continue
+        }
+        result.left = Math.min(result.left, x)
+        result.top = Math.min(result.top, y)
+        result.right = Math.max(result.right, x)
+        result.bottom = Math.max(result.bottom, y)
+      }
+    }
+    skeleton.drawOrder.forEach((slot) => {
+      const attachment = slot.getAttachment()
+      if (!slot.bone.active || !attachment) return
+      if (attachment instanceof RegionAttachment) {
+        const vertices = new Float32Array(8)
+        attachment.computeWorldVertices(slot, vertices, 0, 2)
+        includeVertices(vertices)
+      } else if (attachment instanceof MeshAttachment) {
+        const vertices = new Float32Array(attachment.worldVerticesLength)
+        attachment.computeWorldVertices(slot, 0, attachment.worldVerticesLength, vertices, 0, 2)
+        includeVertices(vertices)
+      }
+    })
+    return result
   }
 
   isNodeInsideSelectionBounds(node: Node, bounds: SelectionBounds) {
@@ -936,13 +1107,9 @@ export class PreviewScene extends Scene {
   }
 
   isPointInsideNode(node: Node, x: number, y: number) {
-    if (!node.active) return false
-    const width = node.width * (node.worldScaleX ?? 1)
-    const height = node.height * (node.worldScaleY ?? 1)
-    if (width <= 0 || height <= 0) return false
-    const left = node.worldX - node.anchorX * width
-    const top = node.worldY - node.anchorY * height
-    return x >= left && x <= left + width && y >= top && y <= top + height
+    const bounds = this.getNodeBounds(node)
+    if (!bounds) return false
+    return x >= bounds.left && x <= bounds.right && y >= bounds.top && y <= bounds.bottom
   }
 
   findSelectionPathInNode(node: Node, path: string[], x: number, y: number): string | undefined {
@@ -1045,11 +1212,23 @@ export class PreviewScene extends Scene {
       this.activeArrowAxis = undefined
       this.activeResizeEdge = undefined
       this.isRotating = false
+      this.activeSpineBonePoint = undefined
       this.rotationDragStart = undefined
       this.updateArrowOpacity()
       return
     }
     const isModifierSelecting = this.isMultiSelectModifierPressed && !this.isMiddleMouse
+    this.activeSpineBonePoint = isModifierSelecting || this.isShiftPressed ? undefined : this.getActiveSpineBonePoint(x, y)
+    if (this.activeSpineBonePoint) {
+      this.pushUndoHistory()
+      this.didCaptureDragHistory = true
+      this.activeArrowAxis = undefined
+      this.activeResizeEdge = undefined
+      this.isRotating = false
+      this.rotationDragStart = undefined
+      this.updateArrowOpacity()
+      return
+    }
     this.isRotating = !isModifierSelecting && this.getActiveRotationHandle(x, y)
     if (this.isRotating) {
       const currentNode = getCurrentNode(this.drawNode, this.getChildrenIndex(this.editingPaths[0]))
@@ -1119,6 +1298,10 @@ export class PreviewScene extends Scene {
       this.changeSelectPath(this.findSelectionPathsInBounds(bounds))
       return
     }
+    if (this.activeSpineBonePoint) {
+      this.moveSpineBonePoint(x, y)
+      return
+    }
     if (!this.editingPaths[0] || this.isMiddleMouse) {
       this.drawNode.x += dx
       this.drawNode.y += dy
@@ -1183,6 +1366,7 @@ export class PreviewScene extends Scene {
     this.activeArrowAxis = undefined
     this.activeResizeEdge = undefined
     this.isRotating = false
+    this.activeSpineBonePoint = undefined
     this.rotationDragStart = undefined
     this.didCaptureDragHistory = false
     this.updateArrowOpacity()

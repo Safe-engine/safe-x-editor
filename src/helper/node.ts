@@ -2,9 +2,18 @@ export function parseEval(evalInit: string) {
   return (v: string) => eval(evalInit + v)
 }
 
-export function parseVec2(position = 'Vec2(0,0)', evalInit) {
-  const [x = 0, y = 0] = position.replace('Vec2(', '').replace(')', '').split(',').map(parseEval(evalInit));
-  return { x, y };
+export function parseVec2(position = 'Vec2(0,0)', evalInit = '') {
+  const [rawX = '', rawY = ''] = String(position).replace('Vec2(', '').replace(')', '').split(',')
+  const evaluate = parseEval(evalInit)
+  const parseValue = (value: string) => {
+    if (!value.trim()) return 0
+    try {
+      return evaluate(value)
+    } catch {
+      return 0
+    }
+  }
+  return { x: parseValue(rawX), y: parseValue(rawY) }
 }
 
 export function Vec2({ x = 0, y = 0 }) {
@@ -64,6 +73,7 @@ export function parseStringsArray(value) {
 
 export function parseVec2Array(value) {
   if (Array.isArray(value)) return value
+  if (!value) return []
   return parseStringFromValue(value)
     .split(';')
     .filter((item) => item.trim())

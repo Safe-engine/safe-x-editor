@@ -30,15 +30,18 @@ export const getFilesInFolder = async ({ src }, panel: WebviewView) => {
   const audioAssets = parseAssetsSrcFile(join(assetsTSFolder, 'AudioAssets.ts'), panel);
   const spriteSheetAssets = parseAssetsSrcFile(join(assetsTSFolder, 'SpriteSheetAssets.ts'), panel);
   const dragonBonesAssets = parseAssetsSrcFile(join(assetsTSFolder, 'DragonBonesAssets.ts'), panel);
-  const spineAssets = parseAssetsSrcFile(join(assetsTSFolder, 'SpineAssets.ts'), panel);
+  const spineAssetsFile = join(assetsTSFolder, 'SpineAssets.ts');
+  const spineAssets = parseAssetsSrcFile(spineAssetsFile, panel);
+  const spineSourceAssets = parseAssetsSrcFile(spineAssetsFile);
   const spriteFramesAssets = parseAssetsSrcFile(join(assetsTSFolder, 'SpriteFrames.ts'));
   const colors = parseAssetsSrcFile(join(src, 'src', 'helper', 'constant.ts'), panel, true);
   const jsonCaches = parseJsonCache(join(src, 'src', 'data', 'JsonCache.ts'), jsonAssets);
   const enumsList = parseEnums(join(src, 'src', 'helper', 'constant.ts'), jsonAssets);
   const designedResolution = getResolutionSettings(src);
   GlobalData.designedResolution = designedResolution;
+  GlobalData.spineAnimations = {};
   // console.log('spineAssets', JSON.stringify(spineAssets, null, 2));
-  spineAssets.forEach(({ key, value }) => {
+  spineSourceAssets.forEach(({ key, value }) => {
     const { skeleton, atlas } = value;
     if (!skeleton) { return; }
     const data = loadSpineFile(skeleton.replace(/\\/g, '/'), atlas);
@@ -79,7 +82,8 @@ export const getFilesInFolder = async ({ src }, panel: WebviewView) => {
       spriteSheetAssets,
       spriteFramesAssets,
       dragonBonesAssets,
-      spineAssets
+      spineAssets,
+      spineAnimations: GlobalData.spineAnimations,
     },
     componentsCache,
     defaultProps,

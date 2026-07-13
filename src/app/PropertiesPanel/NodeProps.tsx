@@ -1,4 +1,5 @@
 import { sendRequest } from 'app/app.ipc';
+import SelectBox from 'base/SelectBox';
 import { parseOutline, parseStringFromValue } from 'helper/node';
 import { memo, useState } from 'react';
 import toast from 'react-hot-toast';
@@ -18,6 +19,13 @@ const LABEL_DEFAULT_PROPS = {
   shadow: '{[, 0, Size(0, 0)]}',
 };
 
+const SPINE_DEFAULT_PROPS = {
+  skin: '',
+  animation: '',
+  timeScale: 1,
+  loop: true,
+};
+
 function isObject(value) {
   return value && typeof value === 'object' && !Array.isArray(value);
 }
@@ -31,6 +39,11 @@ function parseValue(value, previousValue) {
   if (typeof previousValue === 'boolean') return value === 'true';
   if (typeof previousValue === 'number') return parseNumber(value, previousValue);
   return value;
+}
+
+function parseNodeString(value) {
+  const stringValue = String(value ?? '');
+  return stringValue.replace(/^(?:"(.*)"|'(.*)')$/, '$1$2');
 }
 
 function parseVec2(position = 'Vec2(0,0)') {
@@ -117,6 +130,16 @@ function Field({ label, value, onChange }) {
           onChange={onChangeValue}
         />
       )}
+    </label>
+  );
+}
+
+function SpineSelectField({ label, value, items, onChange }) {
+  const options = Array.from(new Set(['', ...items]));
+  return (
+    <label className='grid min-h-7 grid-cols-[70px_minmax(0,1fr)] items-center gap-2 px-2 py-0.5'>
+      <div className='truncate text-[11px] text-[#c8c8c8]' title={label}>{label}</div>
+      <SelectBox items={options} selected={value ?? ''} setSelected={onChange} />
     </label>
   );
 }
@@ -314,29 +337,46 @@ function PropGroup({ title, children }) {
   );
 }
 
-function NodeHeader({ selectedNode, active, onActiveChange }) {
+function NodeHeader({ selectedNode, active, onActiveChange, onNameChange, onTagChange }) {
+  const node = selectedNode.props?.node || {};
+  const inputClassName = 'h-6 min-w-0 rounded-sm border border-[#111] bg-[#151515] px-2 text-[11px] text-[#e2e2e2] outline-none focus:border-[#4a90e2]';
+
   return (
-    <div className='flex min-h-14 items-center border-b border-[#151515] bg-[#242424] px-2 py-2'>
-      <div className='mr-2 flex h-8 w-8 shrink-0 items-center justify-center bg-[#303030] text-[#dcdcdc]'>
-        <div className='h-3.5 w-3.5 rounded-full bg-[#dcdcdc]' />
+    <div className='border-b border-[#151515] bg-[#242424] px-2 py-2'>
+      <div className='flex items-center gap-2'>
+        <label className='flex shrink-0 items-center gap-2 text-[10px] font-semibold uppercase tracking-wide text-[#d5d5d5]'>
+          <input
+            className='h-3.5 w-3.5 accent-[#6aa7ff]'
+            type='checkbox'
+            checked={active}
+            onChange={(event) => onActiveChange(event.target.checked)}
+          />
+        </label>
+        <div className='min-w-0 flex-1 truncate text-[12px] font-bold text-[#f0f0f0]'>{selectedNode.tag}</div>
       </div>
-      <div className='min-w-0 flex-1'>
-        <div className='truncate text-[12px] font-bold text-[#f0f0f0]'>{selectedNode.tag}
-          <span className='truncate'>: {selectedNode.props?.node?.name || ''}</span>
-        </div>
-        <div className='mt-1 flex min-w-0 gap-2 text-[10px] font-semibold uppercase tracking-wide text-[#d5d5d5]'>
-          <span className='truncate'>Tag: {selectedNode.props?.node?.tag || 'default'}</span>
-        </div>
+      <div className='mt-2 grid grid-cols-[minmax(0,1fr)_84px] gap-2'>
+        <label className='grid min-w-0 grid-cols-[32px_minmax(0,1fr)] items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-[#d5d5d5]'>
+          Name
+          <input
+            aria-label='Name'
+            className={inputClassName}
+            placeholder='Name'
+            type='text'
+            value={parseNodeString(node.name)}
+            onChange={(event) => onNameChange(event.target.value)}
+          />
+        </label>
+        <label className='grid min-w-0 grid-cols-[24px_minmax(0,1fr)] items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-[#d5d5d5]'>
+          Tag
+          <input
+            aria-label='Tag'
+            className={inputClassName}
+            type='number'
+            value={node.tag ?? 0}
+            onChange={(event) => onTagChange(parseNumber(event.target.value, node.tag ?? 0))}
+          />
+        </label>
       </div>
-      <div className='mt-1 flex min-w-0 gap-2 text-[10px] font-semibold uppercase tracking-wide text-[#d5d5d5]'>
-        Active
-      </div>
-      <input
-        className='ml-2 h-3.5 w-3.5 accent-[#6aa7ff]'
-        type='checkbox'
-        checked={active}
-        onChange={(event) => onActiveChange(event.target.checked)}
-      />
     </div>
   );
 }
@@ -432,12 +472,16 @@ function NodeProps() {
   const position = getNodePosition(node);
   const textureSize = getTextureSize(props.spriteFrame, assets);
   const components = selectedNode.components || [];
-  const displayedProps = selectedNode.tag === 'Label'
-    ? {
-      ...props,
-      ...Object.fromEntries(Object.entries(LABEL_DEFAULT_PROPS).map(([key, value]) => [key, props[key] ?? value])),
-    }
-    : props;
+  const spineData = assets?.spineAnimations?.[parseStringFromValue(props.data)];
+  const defaultProps = selectedNode.tag === 'Label'
+    ? LABEL_DEFAULT_PROPS
+    : selectedNode.tag === 'SpineSkeleton'
+      ? SPINE_DEFAULT_PROPS
+      : {};
+  const displayedProps = {
+    ...props,
+    ...Object.fromEntries(Object.entries(defaultProps).map(([key, value]) => [key, props[key] ?? value])),
+  };
   const propEntries = Object.entries(displayedProps).filter(([key]) => key !== 'node');
 
   return (<div className='h-screen overflow-y-auto bg-[#252525] pb-4'>
@@ -445,6 +489,8 @@ function NodeProps() {
       selectedNode={selectedNode}
       active={node.active !== false}
       onActiveChange={(active) => updateNodeProps({ active })}
+      onNameChange={(name) => updateNodeProps({ name: JSON.stringify(name) })}
+      onTagChange={(tag) => updateNodeProps({ tag })}
     />
     <InspectorSection title='Transform'>
       <AxisRow
@@ -481,6 +527,11 @@ function NodeProps() {
         onChange={(axis, value) => updateNodeProps({ [axis === 'x' ? 'width' : 'height']: value })}
         onReset={() => updateNodeProps({ width: undefined, height: undefined })}
       />
+      <Field
+        label='zOrder'
+        value={node.zOrder ?? node.zIndex ?? 0}
+        onChange={(zOrder) => updateNodeProps({ zOrder })}
+      />
       <ColorField
         value={node.color}
         colors={colors}
@@ -488,7 +539,7 @@ function NodeProps() {
         onEdit={() => setIsColorEditorOpen(true)}
       />
       {Object.entries(node)
-        .filter(([key]) => !['position', 'xy', 'x', 'y', 'z', 'rotation', 'scale', 'scaleX', 'scaleY', 'scaleZ', 'width', 'height', 'anchorX', 'anchorY', 'color', 'active'].includes(key))
+        .filter(([key]) => !['position', 'xy', 'x', 'y', 'z', 'rotation', 'scale', 'scaleX', 'scaleY', 'scaleZ', 'width', 'height', 'anchorX', 'anchorY', 'zOrder', 'zIndex', 'name', 'tag', 'color', 'active'].includes(key))
         .map(([key, value]) => (
           <Field
             key={key}
@@ -533,6 +584,22 @@ function NodeProps() {
                 key={key}
                 value={value}
                 colors={colors}
+                onChange={(nextValue) => updateProps({ [key]: nextValue })}
+              />
+            ) : selectedNode.tag === 'SpineSkeleton' && key === 'skin' && spineData?.skins?.length ? (
+              <SpineSelectField
+                key={key}
+                label={key}
+                value={value}
+                items={spineData.skins}
+                onChange={(nextValue) => updateProps({ [key]: nextValue })}
+              />
+            ) : selectedNode.tag === 'SpineSkeleton' && key === 'animation' && spineData?.animations?.length ? (
+              <SpineSelectField
+                key={key}
+                label={key}
+                value={value}
+                items={spineData.animations}
                 onChange={(nextValue) => updateProps({ [key]: nextValue })}
               />
             ) : (

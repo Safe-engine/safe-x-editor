@@ -39,7 +39,6 @@ export let loadSpineFile;
     newClippingAttachment(skin, name) { return new spine.ClippingAttachment(name); }
   }
   loadSpineFile = function (skeletonDataFile: string, atlasFile: string) {
-    if (!skeletonDataFile.includes('.net')) { return; }
     const realFile = decodeURIComponent(last(skeletonDataFile.split('.net/')));
     // console.log('skeletonDataFile', realFile);
     const attachmentLoader = new StubAttachmentLoader();

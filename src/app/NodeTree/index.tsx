@@ -102,6 +102,13 @@ export default function NodeTree() {
     // }
   }
 
+  const onFocusNode = (node) => {
+    const path = node.data.id;
+    if (!path) return;
+    selectEditMultiNodes([path]);
+    window.postMessage({ type: 'focusPreviewNode', path }, '*');
+  }
+
   return (
     <div className='h-screen bg-[#252525] text-[#dcdcdc]' >
       <div className='flex h-8 items-center border-b border-[#151515] bg-[#202020] px-2'>
@@ -126,7 +133,7 @@ export default function NodeTree() {
         }}
         openByDefault
       >
-        {TreeItem}
+        {(props) => <TreeItem {...props} onFocusNode={onFocusNode} />}
       </Tree>
       {/* <ContextMenu
         // ref={contextMenuRef}

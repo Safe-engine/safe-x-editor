@@ -1,12 +1,14 @@
 import { Box, Center, HStack } from "base/Stack";
 import clsx from "clsx";
 import { get } from "lodash-es";
-import { useState } from "react";
 import { NodeRendererProps } from "react-arborist";
 import { AiFillFolderOpen } from "react-icons/ai";
+import { FiEye } from "react-icons/fi";
 import { RiBox3Line } from "react-icons/ri";
-import { useSelector } from "states/app.context";
-import { selectSelectedEditingClassNamePath } from "states/app.selectors";
+
+type TreeItemProps = NodeRendererProps<any> & {
+  onFocusNode: (node: any) => void;
+};
 
 function renderIcon(data: any) {
   if (data.isDirectory) {
@@ -30,10 +32,7 @@ function renderName(node: any) {
     </Box>
 }
 
-export function TreeItem({ node, style, dragHandle }: NodeRendererProps<any>) {
-  const [tempName, setTempName] = useState('');
-  const selectedEditingClassNamePath = useSelector(selectSelectedEditingClassNamePath);
-
+export function TreeItem({ node, style, dragHandle, onFocusNode }: TreeItemProps) {
   const handleContextMenu = (
     e: React.MouseEvent,
     node: any
@@ -45,13 +44,10 @@ export function TreeItem({ node, style, dragHandle }: NodeRendererProps<any>) {
   return <HStack ref={dragHandle}
     style={style}
     className={clsx(
-      'h-full items-center rounded-sm px-1 text-[12px] text-[#d6d6d6] hover:cursor-pointer hover:bg-[#303846]',
+      'h-full w-full items-center justify-between rounded-sm px-1 text-[12px] text-[#d6d6d6] hover:cursor-pointer hover:bg-[#303846]',
       node.isSelected && 'bg-[#304766] text-[#f0f0f0]'
     )}
-    onDoubleClick={() => {
-      setTempName(node.data.name)
-      node.edit()
-    }}
+    onDoubleClick={() => onFocusNode(node)}
     onContextMenu={(e) => handleContextMenu(e, node.data)}
   >
     <Center>
@@ -59,5 +55,18 @@ export function TreeItem({ node, style, dragHandle }: NodeRendererProps<any>) {
       <Box className={clsx('truncate font-semibold', node.isSelected ? 'text-[#ffffff]' : 'text-[#d6d6d6]')}>{node.data.tag}</Box>
       {renderName(node)}
     </Center>
+    <button
+      type="button"
+      className="ml-1 flex shrink-0 rounded p-0.5 text-[#aeb8c5] hover:bg-[#49637f] hover:text-white"
+      title="Focus in preview"
+      aria-label="Focus in preview"
+      onMouseDown={(event) => event.stopPropagation()}
+      onClick={(event) => {
+        event.stopPropagation()
+        onFocusNode(node)
+      }}
+    >
+      <FiEye size={14} />
+    </button>
   </HStack >
 }

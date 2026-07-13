@@ -82,8 +82,8 @@ export function parseAssets(parsed, panel?: WebviewView, isColor = false) {
               if (!key) { return; }
               const base = workspace.workspaceFolders[0].uri;
               const fileUri = Uri.joinPath(base, 'res', p.value.value as string);
-              // console.log(fileUri.fsPath);
-              obj[key] = getViewPath(panel, fileUri);
+              // console.log('ObjectExpression asset:', key, fileUri.fsPath);
+              obj[key] = panel ? getViewPath(panel, fileUri) : fileUri.fsPath;
               if (key === 'atlas') {
                 path = p.value.value as string;
               }

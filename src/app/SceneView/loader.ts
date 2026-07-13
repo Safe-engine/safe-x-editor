@@ -1,5 +1,6 @@
 import { AssetManager, ComponentX, Label, Node, ScrollView, SpineSkeleton, Sprite, TiledMap } from '@safe-engine/sdl'
 import { DragonBones } from '@safe-engine/sdl/lib/dragonbones'
+import { getLastRootFolder } from 'data/AppData'
 import { ProjectData } from 'data/GloablState'
 import {
   getNodePosition,
@@ -17,6 +18,13 @@ import { getComponent } from './component'
 import { addQuotesToTernary } from './utils'
 
 type SdlColor = { r: number; g: number; b: number; a?: number }
+
+function projectAssetUrl(path: string) {
+  if (/^[a-z][a-z0-9+.-]*:/i.test(path)) return path
+  const normalized = path.replace(/\\/g, '/').replace(/^res\//, '')
+  const absolutePath = normalized.startsWith('/') ? normalized : `${getLastRootFolder()}/res/${normalized}`
+  return `file://${absolutePath.split('/').map(encodeURIComponent).join('/')}`
+}
 
 export class RectRender extends ComponentX<{ fillColor?: SdlColor; strokeColor?: SdlColor; lineWidth?: number }> {
   fillColor: SdlColor | undefined
@@ -223,14 +231,23 @@ async function parseChildren(root, parentNode: Node, data: ProjectData, evalInit
     const spineAsset = data.spineAssets?.find((item) => item.key === key)
     const atlasKey = parseStringFromValue(spineAtlas)
     const atlasAsset = data.spineAssets?.find((item) => item.key === atlasKey)
+    // console.log('Spine Props:', props, 'Spine Asset:', spineAsset, 'Atlas Asset:', atlasAsset)
     const spineValue = spineAsset?.value
     const spineConfig =
       typeof spineValue === 'object' && spineValue
         ? spineValue
         : { skeleton: spineValue, atlas: atlasAsset?.value ?? atlasKey }
+        // console.log('Spine Config:', spineConfig, 'Props:', props, 'Spine Asset:', spineAsset, 'Atlas Asset:', atlasAsset)
     if (typeof spineConfig.skeleton === 'string' && typeof spineConfig.atlas === 'string') {
+      const resolvedSpineData = {
+        ...spineConfig,
+        skeleton: projectAssetUrl(spineConfig.skeleton),
+        atlas: projectAssetUrl(spineConfig.atlas),
+        ...(typeof spineConfig.texture === 'string' ? { texture: projectAssetUrl(spineConfig.texture) } : {}),
+      }
+      // console.log('Resolved Spine Data:', resolvedSpineData, 'Props:', props, 'Spine Asset:', spineAsset, 'Atlas Asset:', atlasAsset)
       const spineSkeleton = renderNode.addComponent(
-        new SpineSkeleton({ data: spineConfig, skin, animation, loop: parseBoolFromValue(loop) ?? true, timeScale }),
+        new SpineSkeleton({ data: resolvedSpineData, skin, animation, loop: parseBoolFromValue(loop) ?? true, timeScale }),
       )
       await spineSkeleton.reload()
     }
@@ -244,11 +261,12 @@ async function parseChildren(root, parentNode: Node, data: ProjectData, evalInit
       )
       await dragonBones.reload()
     }
-  } else if (tag === 'TiledMap' || tag === 'TiledMapComp') {
+  } else if (tag === 'TiledMap') {
     const { mapFile } = props
     const key = parseStringFromValue(mapFile)
+    // console.log('TiledMap key:', key, 'data.jsonAssets:', data.jsonAssets, 'props:', props)
     const mapAsset = data.jsonAssets?.find((item) => item.key === key)
-    const mapFilePath = mapAsset?.value ?? key
+    const mapFilePath = projectAssetUrl(mapAsset?.path ?? key)
     if (mapFilePath) {
       const tiledMap = renderNode.addComponent(new TiledMap({ mapFile: mapFilePath }))
       await tiledMap.reload()
@@ -260,7 +278,7 @@ async function parseChildren(root, parentNode: Node, data: ProjectData, evalInit
   if (renderNode !== parentNode && !renderNode.parent) parentNode.addChild(renderNode)
 
   const { node = {} } = props
-  const { scaleX = 1, scaleY = 1, scale = 1, rotation = 0, width, height, color, active, anchorX, anchorY, zIndex } = node
+  const { scaleX = 1, scaleY = 1, scale = 1, rotation = 0, width, height, color, active, anchorX, anchorY, zIndex, zOrder, name, tag: nodeTag } = node
   if (node.position || node.xy || node.x !== undefined || node.y !== undefined) {
     const { x, y } = getNodePosition(node, initWithProps)
     renderNode.x = x
@@ -273,6 +291,8 @@ async function parseChildren(root, parentNode: Node, data: ProjectData, evalInit
   if (anchorY !== undefined) renderNode.anchorY = parseEval(initWithProps)(anchorY)
   if (rotation !== 0) renderNode.rotation = parseEval(initWithProps)(rotation)
   if (zIndex !== undefined) renderNode.zIndex = parseEval(initWithProps)(zIndex)
+  if (name !== undefined) renderNode.name = parseEval(initWithProps)(name)
+  if (nodeTag !== undefined) renderNode.tag = parseEval(initWithProps)(nodeTag)
   if (width) renderNode.width = parseEval(initWithProps)(width)
   if (height) renderNode.height = parseEval(initWithProps)(height)
   if (active !== undefined) renderNode.active = parseEval(initWithProps)(active)
