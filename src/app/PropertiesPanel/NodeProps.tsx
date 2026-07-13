@@ -363,6 +363,12 @@ function NodeProps() {
         }}
       />
       <AxisRow
+        label='Anchor'
+        step={0.01}
+        values={{ x: node.anchorX ?? 0.5, y: node.anchorY ?? 0.5 }}
+        onChange={(axis, value) => updateNodeProps({ [axis === 'x' ? 'anchorX' : 'anchorY']: value })}
+      />
+      <AxisRow
         label='Size'
         values={{ x: node.width ?? textureSize.width, y: node.height ?? textureSize.height }}
         onChange={(axis, value) => updateNodeProps({ [axis === 'x' ? 'width' : 'height']: value })}
@@ -375,7 +381,7 @@ function NodeProps() {
         onEdit={() => setIsColorEditorOpen(true)}
       />
       {Object.entries(node)
-        .filter(([key]) => !['position', 'xy', 'x', 'y', 'z', 'rotation', 'scale', 'scaleX', 'scaleY', 'scaleZ', 'width', 'height', 'color', 'active'].includes(key))
+        .filter(([key]) => !['position', 'xy', 'x', 'y', 'z', 'rotation', 'scale', 'scaleX', 'scaleY', 'scaleZ', 'width', 'height', 'anchorX', 'anchorY', 'color', 'active'].includes(key))
         .map(([key, value]) => (
           <Field
             key={key}

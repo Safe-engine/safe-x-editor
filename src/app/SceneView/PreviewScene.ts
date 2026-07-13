@@ -49,7 +49,7 @@ export class PreviewScene extends Scene {
   logicalCanvasWidth = window.innerWidth
   lastTouch?: { x: number; y: number }
   middleMouseSelectionPaths?: string[]
-  activeArrowAxis?: 'x' | 'y' | 'move'
+  activeArrowAxis?: 'x' | 'y' | 'move' | 'anchor'
   activeResizeEdge?: ResizeHandle
   isRotating = false
   rotationDragStart?: { angle: number; rotation: number }
@@ -192,6 +192,13 @@ export class PreviewScene extends Scene {
       const bounds = canvas.getBoundingClientRect()
       const x = (event.clientX - bounds.left) * this.logicalCanvasWidth / bounds.width
       const y = (event.clientY - bounds.top) * this.logicalCanvasWidth / bounds.width
+      const activeArrowAxis = !this.isShiftPressed && !this.isMultiSelectModifierPressed && this.editingPaths[0]
+        ? this.getActiveArrowAxis(x, y)
+        : undefined
+      if (activeArrowAxis === 'anchor') {
+        canvas.style.cursor = 'move'
+        return
+      }
       if (!this.isShiftPressed && !this.isMultiSelectModifierPressed && this.getActiveRotationHandle(x, y)) {
         canvas.style.cursor = 'grab'
         return
@@ -679,6 +686,45 @@ export class PreviewScene extends Scene {
     this.updateArrowPosition()
   }
 
+  moveSelectionAnchor(dx: number, dy: number) {
+    if (this.editingPaths.length !== 1) return false
+    const editingPath = this.editingPaths[0]
+    const currentNode = getCurrentNode(this.drawNode, this.getChildrenIndex(editingPath))
+    const parent = currentNode.parent ?? this.drawNode
+    const parentScaleX = parent.worldScaleX || this.drawNode.scaleX || 1
+    const parentScaleY = parent.worldScaleY || this.drawNode.scaleY || 1
+    const width = currentNode.width
+    const height = currentNode.height
+    const worldScaleX = currentNode.worldScaleX || 1
+    const worldScaleY = currentNode.worldScaleY || 1
+    const scaleX = worldScaleX / parentScaleX
+    const scaleY = worldScaleY / parentScaleY
+    const anchorX = width ? Number((currentNode.anchorX + dx / (width * worldScaleX)).toFixed(3)) : currentNode.anchorX
+    const anchorY = height ? Number((currentNode.anchorY + dy / (height * worldScaleY)).toFixed(3)) : currentNode.anchorY
+    if (anchorX === currentNode.anchorX && anchorY === currentNode.anchorY) return false
+
+    currentNode.x += (anchorX - currentNode.anchorX) * width * scaleX
+    currentNode.y += (anchorY - currentNode.anchorY) * height * scaleY
+    currentNode.anchorX = anchorX
+    currentNode.anchorY = anchorY
+
+    const editNode = this.getEditingNodeByPath(editingPath)
+    if (!editNode) return false
+    editNode.props ??= {}
+    editNode.props.node ??= {}
+    editNode.props.node.anchorX = anchorX
+    editNode.props.node.anchorY = anchorY
+    setNodePositionProps(editNode.props, Math.round(currentNode.x), Math.round(currentNode.y))
+    normalizeNodeProps(editNode.props)
+    this.syncEditingFlag()
+    window.postMessage({
+      type: 'previewUpdateSelectedNodes',
+      selectPaths: this.editingPaths,
+      nodes: [{ component: 'props', updated: editNode.props }],
+    }, '*')
+    return true
+  }
+
   resizeSelectedNode(handle: ResizeHandle, dx: number, dy: number) {
     if (this.editingPaths.length !== 1) return false
     const editingPath = this.editingPaths[0]
@@ -946,7 +992,7 @@ export class PreviewScene extends Scene {
     const anchorHalfWidth = this.selectionAnchorNode.width / 2
     const anchorHalfHeight = this.selectionAnchorNode.height / 2
     if (Math.abs(x - anchorX) <= anchorHalfWidth && Math.abs(y - anchorY) <= anchorHalfHeight) {
-      return 'move' as const
+      return 'anchor' as const
     }
     const radius = PreviewScene.ARROW_HIT_RADIUS
     const horizontalX = this.arrowContainerNode.x + this.arrowSpriteHorizonNode.x
@@ -1011,8 +1057,14 @@ export class PreviewScene extends Scene {
     } else {
       this.rotationDragStart = undefined
     }
-    this.activeResizeEdge = this.isRotating || isModifierSelecting ? undefined : this.getActiveResizeEdge(x, y)
-    this.activeArrowAxis = this.isRotating || this.activeResizeEdge ? undefined : isModifierSelecting ? undefined : this.editingPaths[0] ? this.getActiveArrowAxis(x, y) : undefined
+    const activeArrowAxis = this.isRotating || isModifierSelecting || !this.editingPaths[0]
+      ? undefined
+      : this.getActiveArrowAxis(x, y)
+    this.activeArrowAxis = activeArrowAxis === 'anchor' ? activeArrowAxis : undefined
+    this.activeResizeEdge = this.isRotating || isModifierSelecting || this.activeArrowAxis
+      ? undefined
+      : this.getActiveResizeEdge(x, y)
+    if (!this.activeArrowAxis && !this.activeResizeEdge) this.activeArrowAxis = activeArrowAxis
     if (this.isShiftPressed && !this.isMiddleMouse) {
       this.activeArrowAxis = undefined
       this.activeResizeEdge = undefined
@@ -1091,6 +1143,15 @@ export class PreviewScene extends Scene {
           this.didCaptureDragHistory = true
         }
         this.resizeSelectedNode(this.activeResizeEdge, dx, dy)
+        this.updateArrowPosition()
+        return
+      }
+      if (this.activeArrowAxis === 'anchor') {
+        if (!this.didCaptureDragHistory) {
+          this.pushUndoHistory()
+          this.didCaptureDragHistory = true
+        }
+        this.moveSelectionAnchor(dx, dy)
         this.updateArrowPosition()
         return
       }
