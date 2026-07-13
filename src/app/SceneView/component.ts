@@ -1,6 +1,6 @@
 import { BoxCollider, CircleCollider, ComponentX, Node, PolygonCollider, SpineBonesControl } from '@safe-engine/sdl'
+import { parseFloatFromValue, parseIntFromValue, parseNumbersArray, parsePoints, parseStringsArray } from 'helper/node'
 import { forEach } from 'lodash-es'
-import { parseFloatFromValue, parseIntFromValue, parseNumbersArray, parsePoints, parseStringsArray, parseVec2Array } from 'helper/node'
 
 type PreviewWidgetProps = {
   top?: number
@@ -69,7 +69,7 @@ export function getComponent(components = [], node: Node, designedResolution: { 
         const { bonesName, posList } = props
         component = new SpineBonesControl({
           bonesName: parseStringsArray(bonesName),
-          posList: parseVec2Array(posList),
+          posList: parseNumbersArray(posList),
         } as any)
         break
       }

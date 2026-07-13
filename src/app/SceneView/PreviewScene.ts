@@ -12,7 +12,6 @@ import { loadSceneViewSdl, preloadSdlAssets, RectRender } from './loader'
 import { SpineBonesControlRender } from './SpineBonesControlRender'
 import { createNode, getComponentChildrenNum, getCurrentNode, getEditingRoot, KEY, setNodePositionProps } from './utils'
 
-
 export class PreviewScene extends Scene {
   static readonly ARROW_HIT_RADIUS = 32
   static readonly SELECTION_ANCHOR_SIZE = 16
@@ -31,6 +30,7 @@ export class PreviewScene extends Scene {
   rotationHandleNode: Node
   marqueeSelectionNode: Node
   spineBonesControlNode: Node
+  spineBoneTooltipNode?: HTMLDivElement
   saveDialogNode?: HTMLDivElement
   drawNode: Node
   borderNode: Node
@@ -105,13 +105,13 @@ export class PreviewScene extends Scene {
     window.addEventListener('keydown', async (event) => {
       const keyCode = event.code
       this.updateInputModifiers(event)
-      if (
-        [KEY.dash, KEY.equal, KEY.x, KEY.y, KEY.h, KEY.c, KEY.s, KEY.r, KEY.a, KEY.z, KEY.up, KEY.down, KEY.left, KEY.right].includes(
-          keyCode,
-        )
-      ) {
-        event.preventDefault()
-      }
+      // if (
+      //   [KEY.dash, KEY.equal, KEY.x, KEY.y, KEY.h, KEY.c, KEY.s, KEY.r, KEY.a, KEY.z, KEY.up, KEY.down, KEY.left, KEY.right].includes(
+      //     keyCode,
+      //   )
+      // ) {
+      //   event.preventDefault()
+      // }
       if (keyCode === KEY.shift || keyCode === KEY.shiftR) {
         // this.changeSelectPath(['1-1-1'])
       }
@@ -135,37 +135,38 @@ export class PreviewScene extends Scene {
         }
         return
       }
-      if (keyCode === KEY.dash) {
-        this.setRootScale(-0.05)
-      } else if (keyCode === KEY.equal) {
-        this.setRootScale(0.05)
-      } else if (keyCode === KEY.x) {
-        this.lockX = !this.lockX
-        this.updateArrowOpacity()
-      } else if (keyCode === KEY.y) {
-        this.lockY = !this.lockY
-        this.updateArrowOpacity()
-        // } else if (keyCode === KEY.h) {
-        //   this.toggleSelectedNode()
-      }
-      if (keyCode === KEY.up && event.shiftKey) {
-        this.moveSelectedNodeWithHistory(0, -10)
-      } else if (keyCode === KEY.down && event.shiftKey) {
-        this.moveSelectedNodeWithHistory(0, 10)
-      } else if (keyCode === KEY.left && event.shiftKey) {
-        this.moveSelectedNodeWithHistory(-10, 0)
-      } else if (keyCode === KEY.right && event.shiftKey) {
-        this.moveSelectedNodeWithHistory(10, 0)
-      } else if (keyCode === KEY.up) {
-        this.moveSelectedNodeWithHistory(0, -1)
-      } else if (keyCode === KEY.down) {
-        this.moveSelectedNodeWithHistory(0, 1)
-      } else if (keyCode === KEY.left) {
-        this.moveSelectedNodeWithHistory(-1, 0)
-      } else if (keyCode === KEY.right) {
-        this.moveSelectedNodeWithHistory(1, 0)
-      } else if (keyCode === KEY.c) {
-        this.selectAllChildren()
+      if (event.shiftKey) {
+        if (keyCode === KEY.dash) {
+          this.setRootScale(-0.05)
+        } else if (keyCode === KEY.equal) {
+          this.setRootScale(0.05)
+        } else if (keyCode === KEY.x) {
+          this.lockX = !this.lockX
+          this.updateArrowOpacity()
+        } else if (keyCode === KEY.y) {
+          this.lockY = !this.lockY
+          this.updateArrowOpacity()
+        } else if (keyCode === KEY.h) {
+          this.toggleSelectedNode()
+        } else if (keyCode === KEY.up) {
+          this.moveSelectedNodeWithHistory(0, -10)
+        } else if (keyCode === KEY.down) {
+          this.moveSelectedNodeWithHistory(0, 10)
+        } else if (keyCode === KEY.left) {
+          this.moveSelectedNodeWithHistory(-10, 0)
+        } else if (keyCode === KEY.right) {
+          this.moveSelectedNodeWithHistory(10, 0)
+        } else if (keyCode === KEY.up) {
+          this.moveSelectedNodeWithHistory(0, -1)
+        } else if (keyCode === KEY.down) {
+          this.moveSelectedNodeWithHistory(0, 1)
+        } else if (keyCode === KEY.left) {
+          this.moveSelectedNodeWithHistory(-1, 0)
+        } else if (keyCode === KEY.right) {
+          this.moveSelectedNodeWithHistory(1, 0)
+        } else if (keyCode === KEY.c) {
+          this.selectAllChildren()
+        }
       }
     })
     window.addEventListener('keyup', (event) => {
@@ -197,6 +198,7 @@ export class PreviewScene extends Scene {
       const bounds = canvas.getBoundingClientRect()
       const x = (event.clientX - bounds.left) * this.logicalCanvasWidth / bounds.width
       const y = (event.clientY - bounds.top) * this.logicalCanvasWidth / bounds.width
+      this.updateSpineBoneTooltip(x, y, event.clientX, event.clientY)
       const activeArrowAxis = !this.isShiftPressed && !this.isMultiSelectModifierPressed && this.editingPaths[0]
         ? this.getActiveArrowAxis(x, y)
         : undefined
@@ -217,6 +219,7 @@ export class PreviewScene extends Scene {
     })
     canvas?.addEventListener('pointerleave', () => {
       canvas.style.cursor = 'default'
+      if (this.spineBoneTooltipNode) this.spineBoneTooltipNode.style.display = 'none'
     })
     canvas?.addEventListener('pointerup', () => {
       this.isMiddleMouse = false
@@ -398,6 +401,19 @@ export class PreviewScene extends Scene {
     control.addComponent(new SpineBonesControlRender({ getPoints: () => this.getSpineBoneControlPoints() }))
     this.spineBonesControlNode = control
     this.node.addChild(control)
+
+    const tooltip = document.createElement('div')
+    tooltip.style.position = 'fixed'
+    tooltip.style.display = 'none'
+    tooltip.style.pointerEvents = 'none'
+    tooltip.style.zIndex = '2147483646'
+    tooltip.style.padding = '3px 6px'
+    tooltip.style.borderRadius = '3px'
+    tooltip.style.background = 'rgb(20 20 20 / 90%)'
+    tooltip.style.color = '#ffffff'
+    tooltip.style.font = '12px system-ui, sans-serif'
+    document.body.append(tooltip)
+    this.spineBoneTooltipNode = tooltip
   }
 
   getSpineBonesControl() {
@@ -407,17 +423,37 @@ export class PreviewScene extends Scene {
     if (componentIndex < 0) return undefined
     const points = editNode.components[componentIndex].props?.posList
     if (!Array.isArray(points) && typeof points !== 'string') return undefined
-    const parsedPoints = Array.isArray(points)
-      ? points.map((point) => ({ x: Number(point?.x) || 0, y: Number(point?.y) || 0 }))
-      : points
-        .replace(/^\{|\}$/g, '')
-        .split(';')
-        .filter((point) => point.trim())
-        .map((point) => {
-          const [x = 0, y = 0] = point.replace('Vec2(', '').replace(')', '').split(',').map(Number)
-          return { x: Number.isFinite(x) ? x : 0, y: Number.isFinite(y) ? y : 0 }
-        })
-    return { componentIndex, points, parsedPoints }
+    const bonesNameValue = editNode.components[componentIndex].props?.bonesName
+    const bonesName = (Array.isArray(bonesNameValue)
+      ? bonesNameValue
+      : typeof bonesNameValue === 'string' ? bonesNameValue.replace(/[\{\|\[\]\'\}]/g, '').split(',') : [])
+      .map((name) => String(name).trim())
+    const values = (Array.isArray(points)
+      ? points
+      : points.replace(/^\{|\}$/g, '').split(',').filter((value) => value.trim()))
+      .map(Number)
+    const parsedPoints = Array.from({ length: Math.ceil(values.length / 2) }, (_, index) => ({
+      x: Number.isFinite(values[index * 2]) ? values[index * 2] : 0,
+      y: Number.isFinite(values[index * 2 + 1]) ? values[index * 2 + 1] : 0,
+    }))
+    return { componentIndex, points, parsedPoints, bonesName }
+  }
+
+  updateSpineBoneTooltip(x: number, y: number, clientX: number, clientY: number) {
+    if (!this.spineBoneTooltipNode) return
+    const control = this.getSpineBonesControl()
+    const pointIndex = control
+      ? this.getSpineBoneControlPoints().findIndex((point) => Math.hypot(x - point.x, y - point.y) <= 10)
+      : -1
+    const boneName = pointIndex >= 0 ? control?.bonesName[pointIndex] : undefined
+    if (!boneName) {
+      this.spineBoneTooltipNode.style.display = 'none'
+      return
+    }
+    this.spineBoneTooltipNode.textContent = boneName
+    this.spineBoneTooltipNode.style.left = `${clientX + 12}px`
+    this.spineBoneTooltipNode.style.top = `${clientY + 12}px`
+    this.spineBoneTooltipNode.style.display = 'block'
   }
 
   getSpineBoneControlPoints() {
@@ -466,15 +502,16 @@ export class PreviewScene extends Scene {
     const editNode = this.getEditingNodeByPath(this.editingPaths[0])
     const component = editNode?.components?.[control.componentIndex]
     if (!component) return false
+    const posList = control.parsedPoints.flatMap((point) => [point.x, point.y])
     component.props = {
       ...component.props,
       posList: Array.isArray(control.points)
-        ? control.parsedPoints
-        : `${String(control.points).startsWith('{') ? '{' : ''}${control.parsedPoints.map((point) => `Vec2(${point.x},${point.y})`).join(';')}${String(control.points).endsWith('}') ? '}' : ''}`,
+        ? posList
+        : `${String(control.points).startsWith('{') ? '{' : ''}${posList.join(',')}${String(control.points).endsWith('}') ? '}' : ''}`,
     }
     const currentNode = getCurrentNode(this.drawNode, this.getChildrenIndex(this.editingPaths[0]))
     const liveControl = currentNode.getComponent(SpineBonesControl)
-    if (liveControl) liveControl.props.posList = control.parsedPoints
+    if (liveControl) liveControl.props.posList = posList
     this.syncEditingFlag()
     window.postMessage({
       type: 'previewUpdateSelectedNodes',
@@ -694,6 +731,12 @@ export class PreviewScene extends Scene {
       if (component === 'props') normalizeNodeProps(editNode.props)
     }
     await this.reloadEditingComponent()
+    const control = this.getSpineBonesControl()
+    if (control) {
+      const currentNode = getCurrentNode(this.drawNode, this.getChildrenIndex(this.editingPaths[0]))
+      const liveControl = currentNode?.getComponent(SpineBonesControl)
+      if (liveControl) liveControl.props.posList = control.parsedPoints.flatMap((point) => [point.x, point.y])
+    }
   }
 
   async undoEdit() {

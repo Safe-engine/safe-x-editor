@@ -310,11 +310,12 @@ function ShadowField({ value, colors, onChange }) {
   );
 }
 
-function InspectorSection({ title, children }) {
+function InspectorSection({ title, headerContent, children }) {
   return (
     <details className='border-b border-[#141414]' open>
-      <summary className='flex h-8 cursor-default select-none items-center bg-[#202020] px-2 text-[11px] font-bold uppercase text-[#dcdcdc] marker:text-[#a8c7ff]'>
-        <span className='ml-1'>{title}</span>
+      <summary className='flex h-8 cursor-default select-none items-center bg-[#202020] px-2 text-[11px] font-bold text-[#dcdcdc] marker:text-[#a8c7ff]'>
+        <span className='ml-1'>{title.replace(/([a-z])([A-Z])/g, '$1 $2')}</span>
+        {headerContent}
         <span className='ml-auto text-lg leading-none text-[#bdbdbd]'>⋮</span>
       </summary>
       <div className='bg-[#252525] py-1'>{children}</div>
@@ -337,46 +338,32 @@ function PropGroup({ title, children }) {
   );
 }
 
-function NodeHeader({ selectedNode, active, onActiveChange, onNameChange, onTagChange }) {
-  const node = selectedNode.props?.node || {};
+function NodeIdentityRow({ node, onNameChange, onTagChange }) {
   const inputClassName = 'h-6 min-w-0 rounded-sm border border-[#111] bg-[#151515] px-2 text-[11px] text-[#e2e2e2] outline-none focus:border-[#4a90e2]';
 
   return (
-    <div className='border-b border-[#151515] bg-[#242424] px-2 py-2'>
-      <div className='flex items-center gap-2'>
-        <label className='flex shrink-0 items-center gap-2 text-[10px] font-semibold uppercase tracking-wide text-[#d5d5d5]'>
-          <input
-            className='h-3.5 w-3.5 accent-[#6aa7ff]'
-            type='checkbox'
-            checked={active}
-            onChange={(event) => onActiveChange(event.target.checked)}
-          />
-        </label>
-        <div className='min-w-0 flex-1 truncate text-[12px] font-bold text-[#f0f0f0]'>{selectedNode.tag}</div>
-      </div>
-      <div className='mt-2 grid grid-cols-[minmax(0,1fr)_84px] gap-2'>
-        <label className='grid min-w-0 grid-cols-[32px_minmax(0,1fr)] items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-[#d5d5d5]'>
-          Name
-          <input
-            aria-label='Name'
-            className={inputClassName}
-            placeholder='Name'
-            type='text'
-            value={parseNodeString(node.name)}
-            onChange={(event) => onNameChange(event.target.value)}
-          />
-        </label>
-        <label className='grid min-w-0 grid-cols-[24px_minmax(0,1fr)] items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-[#d5d5d5]'>
-          Tag
-          <input
-            aria-label='Tag'
-            className={inputClassName}
-            type='number'
-            value={node.tag ?? 0}
-            onChange={(event) => onTagChange(parseNumber(event.target.value, node.tag ?? 0))}
-          />
-        </label>
-      </div>
+    <div className='grid min-h-7 grid-cols-[minmax(0,1fr)_84px] gap-2 px-2 py-0.5'>
+      <label className='grid min-w-0 grid-cols-[32px_minmax(0,1fr)] items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-[#d5d5d5]'>
+        Name
+        <input
+          aria-label='Name'
+          className={inputClassName}
+          placeholder='Name'
+          type='text'
+          value={parseNodeString(node.name)}
+          onChange={(event) => onNameChange(event.target.value)}
+        />
+      </label>
+      <label className='grid min-w-0 grid-cols-[24px_minmax(0,1fr)] items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-[#d5d5d5]'>
+        Tag
+        <input
+          aria-label='Tag'
+          className={inputClassName}
+          type='number'
+          value={node.tag ?? 0}
+          onChange={(event) => onTagChange(parseNumber(event.target.value, node.tag ?? 0))}
+        />
+      </label>
     </div>
   );
 }
@@ -485,14 +472,21 @@ function NodeProps() {
   const propEntries = Object.entries(displayedProps).filter(([key]) => key !== 'node');
 
   return (<div className='h-screen overflow-y-auto bg-[#252525] pb-4'>
-    <NodeHeader
-      selectedNode={selectedNode}
-      active={node.active !== false}
-      onActiveChange={(active) => updateNodeProps({ active })}
-      onNameChange={(name) => updateNodeProps({ name: JSON.stringify(name) })}
-      onTagChange={(tag) => updateNodeProps({ tag })}
-    />
-    <InspectorSection title='Transform'>
+    <InspectorSection
+      title='Node'
+      headerContent={<input
+        className='ml-2 h-3.5 w-3.5 accent-[#6aa7ff]'
+        type='checkbox'
+        checked={node.active !== false}
+        onClick={(event) => event.stopPropagation()}
+        onChange={(event) => updateNodeProps({ active: event.target.checked })}
+      />}
+    >
+      <NodeIdentityRow
+        node={node}
+        onNameChange={(name) => updateNodeProps({ name: JSON.stringify(name) })}
+        onTagChange={(tag) => updateNodeProps({ tag })}
+      />
       <AxisRow
         label='Position'
         values={{ x: position.x, y: position.y }}
@@ -550,7 +544,7 @@ function NodeProps() {
         ))}
     </InspectorSection>
     {(propEntries.length > 0 || selectedNode.tag === 'Sprite') && (
-      <InspectorSection title='Properties'>
+      <InspectorSection title={selectedNode.tag}>
         {propEntries.filter(([key]) => key !== 'capInsets' && key !== 'tiled').map(([key, value]) => (
           isObject(value) ? (
             <PropGroup key={key} title={key}>

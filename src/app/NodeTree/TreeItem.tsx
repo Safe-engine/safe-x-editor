@@ -18,8 +18,11 @@ function renderIcon(data: any) {
 }
 
 function renderName(node: any) {
-  if (node.data.name)
-    return <Box className={clsx('truncate text-[11px]', node.isSelected ? 'text-[#ffffff]' : 'text-[#b8b8b8]')}>{node.data.name}</Box>
+  const nodeName = get(node, 'data.props.node.name');
+  if (nodeName)
+    return <Box className={clsx('truncate text-[11px]', node.isSelected ? 'text-[#ffffff]' : 'text-[#b8b8b8]')}>
+      {String(nodeName).replace(/^(?:"(.*)"|'(.*)')$/, '$1$2')}
+    </Box>
   const spriteFrame = get(node, 'data.props.spriteFrame')
   if (spriteFrame)
     return <Box className={clsx('truncate text-[11px]', node.isSelected ? 'text-[#ffffff]' : 'text-[#9fb7ff]')}>
