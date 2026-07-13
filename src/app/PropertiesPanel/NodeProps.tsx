@@ -1,6 +1,7 @@
 import { memo } from 'react';
 import { useActions, useSelector } from 'states/app.context';
-import { selectSelectedNode } from 'states/app.selectors';
+import { parseStringFromValue } from 'helper/node';
+import { selectAssets, selectColors, selectSelectedNode } from 'states/app.selectors';
 
 function isObject(value) {
   return value && typeof value === 'object' && !Array.isArray(value);
@@ -35,6 +36,22 @@ function buildPositionUpdate(node, x, y) {
   if (node.position !== undefined) return { position: `Vec2(${x},${y})`, x: undefined, y: undefined, xy: undefined };
   if (node.x !== undefined || node.y !== undefined) return { x, y, position: undefined, xy: undefined };
   return { xy: [x, y], position: undefined, x: undefined, y: undefined };
+}
+
+function getTextureSize(spriteFrame, assets) {
+  const frameName = parseStringFromValue(spriteFrame);
+  if (!frameName) return { width: 0, height: 0 };
+
+  const textures = assets?.assetsTextureList || [];
+  const spriteFrameAsset = assets?.spriteFramesAssets?.find((asset) => asset.key === frameName);
+  const texture = textures.find((asset) => (
+    asset.key === frameName || asset.key === spriteFrameAsset?.value || asset.value === spriteFrameAsset?.value
+  ));
+
+  return {
+    width: texture?.size?.width ?? 0,
+    height: texture?.size?.height ?? 0,
+  };
 }
 
 function Field({ label, value, onChange }) {
@@ -129,6 +146,22 @@ function AxisRow({ label, values, step, onChange }) {
   );
 }
 
+function ColorField({ value, colors, onChange }) {
+  return (
+    <label className='grid min-h-7 grid-cols-[70px_minmax(0,1fr)] items-center gap-2 px-2 py-0.5'>
+      <div className='truncate text-[11px] text-[#c8c8c8]'>Color</div>
+      <select
+        className='h-6 min-w-0 rounded-sm border border-[#111] bg-[#151515] px-2 text-[12px] text-[#e2e2e2] outline-none focus:border-[#4a90e2]'
+        value={parseStringFromValue(value) ?? ''}
+        onChange={(event) => onChange(event.target.value || undefined)}
+      >
+        <option value=''>Default</option>
+        {colors.map((color) => <option key={color.key} value={color.key}>{color.key}</option>)}
+      </select>
+    </label>
+  );
+}
+
 function InspectorSection({ title, children }) {
   return (
     <details className='border-b border-[#141414]' open>
@@ -185,6 +218,8 @@ function NodeHeader({ selectedNode, active, onActiveChange }) {
 
 function NodeProps() {
   const { updateMultiNodes } = useActions();
+  const assets = useSelector(selectAssets);
+  const colors = useSelector(selectColors);
   const selectedNode = useSelector(selectSelectedNode);
 
   function updatePreview(component, updated) {
@@ -253,6 +288,7 @@ function NodeProps() {
   const props = selectedNode.props || {};
   const node = props.node || {};
   const position = getNodePosition(node);
+  const textureSize = getTextureSize(props.spriteFrame, assets);
   const components = selectedNode.components || [];
   const propEntries = Object.entries(props).filter(([key]) => key !== 'node');
 
@@ -285,8 +321,18 @@ function NodeProps() {
           updateNodeProps({ [propName]: nextValue, scale: undefined });
         }}
       />
+      <AxisRow
+        label='Size'
+        values={{ x: node.width ?? textureSize.width, y: node.height ?? textureSize.height }}
+        onChange={(axis, value) => updateNodeProps({ [axis === 'x' ? 'width' : 'height']: value })}
+      />
+      <ColorField
+        value={node.color}
+        colors={colors}
+        onChange={(color) => updateNodeProps({ color })}
+      />
       {Object.entries(node)
-        .filter(([key]) => !['position', 'xy', 'x', 'y', 'z', 'rotation', 'scale', 'scaleX', 'scaleY', 'scaleZ', 'active'].includes(key))
+        .filter(([key]) => !['position', 'xy', 'x', 'y', 'z', 'rotation', 'scale', 'scaleX', 'scaleY', 'scaleZ', 'width', 'height', 'color', 'active'].includes(key))
         .map(([key, value]) => (
           <Field
             key={key}

@@ -13,6 +13,7 @@ export const initialState = {
   editingClassNamePath: '',
   componentTree: [],
   componentsCache: [],
+  colors: [],
   assets: {
     fontAssets: [],
     audioAssets: [],

@@ -103,6 +103,11 @@ export const selectAssets = createSelector(
   (appState) => appState.assets
 );
 
+export const selectColors = createSelector(
+  selectApp,
+  (appState) => appState.colors
+);
+
 export const selectPreviewAsset = createSelector(
   selectApp,
   (appState) => appState.previewAsset

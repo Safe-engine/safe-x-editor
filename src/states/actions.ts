@@ -9,10 +9,11 @@ export function getAction(draft: AppState) {
       draft.rootFolder = src.replace(/\\/g, '/')
     },
     getFilesSuccess(data) {
-      const { componentsTree, componentsCache, assets, designedResolution, isPixi } = data
+      const { componentsTree, componentsCache, assets, colors, designedResolution, isPixi } = data
       draft.filesData = componentsTree[0].children
       draft.resourceFilesData = pathListToTree(assets) || []
       draft.assets = assets
+      draft.colors = colors || []
       draft.componentsCache = componentsCache
       draft.settings.designedResolution = designedResolution
       draft.isPixi = isPixi

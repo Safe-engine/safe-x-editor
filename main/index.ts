@@ -14,6 +14,7 @@ function createWindow() {
   if (process.env.NODE_ENV === 'development') {
     installDevtoolExtensions();
   }
+  Router();
   mainWindow = new BrowserWindow({
     width: 1366,
     height: 768,
@@ -42,7 +43,6 @@ function createWindow() {
     }
     mainWindow.show();
     mainWindow.focus();
-    Router();
   });
 
   mainWindow.on('closed', () => {
