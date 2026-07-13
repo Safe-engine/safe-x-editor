@@ -683,9 +683,6 @@ export class PreviewScene extends Scene {
     if (this.editingPaths.length !== 1) return false
     const editingPath = this.editingPaths[0]
     const currentNode = getCurrentNode(this.drawNode, this.getChildrenIndex(editingPath))
-    const parent = currentNode.parent ?? this.drawNode
-    const parentScaleX = parent.worldScaleX || this.drawNode.scaleX || 1
-    const parentScaleY = parent.worldScaleY || this.drawNode.scaleY || 1
     const nodeScaleX = currentNode.worldScaleX || 1
     const nodeScaleY = currentNode.worldScaleY || 1
     const horizontalEdge = handle.endsWith('left') ? 'left' : handle.endsWith('right') ? 'right' : undefined
@@ -700,16 +697,8 @@ export class PreviewScene extends Scene {
     const didResizeHeight = newHeight !== currentNode.height
     if (!didResizeWidth && !didResizeHeight) return false
 
-    if (didResizeWidth) {
-      const sizeDelta = (newWidth - currentNode.width) * nodeScaleX
-      currentNode.width = newWidth
-      currentNode.x += (horizontalEdge === 'right' ? currentNode.anchorX : -(1 - currentNode.anchorX)) * sizeDelta / parentScaleX
-    }
-    if (didResizeHeight) {
-      const sizeDelta = (newHeight - currentNode.height) * nodeScaleY
-      currentNode.height = newHeight
-      currentNode.y += (verticalEdge === 'bottom' ? currentNode.anchorY : -(1 - currentNode.anchorY)) * sizeDelta / parentScaleY
-    }
+    if (didResizeWidth) currentNode.width = newWidth
+    if (didResizeHeight) currentNode.height = newHeight
 
     const editNode = this.getEditingNodeByPath(editingPath)
     if (!editNode) return false
@@ -717,7 +706,6 @@ export class PreviewScene extends Scene {
     editNode.props.node ??= {}
     if (didResizeWidth) editNode.props.node.width = newWidth
     if (didResizeHeight) editNode.props.node.height = newHeight
-    setNodePositionProps(editNode.props, Math.round(currentNode.x), Math.round(currentNode.y))
     normalizeNodeProps(editNode.props)
     this.syncEditingFlag()
     window.postMessage({

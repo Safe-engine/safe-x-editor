@@ -2,7 +2,7 @@ import { sendRequest } from 'app/app.ipc';
 import { parseStringFromValue } from 'helper/node';
 import { memo, useState } from 'react';
 import toast from 'react-hot-toast';
-import { FiEdit2 } from 'react-icons/fi';
+import { FiEdit2, FiRotateCcw } from 'react-icons/fi';
 import { UPDATE_PROJECT_COLORS_REQUEST } from 'shared/constant.message';
 import { useActions, useSelector } from 'states/app.context';
 import { selectAssets, selectColors, selectRootFolder, selectSelectedNode } from 'states/app.selectors';
@@ -128,7 +128,7 @@ function AxisInput({ axis, value, color, step = 1, onChange }) {
   );
 }
 
-function AxisRow({ label, values, step, onChange }) {
+function AxisRow({ label, values, step, onChange, onReset }) {
   const axes = [
     { key: 'x', label: 'X', color: '#ff6565' },
     { key: 'y', label: 'Y', color: '#71d36b' },
@@ -137,17 +137,29 @@ function AxisRow({ label, values, step, onChange }) {
   return (
     <div className='grid min-h-7 grid-cols-[70px_minmax(0,1fr)] items-center gap-2 px-2 py-0.5'>
       <div className='truncate text-[11px] text-[#c8c8c8]'>{label}</div>
-      <div className='grid min-w-0 grid-cols-2 gap-1'>
-        {axes.map((axis) => (
-          <AxisInput
-            key={axis.key}
-            axis={axis.label}
-            color={axis.color}
-            step={step}
-            value={values[axis.key] ?? 0}
-            onChange={(nextValue) => onChange(axis.key, nextValue)}
-          />
-        ))}
+      <div className='flex min-w-0 gap-1'>
+        <div className='grid min-w-0 flex-1 grid-cols-2 gap-1'>
+          {axes.map((axis) => (
+            <AxisInput
+              key={axis.key}
+              axis={axis.label}
+              color={axis.color}
+              step={step}
+              value={values[axis.key] ?? 0}
+              onChange={(nextValue) => onChange(axis.key, nextValue)}
+            />
+          ))}
+        </div>
+        {onReset && (
+          <button
+            className='flex h-6 w-6 shrink-0 items-center justify-center rounded-sm border border-[#111] bg-[#303030] text-[#bdbdbd] hover:text-[#f0f0f0]'
+            type='button'
+            onClick={onReset}
+            title='Reset size'
+          >
+            <FiRotateCcw size={13} />
+          </button>
+        )}
       </div>
     </div>
   );
@@ -354,6 +366,7 @@ function NodeProps() {
         label='Size'
         values={{ x: node.width ?? textureSize.width, y: node.height ?? textureSize.height }}
         onChange={(axis, value) => updateNodeProps({ [axis === 'x' ? 'width' : 'height']: value })}
+        onReset={() => updateNodeProps({ width: undefined, height: undefined })}
       />
       <ColorField
         value={node.color}
@@ -372,9 +385,9 @@ function NodeProps() {
           />
         ))}
     </InspectorSection>
-    {propEntries.length > 0 && (
+    {(propEntries.length > 0 || selectedNode.tag === 'Sprite') && (
       <InspectorSection title='Properties'>
-        {propEntries.filter(([key]) => key !== 'capInsets').map(([key, value]) => (
+        {propEntries.filter(([key]) => key !== 'capInsets' && key !== 'tiled').map(([key, value]) => (
           isObject(value) ? (
             <PropGroup key={key} title={key}>
               {Object.entries(value).map(([childKey, childValue]) => (
@@ -405,6 +418,13 @@ function NodeProps() {
             )
           )
         ))}
+        {selectedNode.tag === 'Sprite' && (
+          <Field
+            label='Tiled'
+            value={props.tiled ?? false}
+            onChange={(tiled) => updateProps({ tiled })}
+          />
+        )}
         {props.spriteFrame !== undefined && (
           <CapInsetsField
             value={props.capInsets}
@@ -423,7 +443,7 @@ function NodeProps() {
     )}
     {components.map((component, index) => (
       <InspectorSection key={`${component.tag}-${index}`} title={component.tag || `Component ${index + 1}`}>
-        {Object.entries(component.props || {}).filter(([key]) => key !== 'capInsets').map(([key, value]) => (
+        {Object.entries(component.props || {}).filter(([key]) => key !== 'capInsets' && key !== 'tiled').map(([key, value]) => (
           key === 'spriteFrame' ? (
             <SpriteFrameField
               key={`${component.tag}-${index}-${key}`}
@@ -442,13 +462,20 @@ function NodeProps() {
           )
         ))}
         {isSpriteComponent(component) && (
-          <CapInsetsField
-            value={component.props?.capInsets}
-            spriteFrame={component.props?.spriteFrame}
-            textures={assets?.assetsTextureList || []}
-            rootFolder={rootFolder}
-            onChange={(nextValue) => updateComponentProps(index, { capInsets: nextValue })}
-          />
+          <>
+            <Field
+              label='Tiled'
+              value={component.props?.tiled ?? false}
+              onChange={(tiled) => updateComponentProps(index, { tiled })}
+            />
+            <CapInsetsField
+              value={component.props?.capInsets}
+              spriteFrame={component.props?.spriteFrame}
+              textures={assets?.assetsTextureList || []}
+              rootFolder={rootFolder}
+              onChange={(nextValue) => updateComponentProps(index, { capInsets: nextValue })}
+            />
+          </>
         )}
       </InspectorSection>
     ))}

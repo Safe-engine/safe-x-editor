@@ -166,7 +166,7 @@ async function parseChildren(root, parentNode: Node, data: ProjectData, evalInit
 
   if (tag === 'Sprite') {
     const texture = await getTexture(props.spriteFrame)
-    if (texture) renderNode.addComponent(new Sprite({ spriteFrame: texture }))
+    if (texture) renderNode.addComponent(new Sprite({ spriteFrame: texture, tiled: props.tiled ?? false }))
   } else if (tag === 'ProgressBar') {
     const texture = await getTexture(props.spriteFrame)
     // SDL's ProgressBar preview does not match Sprite frame rendering closely enough for editor preview.
