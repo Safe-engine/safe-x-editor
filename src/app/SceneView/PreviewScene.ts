@@ -208,10 +208,10 @@ export class PreviewScene extends Scene {
       } else if (keyCode === KEY.y) {
         this.lockY = !this.lockY
         this.updateArrowOpacity()
-      } else if (keyCode === KEY.h) {
-        this.toggleSelectedNode()
-      } else if (keyCode === KEY.c) {
-        this.selectAllChildren()
+      // } else if (keyCode === KEY.h) {
+      //   this.toggleSelectedNode()
+      // } else if (keyCode === KEY.c) {
+      //   this.selectAllChildren()
       }
       if (keyCode === KEY.up && event.shiftKey) {
         this.moveSelectedNodeWithHistory(0, -10)

@@ -3,6 +3,7 @@ import { FiEdit2 } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { sendRequest } from 'app/app.ipc';
 import ColorEditorDialog from './ColorEditorDialog';
+import SpriteFrameField from './SpriteFrameField';
 import { useActions, useSelector } from 'states/app.context';
 import { parseStringFromValue } from 'helper/node';
 import { selectAssets, selectColors, selectRootFolder, selectSelectedNode } from 'states/app.selectors';
@@ -381,12 +382,22 @@ function NodeProps() {
               ))}
             </PropGroup>
           ) : (
-            <Field
-              key={key}
-              label={key}
-              value={value}
-              onChange={(nextValue) => updateProps({ [key]: nextValue })}
-            />
+            key === 'spriteFrame' ? (
+              <SpriteFrameField
+                key={key}
+                value={value}
+                textures={assets?.assetsTextureList || []}
+                rootFolder={rootFolder}
+                onChange={(nextValue) => updateProps({ [key]: nextValue })}
+              />
+            ) : (
+              <Field
+                key={key}
+                label={key}
+                value={value}
+                onChange={(nextValue) => updateProps({ [key]: nextValue })}
+              />
+            )
           )
         ))}
       </InspectorSection>
@@ -399,12 +410,22 @@ function NodeProps() {
     {components.map((component, index) => (
       <InspectorSection key={`${component.tag}-${index}`} title={component.tag || `Component ${index + 1}`}>
         {Object.entries(component.props || {}).map(([key, value]) => (
-          <Field
-            key={`${component.tag}-${index}-${key}`}
-            label={key}
-            value={value}
-            onChange={(nextValue) => updateComponentProps(index, { [key]: nextValue })}
-          />
+          key === 'spriteFrame' ? (
+            <SpriteFrameField
+              key={`${component.tag}-${index}-${key}`}
+              value={value}
+              textures={assets?.assetsTextureList || []}
+              rootFolder={rootFolder}
+              onChange={(nextValue) => updateComponentProps(index, { [key]: nextValue })}
+            />
+          ) : (
+            <Field
+              key={`${component.tag}-${index}-${key}`}
+              label={key}
+              value={value}
+              onChange={(nextValue) => updateComponentProps(index, { [key]: nextValue })}
+            />
+          )
         ))}
       </InspectorSection>
     ))}
