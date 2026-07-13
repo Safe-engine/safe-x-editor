@@ -22,17 +22,6 @@ export class GlobalData {
     onTouchEnd: 2,
     onTouchCancel: 2,
   }
-  static templatesMap: { [key: string]: string } = {
-    SpineSkeleton: '{{data}}, {{atlas}}',
-    Collider: '{{group}}, {{offset}}',
-    BoxCollider: '{{width}}, {{height}}',
-    LabelComp: '{{string}}, {{fontName}}, {{size}}',
-    SpriteRender: '{{spriteFrame}}',
-    ProgressTimerComp: '{{spriteFrame}}, {{fillType}}, {{fillRange}}, {{fillCenter}}, {{isReverse}}',
-    ExtraDataComp: '{{key}}, {{value}}',
-    ScrollViewComp: '{{viewSize}}, {{contentSize}}, {{bounceEnabled}}',
-    ParticleComp: '{{plistFile}}',
-  };
   static componentsMap: { [key: string]: any } = {
     SpineSkeleton: { loop: true, atlas: '""' },
     Collider: { offset: 'Vec2(0, 0)', group: 0 },

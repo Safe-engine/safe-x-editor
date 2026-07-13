@@ -211,6 +211,9 @@ const genPropsLine = (props: { [key: string]: any }) => {
       if (val === true) { return key; }
       if (val === false) { return `${key}={false}`; }
       if (typeof val === 'number') { return `${key}={${val}}`; }
+      if (key === 'capInsets' && Array.isArray(val)) {
+        return `${key}={${JSON.stringify(val)}}`;
+      }
       if (key === 'node') {
         // console.log('genPropsLine node', val);
         if (val.position?.replace(/\s/g, '') === 'Vec2(0,0)') { return ''; }

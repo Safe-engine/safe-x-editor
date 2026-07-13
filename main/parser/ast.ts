@@ -1,11 +1,10 @@
 
-import { getParamsType } from './component';
-import { getTypeAnnotation } from './helper';
-import { parseParams } from './parse-data';
 import { get, upperFirst } from 'lodash';
-import { praseJSXElement } from './jsx';
+import { getParamsType } from './component';
 import { GlobalData } from './global';
-import { propertiesToParams } from './helper';
+import { getTypeAnnotation } from './helper';
+import { praseJSXElement } from './jsx';
+import { parseParams } from './parse-data';
 
 const templatesList = ['getComponent', 'getComponentInChildren', 'getComponentsInChildren', 'hasComponentInChildren'];
 
@@ -181,10 +180,6 @@ function parseCallExpression(value) {
   if ('loadJsonFromCache' === callee.name) {
     const { params } = typeParameters
     return `${params[0].typeName.name}::parseJsonAsset(${parseValue(args[0])})`;
-  }
-  if ('instantiate' === callee.name) {
-    const componentName = parseValue(args[0])
-    return `${componentName}::create(${propertiesToParams(componentName, args[1].properties)})`;
   }
   const argsString = args.map(a => parseValue(a)).join(', ');
   switch (callee.type) {

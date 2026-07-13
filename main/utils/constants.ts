@@ -16,8 +16,4 @@ export const renderList = [
   'DragonBones', 'ProgressBar', 'Label', 'TextInput',
   'Container', 'Sprite', 'Mask', 'Particle', 'Graphics', 'TiledMap',
   'RichText', 'SpineSkeleton', 'Scene',
-  'ButtonComp', 'ListViewComp', 'ScrollViewComp', 'SliderComp', 'RenderTextureComp',
-  'DragonBonesComp', 'ProgressTimerComp', 'LabelComp', 'InputComp',
-  'NodeRender', 'SpriteRender', 'MaskRender', 'ParticleComp', 'GraphicsRender', 'TiledMapComp',
-  'RichTextComp', 'SpineSkeleton', 'SceneComponent'
 ];

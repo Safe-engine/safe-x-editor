@@ -1,13 +1,14 @@
-import { memo, useState } from 'react';
-import { FiEdit2 } from 'react-icons/fi';
-import toast from 'react-hot-toast';
 import { sendRequest } from 'app/app.ipc';
+import { parseStringFromValue } from 'helper/node';
+import { memo, useState } from 'react';
+import toast from 'react-hot-toast';
+import { FiEdit2 } from 'react-icons/fi';
+import { UPDATE_PROJECT_COLORS_REQUEST } from 'shared/constant.message';
+import { useActions, useSelector } from 'states/app.context';
+import { selectAssets, selectColors, selectRootFolder, selectSelectedNode } from 'states/app.selectors';
+import CapInsetsField from './CapInsetsField';
 import ColorEditorDialog from './ColorEditorDialog';
 import SpriteFrameField from './SpriteFrameField';
-import { useActions, useSelector } from 'states/app.context';
-import { parseStringFromValue } from 'helper/node';
-import { selectAssets, selectColors, selectRootFolder, selectSelectedNode } from 'states/app.selectors';
-import { UPDATE_PROJECT_COLORS_REQUEST } from 'shared/constant.message';
 
 function isObject(value) {
   return value && typeof value === 'object' && !Array.isArray(value);
@@ -301,6 +302,10 @@ function NodeProps() {
     });
   }
 
+  function isSpriteComponent(component) {
+    return component.tag === 'Sprite';
+  }
+
   if (!selectedNode) {
     return (
       <div className='p-3 text-[12px] text-[#8f8f8f]'>
@@ -369,7 +374,7 @@ function NodeProps() {
     </InspectorSection>
     {propEntries.length > 0 && (
       <InspectorSection title='Properties'>
-        {propEntries.map(([key, value]) => (
+        {propEntries.filter(([key]) => key !== 'capInsets').map(([key, value]) => (
           isObject(value) ? (
             <PropGroup key={key} title={key}>
               {Object.entries(value).map(([childKey, childValue]) => (
@@ -400,6 +405,15 @@ function NodeProps() {
             )
           )
         ))}
+        {props.spriteFrame !== undefined && (
+          <CapInsetsField
+            value={props.capInsets}
+            spriteFrame={props.spriteFrame}
+            textures={assets?.assetsTextureList || []}
+            rootFolder={rootFolder}
+            onChange={(nextValue) => updateProps({ capInsets: nextValue })}
+          />
+        )}
       </InspectorSection>
     )}
     {components.length === 0 && (
@@ -409,7 +423,7 @@ function NodeProps() {
     )}
     {components.map((component, index) => (
       <InspectorSection key={`${component.tag}-${index}`} title={component.tag || `Component ${index + 1}`}>
-        {Object.entries(component.props || {}).map(([key, value]) => (
+        {Object.entries(component.props || {}).filter(([key]) => key !== 'capInsets').map(([key, value]) => (
           key === 'spriteFrame' ? (
             <SpriteFrameField
               key={`${component.tag}-${index}-${key}`}
@@ -427,6 +441,15 @@ function NodeProps() {
             />
           )
         ))}
+        {isSpriteComponent(component) && (
+          <CapInsetsField
+            value={component.props?.capInsets}
+            spriteFrame={component.props?.spriteFrame}
+            textures={assets?.assetsTextureList || []}
+            rootFolder={rootFolder}
+            onChange={(nextValue) => updateComponentProps(index, { capInsets: nextValue })}
+          />
+        )}
       </InspectorSection>
     ))}
     <div className='px-3 pt-3'>

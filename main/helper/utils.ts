@@ -1,4 +1,3 @@
-import { renderComMapCpp } from '@@/parser/constants';
 import { camelCase, upperFirst } from 'lodash';
 
 export function pascalCase(str) {
@@ -21,11 +20,6 @@ export function getAndIncrementLastNumber(str) {
   return str.replace(/\d+$/, function (s) {
     return +s + 1;
   });
-}
-
-export function getRenderComponent(type) {
-  const renderComp = renderComMapCpp[type];
-  return renderComp;
 }
 
 export function getCustomComponents(components = []) {
@@ -60,12 +54,4 @@ export function vec2cpp(v2: any) {
 export function createPositionPair(v2: any) {
   const { x, y } = v2;
   return `${x}, ${y}`;
-}
-
-export function replaceRenderCom(content) {
-  return content.replace(/(cc\.\w+)/g, (match, p1) => {
-    // console.log(match, p1);
-    const renderCom = renderComMapCpp[p1];
-    return renderCom || match;
-  });
 }
