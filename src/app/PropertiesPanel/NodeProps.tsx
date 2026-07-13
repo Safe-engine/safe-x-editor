@@ -1,5 +1,5 @@
 import { sendRequest } from 'app/app.ipc';
-import { parseStringFromValue } from 'helper/node';
+import { parseOutline, parseStringFromValue } from 'helper/node';
 import { memo, useState } from 'react';
 import toast from 'react-hot-toast';
 import { FiEdit2, FiRotateCcw } from 'react-icons/fi';
@@ -9,6 +9,14 @@ import { selectAssets, selectColors, selectRootFolder, selectSelectedNode } from
 import CapInsetsField from './CapInsetsField';
 import ColorEditorDialog from './ColorEditorDialog';
 import SpriteFrameField from './SpriteFrameField';
+
+const LABEL_DEFAULT_PROPS = {
+  string: '',
+  font: 'defaultFont',
+  size: 36,
+  outline: '{[, 0]}',
+  shadow: '{[, 0, Size(0, 0)]}',
+};
 
 function isObject(value) {
   return value && typeof value === 'object' && !Array.isArray(value);
@@ -166,21 +174,114 @@ function AxisRow({ label, values, step, onChange, onReset }) {
 }
 
 function ColorField({ value, colors, onChange, onEdit }) {
+  const colorName = parseStringFromValue(value) ?? '';
+  const selectedColor = colors.find((color) => color.key === colorName);
+  const [red = 0, green = 0, blue = 0, alpha = 255] = selectedColor?.value || [];
+  const previewColor = selectedColor && `rgba(${red}, ${green}, ${blue}, ${alpha / 255})`;
+
   return (
     <label className='grid min-h-7 grid-cols-[70px_minmax(0,1fr)] items-center gap-2 px-2 py-0.5'>
       <div className='truncate text-[11px] text-[#c8c8c8]'>Color</div>
       <div className='flex min-w-0 gap-1'>
         <select
           className='h-6 min-w-0 flex-1 rounded-sm border border-[#111] bg-[#151515] px-2 text-[12px] text-[#e2e2e2] outline-none focus:border-[#4a90e2]'
-          value={parseStringFromValue(value) ?? ''}
+          value={colorName}
           onChange={(event) => onChange(event.target.value || undefined)}
         >
           <option value=''>Default</option>
           {colors.map((color) => <option key={color.key} value={color.key}>{color.key}</option>)}
         </select>
+        <div
+          className='h-6 w-6 shrink-0 rounded-sm border border-[#111] bg-[#151515]'
+          style={{ backgroundColor: previewColor }}
+          title='Color preview'
+        />
         <button className='flex h-6 w-6 shrink-0 items-center justify-center rounded-sm border border-[#111] bg-[#303030] text-[#bdbdbd] hover:text-[#f0f0f0]' onClick={onEdit} title='Edit project colors'>
           <FiEdit2 size={13} />
         </button>
+      </div>
+    </label>
+  );
+}
+
+function OutlineField({ value, colors, onChange }) {
+  const [color = '', width = 0] = parseOutline(value);
+  const selectedColor = colors.find((projectColor) => projectColor.key === color);
+  const [red = 0, green = 0, blue = 0, alpha = 255] = selectedColor?.value || [];
+  const previewColor = selectedColor && `rgba(${red}, ${green}, ${blue}, ${alpha / 255})`;
+
+  function update(nextColor = color, nextWidth = width) {
+    onChange(`{[${nextColor}, ${nextWidth}]}`);
+  }
+
+  return (
+    <label className='grid min-h-7 grid-cols-[70px_minmax(0,1fr)] items-center gap-2 px-2 py-0.5'>
+      <div className='truncate text-[11px] text-[#c8c8c8]'>Outline</div>
+      <div className='flex min-w-0 gap-1'>
+        <select
+          className='h-6 min-w-0 flex-1 rounded-sm border border-[#111] bg-[#151515] px-2 text-[12px] text-[#e2e2e2] outline-none focus:border-[#4a90e2]'
+          value={color}
+          onChange={(event) => update(event.target.value)}
+        >
+          <option value=''>Color</option>
+          {colors.map((projectColor) => <option key={projectColor.key} value={projectColor.key}>{projectColor.key}</option>)}
+        </select>
+        <div
+          className='h-6 w-6 shrink-0 rounded-sm border border-[#111] bg-[#151515]'
+          style={{ backgroundColor: previewColor }}
+          title='Color preview'
+        />
+        <input
+          className='h-6 w-16 shrink-0 rounded-sm border border-[#111] bg-[#151515] px-2 text-[12px] text-[#e2e2e2] outline-none focus:border-[#4a90e2]'
+          type='number'
+          min='0'
+          step='1'
+          value={width}
+          onChange={(event) => update(color, parseNumber(event.target.value, width))}
+        />
+      </div>
+    </label>
+  );
+}
+
+function ShadowField({ value, colors, onChange }) {
+  const values = Array.isArray(value)
+    ? value
+    : parseStringFromValue(value).replace(/^\[|\]$/g, '').split(',').map((item) => item.trim());
+  const [color = '', width = 0, ...offset] = values;
+  const [x = 0, y = 0] = offset.join(',').match(/-?\d+(\.\d+)?/g)?.map(Number) || [];
+
+  function update(nextColor = color, nextWidth = width, nextX = x, nextY = y) {
+    onChange(`{[${nextColor}, ${nextWidth}, Size(${nextX}, ${nextY})]}`);
+  }
+
+  return (
+    <label className='grid min-h-7 grid-cols-[70px_minmax(0,1fr)] items-center gap-2 px-2 py-0.5'>
+      <div className='truncate text-[11px] text-[#c8c8c8]'>Shadow</div>
+      <div className='flex min-w-0 gap-1'>
+        <select
+          className='h-6 min-w-0 flex-1 rounded-sm border border-[#111] bg-[#151515] px-2 text-[12px] text-[#e2e2e2] outline-none focus:border-[#4a90e2]'
+          value={color}
+          onChange={(event) => update(event.target.value)}
+        >
+          <option value=''>Color</option>
+          {colors.map((projectColor) => <option key={projectColor.key} value={projectColor.key}>{projectColor.key}</option>)}
+        </select>
+        {[
+          { label: 'W', value: width, onChange: (nextValue) => update(color, nextValue) },
+          { label: 'X', value: x, onChange: (nextValue) => update(color, width, nextValue) },
+          { label: 'Y', value: y, onChange: (nextValue) => update(color, width, x, nextValue) },
+        ].map((field) => (
+          <div key={field.label} className='flex h-6 w-12 shrink-0 items-center border border-[#111] bg-[#151515]'>
+            <span className='w-3 text-center text-[10px] font-bold text-[#c8c8c8]'>{field.label}</span>
+            <input
+              className='min-w-0 flex-1 bg-transparent pr-1 text-right text-[11px] text-[#e2e2e2] outline-none'
+              type='number'
+              value={field.value}
+              onChange={(event) => field.onChange(parseNumber(event.target.value, field.value))}
+            />
+          </div>
+        ))}
       </div>
     </label>
   );
@@ -331,7 +432,13 @@ function NodeProps() {
   const position = getNodePosition(node);
   const textureSize = getTextureSize(props.spriteFrame, assets);
   const components = selectedNode.components || [];
-  const propEntries = Object.entries(props).filter(([key]) => key !== 'node');
+  const displayedProps = selectedNode.tag === 'Label'
+    ? {
+      ...props,
+      ...Object.fromEntries(Object.entries(LABEL_DEFAULT_PROPS).map(([key, value]) => [key, props[key] ?? value])),
+    }
+    : props;
+  const propEntries = Object.entries(displayedProps).filter(([key]) => key !== 'node');
 
   return (<div className='h-screen overflow-y-auto bg-[#252525] pb-4'>
     <NodeHeader
@@ -412,6 +519,20 @@ function NodeProps() {
                 value={value}
                 textures={assets?.assetsTextureList || []}
                 rootFolder={rootFolder}
+                onChange={(nextValue) => updateProps({ [key]: nextValue })}
+              />
+            ) : key === 'outline' ? (
+              <OutlineField
+                key={key}
+                value={value}
+                colors={colors}
+                onChange={(nextValue) => updateProps({ [key]: nextValue })}
+              />
+            ) : key === 'shadow' ? (
+              <ShadowField
+                key={key}
+                value={value}
+                colors={colors}
                 onChange={(nextValue) => updateProps({ [key]: nextValue })}
               />
             ) : (

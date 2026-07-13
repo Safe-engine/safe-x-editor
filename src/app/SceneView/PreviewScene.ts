@@ -114,7 +114,7 @@ export class PreviewScene extends Scene {
         if (keyCode === KEY.s) {
           await this.saveComponent()
         } else if (keyCode === KEY.r) {
-          setLastSceneScale(0.5)
+          // setLastSceneScale(0.5)
           setLastSceneX(0)
           setLastSceneY(0)
           await this.loadComponent(GlobalState.filePath)

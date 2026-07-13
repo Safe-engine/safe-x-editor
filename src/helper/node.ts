@@ -96,7 +96,8 @@ export function parseDirection(value) {
 }
 
 export function parseOutline(value) {
-  const [color = '', width = 0] = splitValues(value)
+  const outline = parseStringFromValue(value).replace(/^\[|\]$/g, '')
+  const [color = '', width = 0] = splitValues(outline)
   return [color, Number(width)]
 }
 

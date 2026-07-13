@@ -131,6 +131,16 @@ async function parseChildren(root, parentNode: Node, data: ProjectData, evalInit
     const [color, width] = parseOutline(outline)
     return [getColor(color), width]
   }
+
+  function getShadow(shadow): [SdlColor, number, { width: number; height: number }] {
+    if (!shadow) return
+    const values = Array.isArray(shadow)
+      ? shadow
+      : parseStringFromValue(shadow).replace(/^\[|\]$/g, '').split(',').map((value) => value.trim())
+    const [color = '', width = 0, ...offset] = values
+    return [getColor(color), Number(width), parseSize(Array.isArray(shadow) ? offset[0] : offset.join(','))]
+  }
+
   async function getTexture(spriteFrame: string) {
     if (!spriteFrame) return undefined
     const frameName = parseStringFromValue(spriteFrame)
@@ -173,7 +183,7 @@ async function parseChildren(root, parentNode: Node, data: ProjectData, evalInit
     // Render the authored sprite frame directly so the visual matches layout assets exactly.
     if (texture) renderNode.addComponent(new Sprite({ spriteFrame: texture }))
   } else if (tag === 'Label' || tag === 'RichText') {
-    const { string, font = '', size, outline } = props
+    const { string, font = '', size, outline, shadow } = props
     const foundFont =
       fontAssets.find((item) => item.key === parseStringFromValue(font)) ?? fontAssets.find((item) => item.key === 'defaultFont')
     const label = new Label({
@@ -181,6 +191,7 @@ async function parseChildren(root, parentNode: Node, data: ProjectData, evalInit
       font: foundFont?.value,
       size: size ? parseIntFromValue(size) : Label.defaultSize,
       outline: getOutline(outline),
+      shadow: getShadow(shadow),
     })
     renderNode.addComponent(label)
   } else if (tag === 'ScrollView' || tag === 'ListView') {
