@@ -1,27 +1,23 @@
 import Router from '@@/router/Router';
 import { enable, initialize } from '@electron/remote/main';
 import { app, BrowserWindow } from 'electron';
-import isDev from 'electron-is-dev';
 import path from 'path';
-import url from 'url';
 import { installDevtoolExtensions } from './installExtensions';
 import MenuBuilder from './menu';
 
-// const isDev = false;
-const basePath = isDev ? __dirname : app.getAppPath();
+const isDev = !!process.env.ELECTRON_RENDERER_URL;
 
 let mainWindow: BrowserWindow;
 initialize();
 
 function createWindow() {
-  console.log('basePath', basePath);
   if (process.env.NODE_ENV === 'development') {
     installDevtoolExtensions();
   }
   mainWindow = new BrowserWindow({
     width: 1366,
     height: 768,
-    icon: path.resolve(basePath, '../../resources/icons/512x512.png'),
+    icon: path.resolve(__dirname, '../../resources/icons/512x512.png'),
     webPreferences: {
       // preload: path.join(__dirname, 'preload.js'),
       contextIsolation: false,
@@ -35,13 +31,11 @@ function createWindow() {
     mainWindow.webContents.openDevTools();
   }
 
-  const file = url.format({
-    pathname: path.join(basePath, '..', 'editor.html'),
-    protocol: 'file:',
-    slashes: true,
-  });
-  // console.log(file)
-  mainWindow.loadURL(isDev ? 'http://localhost:8585' : file);
+  if (isDev) {
+    mainWindow.loadURL(process.env.ELECTRON_RENDERER_URL);
+  } else {
+    mainWindow.loadFile(path.join(__dirname, '../renderer/index.html'));
+  }
   mainWindow.webContents.on('did-finish-load', () => {
     if (!mainWindow) {
       throw new Error('"mainWindow" is not defined');
