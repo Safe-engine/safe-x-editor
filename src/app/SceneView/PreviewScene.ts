@@ -140,10 +140,8 @@ export class PreviewScene extends Scene {
       } else if (keyCode === KEY.y) {
         this.lockY = !this.lockY
         this.updateArrowOpacity()
-      // } else if (keyCode === KEY.h) {
-      //   this.toggleSelectedNode()
-      // } else if (keyCode === KEY.c) {
-      //   this.selectAllChildren()
+        // } else if (keyCode === KEY.h) {
+        //   this.toggleSelectedNode()
       }
       if (keyCode === KEY.up && event.shiftKey) {
         this.moveSelectedNodeWithHistory(0, -10)
@@ -161,6 +159,8 @@ export class PreviewScene extends Scene {
         this.moveSelectedNodeWithHistory(-1, 0)
       } else if (keyCode === KEY.right) {
         this.moveSelectedNodeWithHistory(1, 0)
+      } else if (keyCode === KEY.c) {
+        this.selectAllChildren()
       }
     })
     window.addEventListener('keyup', (event) => {
@@ -183,9 +183,9 @@ export class PreviewScene extends Scene {
       { passive: false },
     )
     canvas?.addEventListener('pointerdown', (event) => {
-        this.isMiddleMouse = event.button === 1
-        if (this.isMiddleMouse) this.middleMouseSelectionPaths = [...this.editingPaths]
-        this.updateInputModifiers(event)
+      this.isMiddleMouse = event.button === 1
+      if (this.isMiddleMouse) this.middleMouseSelectionPaths = [...this.editingPaths]
+      this.updateInputModifiers(event)
     }, true)
     canvas?.addEventListener('pointermove', (event) => {
       this.updateInputModifiers(event)

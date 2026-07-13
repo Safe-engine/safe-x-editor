@@ -1,7 +1,7 @@
 import { sendRequest } from 'app/app.ipc';
 import { ipcMain } from 'helper/electronRemote';
-import { useEffect, useState } from 'react';
-import { Tree } from 'react-arborist';
+import { useEffect, useRef, useState } from 'react';
+import { Tree, TreeApi } from 'react-arborist';
 import toast from 'react-hot-toast';
 import { GEN_COMPONENT_REQUEST } from 'shared/constant.message';
 import { useActions, useSelector } from 'states/app.context';
@@ -14,6 +14,7 @@ export default function NodeTree() {
   const filePath = useSelector(selectSelectedFilePath);
   const rootPath = useSelector(selectRootFolder);
   const selectedPaths = useSelector(selectSelectedPaths);
+  const treeRef = useRef<TreeApi<any> | undefined>(undefined);
   const [selectedTreeItem, setSelectedTreeItem] = useState<any>({});
   const [treeHeight, setTreeHeight] = useState(() => Math.max(0, window.innerHeight - 32));
 
@@ -44,6 +45,24 @@ export default function NodeTree() {
     window.addEventListener('resize', updateTreeHeight);
     return () => window.removeEventListener('resize', updateTreeHeight);
   }, []);
+
+  useEffect(() => {
+    const tree = treeRef.current;
+    if (!tree) return;
+
+    const currentSelection = tree.selectedIds;
+    const nextSelection = selectedPaths.filter(Boolean);
+    const isSynced = currentSelection.size === nextSelection.length
+      && nextSelection.every((path) => currentSelection.has(path));
+
+    if (isSynced) return;
+
+    tree.setSelection({
+      ids: nextSelection,
+      anchor: nextSelection[0] || null,
+      mostRecent: nextSelection[nextSelection.length - 1] || null,
+    });
+  }, [selectedPaths]);
 
   function onItemClick(node) {
     console.log('onItemClick node', node.data)
@@ -94,11 +113,11 @@ export default function NodeTree() {
         </div>
       </div>
       <Tree
+        ref={treeRef}
         className='px-1 py-1'
         data={treeData[0]?.tag === 'SceneComponent' ? treeData[0].children : treeData}
         height={treeHeight}
         width="100%"
-        selection={selectedPaths[0]}
         onSelect={
           onSelectNodes
           }

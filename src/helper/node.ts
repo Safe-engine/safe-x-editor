@@ -66,6 +66,7 @@ export function parseVec2Array(value) {
   if (Array.isArray(value)) return value
   return parseStringFromValue(value)
     .split(';')
+    .filter((item) => item.trim())
     .map((item) => parseVec2(item.trim(), ''))
 }
 
