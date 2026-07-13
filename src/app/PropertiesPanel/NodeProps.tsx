@@ -1,7 +1,12 @@
-import { memo } from 'react';
+import { memo, useState } from 'react';
+import { FiEdit2 } from 'react-icons/fi';
+import toast from 'react-hot-toast';
+import { sendRequest } from 'app/app.ipc';
+import ColorEditorDialog from './ColorEditorDialog';
 import { useActions, useSelector } from 'states/app.context';
 import { parseStringFromValue } from 'helper/node';
-import { selectAssets, selectColors, selectSelectedNode } from 'states/app.selectors';
+import { selectAssets, selectColors, selectRootFolder, selectSelectedNode } from 'states/app.selectors';
+import { UPDATE_PROJECT_COLORS_REQUEST } from 'shared/constant.message';
 
 function isObject(value) {
   return value && typeof value === 'object' && !Array.isArray(value);
@@ -146,18 +151,23 @@ function AxisRow({ label, values, step, onChange }) {
   );
 }
 
-function ColorField({ value, colors, onChange }) {
+function ColorField({ value, colors, onChange, onEdit }) {
   return (
     <label className='grid min-h-7 grid-cols-[70px_minmax(0,1fr)] items-center gap-2 px-2 py-0.5'>
       <div className='truncate text-[11px] text-[#c8c8c8]'>Color</div>
-      <select
-        className='h-6 min-w-0 rounded-sm border border-[#111] bg-[#151515] px-2 text-[12px] text-[#e2e2e2] outline-none focus:border-[#4a90e2]'
-        value={parseStringFromValue(value) ?? ''}
-        onChange={(event) => onChange(event.target.value || undefined)}
-      >
-        <option value=''>Default</option>
-        {colors.map((color) => <option key={color.key} value={color.key}>{color.key}</option>)}
-      </select>
+      <div className='flex min-w-0 gap-1'>
+        <select
+          className='h-6 min-w-0 flex-1 rounded-sm border border-[#111] bg-[#151515] px-2 text-[12px] text-[#e2e2e2] outline-none focus:border-[#4a90e2]'
+          value={parseStringFromValue(value) ?? ''}
+          onChange={(event) => onChange(event.target.value || undefined)}
+        >
+          <option value=''>Default</option>
+          {colors.map((color) => <option key={color.key} value={color.key}>{color.key}</option>)}
+        </select>
+        <button className='flex h-6 w-6 shrink-0 items-center justify-center rounded-sm border border-[#111] bg-[#303030] text-[#bdbdbd] hover:text-[#f0f0f0]' onClick={onEdit} title='Edit project colors'>
+          <FiEdit2 size={13} />
+        </button>
+      </div>
     </label>
   );
 }
@@ -217,10 +227,23 @@ function NodeHeader({ selectedNode, active, onActiveChange }) {
 }
 
 function NodeProps() {
-  const { updateMultiNodes } = useActions();
+  const { getFiles, updateMultiNodes } = useActions();
   const assets = useSelector(selectAssets);
   const colors = useSelector(selectColors);
+  const rootFolder = useSelector(selectRootFolder);
   const selectedNode = useSelector(selectSelectedNode);
+  const [isColorEditorOpen, setIsColorEditorOpen] = useState(false);
+
+  async function saveColors(nextColors) {
+    const response: any = await sendRequest({ key: UPDATE_PROJECT_COLORS_REQUEST, rootFolder, colors: nextColors });
+    if (!response?.success) {
+      toast.error(response?.message || 'Unable to save project colors');
+      return false;
+    }
+    getFiles(rootFolder);
+    window.postMessage({ type: 'reloadProjectData' }, '*');
+    return true;
+  }
 
   function updatePreview(component, updated) {
     window.postMessage({ type: 'updateSelectedNode', component, updated }, '*');
@@ -330,6 +353,7 @@ function NodeProps() {
         value={node.color}
         colors={colors}
         onChange={(color) => updateNodeProps({ color })}
+        onEdit={() => setIsColorEditorOpen(true)}
       />
       {Object.entries(node)
         .filter(([key]) => !['position', 'xy', 'x', 'y', 'z', 'rotation', 'scale', 'scaleX', 'scaleY', 'scaleZ', 'width', 'height', 'color', 'active'].includes(key))
@@ -389,6 +413,12 @@ function NodeProps() {
         + Add Component
       </button>
     </div>
+    <ColorEditorDialog
+      colors={colors}
+      isOpen={isColorEditorOpen}
+      onClose={() => setIsColorEditorOpen(false)}
+      onSave={saveColors}
+    />
   </div>);
 }
 

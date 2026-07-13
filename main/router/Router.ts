@@ -3,6 +3,7 @@ import {
   loadComponent, renameComponent, updateComponentTag,
 } from '@@/services/ComponentService';
 import { createAsset } from '@@/services/AssetCreateService';
+import { updateProjectColors } from '@@/services/ColorService';
 import {
   checkFileExist,
   deleteFolder,
@@ -18,7 +19,8 @@ import {
   GEN_COMPONENT_REQUEST,
   GET_FOLDER_FILES,
   LOAD_COMPONENT_REQUEST,
-  RE_NAME_COMPONENT
+  RE_NAME_COMPONENT,
+  UPDATE_PROJECT_COLORS_REQUEST
 } from '@shared/constant.message';
 import { IpcRequest, RequestMessage } from '@shared/types.message';
 import { ipcMain } from 'electron';
@@ -38,7 +40,7 @@ const addListener = (name: RequestMessage, listener) => {
       return response
     } catch (error) {
       console.log('ERROR res: ', error);
-      // ipcMain.emit('ERROR', error.message);
+      return { error: true, message: error.message };
     }
   });
 };
@@ -53,4 +55,5 @@ export default function Router() {
   addListener(GEN_COMPONENT_REQUEST, updateComponentTag);
   addListener(CREATE_I18N, createI18n);
   addListener(CREATE_ASSET_REQUEST, createAsset);
+  addListener(UPDATE_PROJECT_COLORS_REQUEST, updateProjectColors);
 }

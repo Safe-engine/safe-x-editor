@@ -21,7 +21,7 @@ function Modal({ children, onClose, isOpen, title }) {
   return <Transition appear show={isOpen} as={Fragment}>
     <Dialog
       as='div'
-      className='fixed inset-0 z-10 overflow-y-auto bg-black bg-opacity-60'
+      className='fixed inset-0 z-[101] overflow-y-auto bg-black bg-opacity-60'
       onClose={onClose}
     >
       <div className='min-h-screen px-4 text-center'>

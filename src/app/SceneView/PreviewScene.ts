@@ -292,6 +292,8 @@ export class PreviewScene extends Scene {
         }
       } else if (message.type === 'changeSelectPath') {
         this.changeSelectPath(message.selectPaths, false)
+      } else if (message.type === 'reloadProjectData') {
+        void this.loadProjectData().then(() => this.reloadEditingComponent())
       } else if (message.type === 'updateSelectedNode') {
         void this.updateSelectedNode(message.component, message.updated)
       }
