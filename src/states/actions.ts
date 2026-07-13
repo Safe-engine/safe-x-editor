@@ -21,6 +21,8 @@ export function getAction(draft: AppState) {
     loadComponent(path: string) {
       // if (draft.filePath !== path)
       draft.filePath = path
+      draft.selectedPaths = []
+      draft.selectedNodes = []
     },
     setPreviewAsset(data: any) {
       draft.previewAsset = data
