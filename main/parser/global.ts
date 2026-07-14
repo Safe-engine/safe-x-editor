@@ -32,4 +32,5 @@ export class GlobalData {
   };
   static importPaths: any = {};
   static componentsCache: { [key: string]: any } = {};
+  static enumsName: string[] = [];
 }

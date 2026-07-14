@@ -26,8 +26,8 @@ function parseMemberExpressionProperty(memberObj, isLeft?) {
 function parseMemberExpression(member, isLeft?) {
   const { type, object, property, name, computed } = member;
   // if(property.name==='x')
-  // console.log(global.enumsName, object.name);
-  if (object.name && global.enumsName.includes(object.name)) {
+  // console.log(GlobalData.enumsName, object.name);
+  if (object.name && GlobalData.enumsName.includes(object.name)) {
     return `${object.name}_${property.name}`;
   }
   switch (type) {

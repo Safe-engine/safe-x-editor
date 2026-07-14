@@ -1,3 +1,4 @@
+import { GlobalData } from '@@/parser/global';
 import { afterEach, describe, expect, it } from 'bun:test';
 import { parseValue } from '../parser/ast';
 
@@ -9,7 +10,7 @@ const memberExpression = {
 };
 
 afterEach(() => {
-  delete (global as any).enumsName;
+  delete GlobalData.enumsName;
 });
 
 describe('parseValue member expressions', () => {
@@ -18,7 +19,7 @@ describe('parseValue member expressions', () => {
   });
 
   it('preserves enum member parsing when enum names are initialized', () => {
-    (global as any).enumsName = ['node'];
+    GlobalData.enumsName = ['node'];
 
     expect(parseValue(memberExpression)).toBe('node_visible');
   });
