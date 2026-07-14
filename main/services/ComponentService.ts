@@ -7,7 +7,7 @@ import { spliceString } from '../utils/StringHelper';
 import { lintFile } from './TerminalService';
 
 export const loadComponent = async ({ path }) => {
-  console.log('loadComponent', path);
+  // console.log('loadComponent', path);
   const input = fs.readFileSync(path, { encoding: 'utf8' });
   const parsed = parse(input, { jsx: true, range: true });
   // fs.writeFileSync(logOutput, JSON.stringify(parsed, null, 2));

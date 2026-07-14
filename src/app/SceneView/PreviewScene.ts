@@ -2,12 +2,13 @@ import { MeshAttachment, RegionAttachment } from '@esotericsoftware/spine-core'
 import { Label, loadAll, Node, Scene, SpineBonesControl, SpineSkeleton, Sprite, Touch } from '@safe-engine/sdl'
 import { getLastLoadedFile, getLastRootFolder, getLastSceneScale, getLastSceneX, getLastSceneY, setLastSceneScale, setLastSceneX, setLastSceneY } from 'data/AppData'
 import { GlobalState } from 'data/GloablState'
-import { normalizeNodeProps, parseNumbersArray, parseStringsArray } from 'helper/node'
+import { normalizeNodeProps, parseBoolFromValue, parseNumbersArray, parseStringsArray } from 'helper/node'
 import { cloneDeep, first, isNumber, parseInt, set } from 'lodash-es'
 import { setAssetRoot } from 'sdl3'
 import { sendRequest } from '../app.ipc'
 import { arrow } from './assets'
 import { CircleRender } from './CircleRender'
+import { updatePreviewWidgetInsets } from './component'
 import { loadSceneViewSdl, preloadSdlAssets, RectRender } from './loader'
 import { SpineBonesControlRender } from './SpineBonesControlRender'
 import { createNode, getComponentChildrenNum, getCurrentNode, getEditingRoot, KEY, setNodePositionProps } from './utils'
@@ -784,19 +785,47 @@ export class PreviewScene extends Scene {
   canMoveSelectedNode(mx: number, my: number) {
     const moveX = this.lockX ? 0 : mx
     const moveY = this.lockY ? 0 : my
-    return Boolean(this.editingPaths[0] && (moveX || moveY))
+    return this.editingPaths.some((editingPath) => {
+      const editNode = this.getEditingNodeByPath(editingPath)
+      const widgetProps = editNode?.components?.find((component) => component.tag === 'Widget')?.props || {}
+      return (!parseBoolFromValue(widgetProps.centerHorizon) && moveX)
+        || (!parseBoolFromValue(widgetProps.centerVertical) && moveY)
+    })
+  }
+
+  syncWidgetInsets(editNode: any, currentNode: Node) {
+    const widget = editNode?.components?.find((component) => component.tag === 'Widget')
+    if (!widget) return false
+    widget.props ??= {}
+    const { width: designWidth = 0, height: designHeight = 0 } = GlobalState.data.designedResolution || {}
+    const insets = {
+      top: currentNode.y - currentNode.height * currentNode.anchorY,
+      right: designWidth - currentNode.x - currentNode.width * (1 - currentNode.anchorX),
+      bottom: designHeight - currentNode.y - currentNode.height * (1 - currentNode.anchorY),
+      left: currentNode.x - currentNode.width * currentNode.anchorX,
+    }
+    let didUpdate = false
+    Object.entries(insets).forEach(([direction, value]) => {
+      if (widget.props[direction] !== undefined && widget.props[direction] !== null) {
+        widget.props[direction] = Math.round(value)
+        didUpdate = true
+      }
+    })
+    if (!didUpdate) return false
+    updatePreviewWidgetInsets(currentNode, widget.props)
+    return true
   }
 
   moveSelectedNode(mx = 0, my = 0) {
     const moveX = this.lockX ? 0 : mx
     const moveY = this.lockY ? 0 : my
-    if (!this.editingPaths[0] || (!moveX && !moveY)) return false
+    if (!this.canMoveSelectedNode(mx, my)) return false
     const updatedNodes: Array<{ component: string; updated: any }> = []
+    const updatedWidgets: Array<{ component: string; updated: any }> = []
+    let didUpdateWidget = false
     this.editingPaths.forEach((editingPath) => {
       const childrenIndex = this.getChildrenIndex(editingPath)
       const currentNode = getCurrentNode(this.drawNode, childrenIndex)
-      currentNode.x = (isNumber(currentNode.x) ? currentNode.x : 0) + moveX
-      currentNode.y = (isNumber(currentNode.y) ? currentNode.y : 0) + moveY
       const indexes = [...childrenIndex]
       let editNode = getEditingRoot(this.editingComponent, indexes)
       indexes.forEach((index) => {
@@ -804,14 +833,26 @@ export class PreviewScene extends Scene {
         const componentChildrenNum = getComponentChildrenNum(tag)
         if (editNode.children[index - componentChildrenNum]) editNode = editNode.children[index - componentChildrenNum]
       })
+      const widgetProps = editNode?.components?.find((component) => component.tag === 'Widget')?.props || {}
+      const nodeMoveX = parseBoolFromValue(widgetProps.centerHorizon) ? 0 : moveX
+      const nodeMoveY = parseBoolFromValue(widgetProps.centerVertical) ? 0 : moveY
+      currentNode.x = (isNumber(currentNode.x) ? currentNode.x : 0) + nodeMoveX
+      currentNode.y = (isNumber(currentNode.y) ? currentNode.y : 0) + nodeMoveY
       const nx = Math.round(currentNode.x)
       const ny = Math.round(currentNode.y)
       setNodePositionProps(editNode.props, nx, ny)
       normalizeNodeProps(editNode.props)
       updatedNodes.push({ component: 'props', updated: editNode.props })
+      if (this.syncWidgetInsets(editNode, currentNode)) {
+        didUpdateWidget = true
+      }
+      updatedWidgets.push({ component: 'components', updated: editNode.components })
     })
     this.syncEditingFlag()
     window.postMessage({ type: 'previewUpdateSelectedNodes', selectPaths: this.editingPaths, nodes: updatedNodes }, '*')
+    if (didUpdateWidget) {
+      window.postMessage({ type: 'previewUpdateSelectedNodes', selectPaths: this.editingPaths, nodes: updatedWidgets }, '*')
+    }
     return true
   }
 
@@ -852,12 +893,20 @@ export class PreviewScene extends Scene {
     editNode.props.node.anchorY = anchorY
     setNodePositionProps(editNode.props, Math.round(currentNode.x), Math.round(currentNode.y))
     normalizeNodeProps(editNode.props)
+    const didUpdateWidget = this.syncWidgetInsets(editNode, currentNode)
     this.syncEditingFlag()
     window.postMessage({
       type: 'previewUpdateSelectedNodes',
       selectPaths: this.editingPaths,
       nodes: [{ component: 'props', updated: editNode.props }],
     }, '*')
+    if (didUpdateWidget) {
+      window.postMessage({
+        type: 'previewUpdateSelectedNodes',
+        selectPaths: [editingPath],
+        nodes: [{ component: 'components', updated: editNode.components }],
+      }, '*')
+    }
     return true
   }
 
@@ -889,12 +938,20 @@ export class PreviewScene extends Scene {
     if (didResizeWidth) editNode.props.node.width = newWidth
     if (didResizeHeight) editNode.props.node.height = newHeight
     normalizeNodeProps(editNode.props)
+    const didUpdateWidget = this.syncWidgetInsets(editNode, currentNode)
     this.syncEditingFlag()
     window.postMessage({
       type: 'previewUpdateSelectedNodes',
       selectPaths: this.editingPaths,
       nodes: [{ component: 'props', updated: editNode.props }],
     }, '*')
+    if (didUpdateWidget) {
+      window.postMessage({
+        type: 'previewUpdateSelectedNodes',
+        selectPaths: [editingPath],
+        nodes: [{ component: 'components', updated: editNode.components }],
+      }, '*')
+    }
     return true
   }
 

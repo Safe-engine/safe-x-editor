@@ -6,25 +6,13 @@ import toast from 'react-hot-toast';
 import { FiEdit2, FiRotateCcw } from 'react-icons/fi';
 import { UPDATE_PROJECT_COLORS_REQUEST } from 'shared/constant.message';
 import { useActions, useSelector } from 'states/app.context';
-import { selectAssets, selectColors, selectRootFolder, selectSelectedNode } from 'states/app.selectors';
+import { selectAssets, selectColors, selectDesignResolution, selectRootFolder, selectSelectedNode } from 'states/app.selectors';
 import CapInsetsField from './CapInsetsField';
 import ColorEditorDialog from './ColorEditorDialog';
+import NodeIdentityRow from './NodeIdentityRow';
+import { LABEL_DEFAULT_PROPS, SPINE_DEFAULT_PROPS, WIDGET_DIRECTIONS } from './NodeProps.constants';
 import SpriteFrameField from './SpriteFrameField';
-
-const LABEL_DEFAULT_PROPS = {
-  string: '',
-  font: 'defaultFont',
-  size: 36,
-  outline: '{[, 0]}',
-  shadow: '{[, 0, Size(0, 0)]}',
-};
-
-const SPINE_DEFAULT_PROPS = {
-  skin: '',
-  animation: '',
-  timeScale: 1,
-  loop: true,
-};
+import WidgetInsets from './WidgetInsets';
 
 function isObject(value) {
   return value && typeof value === 'object' && !Array.isArray(value);
@@ -39,11 +27,6 @@ function parseValue(value, previousValue) {
   if (typeof previousValue === 'boolean') return value === 'true';
   if (typeof previousValue === 'number') return parseNumber(value, previousValue);
   return value;
-}
-
-function parseNodeString(value) {
-  const stringValue = String(value ?? '');
-  return stringValue.replace(/^(?:"(.*)"|'(.*)')$/, '$1$2');
 }
 
 function parseVec2(position = 'Vec2(0,0)') {
@@ -338,40 +321,11 @@ function PropGroup({ title, children }) {
   );
 }
 
-function NodeIdentityRow({ node, onNameChange, onTagChange }) {
-  const inputClassName = 'h-6 min-w-0 rounded-sm border border-[#111] bg-[#151515] px-2 text-[11px] text-[#e2e2e2] outline-none focus:border-[#4a90e2]';
-
-  return (
-    <div className='grid min-h-7 grid-cols-[minmax(0,1fr)_84px] gap-2 px-2 py-0.5'>
-      <label className='grid min-w-0 grid-cols-[32px_minmax(0,1fr)] items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-[#d5d5d5]'>
-        Name
-        <input
-          aria-label='Name'
-          className={inputClassName}
-          placeholder='Name'
-          type='text'
-          value={parseNodeString(node.name)}
-          onChange={(event) => onNameChange(event.target.value)}
-        />
-      </label>
-      <label className='grid min-w-0 grid-cols-[24px_minmax(0,1fr)] items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-[#d5d5d5]'>
-        Tag
-        <input
-          aria-label='Tag'
-          className={inputClassName}
-          type='number'
-          value={node.tag ?? 0}
-          onChange={(event) => onTagChange(parseNumber(event.target.value, node.tag ?? 0))}
-        />
-      </label>
-    </div>
-  );
-}
-
 function NodeProps() {
   const { getFiles, updateMultiNodes } = useActions();
   const assets = useSelector(selectAssets);
   const colors = useSelector(selectColors);
+  const designResolution = useSelector(selectDesignResolution);
   const rootFolder = useSelector(selectRootFolder);
   const selectedNode = useSelector(selectSelectedNode);
   const [isColorEditorOpen, setIsColorEditorOpen] = useState(false);
@@ -470,6 +424,40 @@ function NodeProps() {
     ...Object.fromEntries(Object.entries(defaultProps).map(([key, value]) => [key, props[key] ?? value])),
   };
   const propEntries = Object.entries(displayedProps).filter(([key]) => key !== 'node');
+
+  function getWidgetInset(direction, widgetProps) {
+    const getInset = (key) => {
+      if (widgetProps[key] === undefined || widgetProps[key] === null) return null;
+      const value = Number(parseStringFromValue(widgetProps[key]));
+      return Number.isFinite(value) ? value : null;
+    };
+    const top = getInset('top');
+    const right = getInset('right');
+    const bottom = getInset('bottom');
+    const left = getInset('left');
+    const anchorX = node.anchorX ?? 0.5;
+    const anchorY = node.anchorY ?? 0.5;
+    const width = left !== null && right !== null
+      ? Math.max(0, designResolution.width - left - right)
+      : node.width ?? textureSize.width;
+    const height = top !== null && bottom !== null
+      ? Math.max(0, designResolution.height - top - bottom)
+      : node.height ?? textureSize.height;
+    const x = left !== null
+      ? left + width * anchorX
+      : right !== null
+        ? designResolution.width - right - width * (1 - anchorX)
+        : position.x;
+    const y = top !== null
+      ? top + height * anchorY
+      : bottom !== null
+        ? designResolution.height - bottom - height * (1 - anchorY)
+        : position.y;
+    if (direction === 'top') return Math.round(y - height * anchorY);
+    if (direction === 'right') return Math.round(designResolution.width - x - width * (1 - anchorX));
+    if (direction === 'bottom') return Math.round(designResolution.height - y - height * (1 - anchorY));
+    return Math.round(x - width * anchorX);
+  }
 
   return (<div className='h-screen overflow-y-auto bg-[#252525] pb-4'>
     <InspectorSection
@@ -631,7 +619,32 @@ function NodeProps() {
     )}
     {components.map((component, index) => (
       <InspectorSection key={`${component.tag}-${index}`} title={component.tag || `Component ${index + 1}`}>
-        {Object.entries(component.props || {}).filter(([key]) => key !== 'capInsets' && key !== 'tiled').map(([key, value]) => (
+        {component.tag === 'Widget' && (
+          <WidgetInsets
+            props={component.props || {}}
+            onChange={(updated) => updateComponentProps(index, updated)}
+            onToggle={(direction, enabled) => updateComponentProps(index, {
+              [direction]: enabled ? getWidgetInset(direction, component.props || {}) : undefined,
+            })}
+            onToggleCenter={(center, enabled) => updateComponentProps(index, center === 'centerVertical' ? {
+              centerVertical: enabled || undefined,
+              top: undefined,
+              bottom: undefined,
+            } : {
+              centerHorizon: enabled || undefined,
+              left: undefined,
+              right: undefined,
+            })}
+          />
+        )}
+        {Object.entries(component.props || {}).filter(([key]) => (
+          key !== 'capInsets'
+          && key !== 'tiled'
+          && (component.tag !== 'Widget' || (
+            !WIDGET_DIRECTIONS.some((direction) => direction.key === key)
+            && !['centerVertical', 'centerHorizon'].includes(key)
+          ))
+        )).map(([key, value]) => (
           key === 'spriteFrame' ? (
             <SpriteFrameField
               key={`${component.tag}-${index}-${key}`}

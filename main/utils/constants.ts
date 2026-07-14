@@ -13,7 +13,7 @@ export const noRenderList = [
 
 export const renderList = [
   'ListView', 'ScrollView', 'Slider', 'RenderTexture',
-  'DragonBones', 'ProgressBar', 'Label', 'TextInput',
+  'DragonBones', 'ProgressBar', 'Label', 'TextInput', 'Button',
   'Container', 'Sprite', 'Mask', 'Particle', 'Graphics', 'TiledMap',
-  'RichText', 'SpineSkeleton', 'Scene',
+  'RichText', 'SpineSkeleton', 'Scene', 'CircleProgress'
 ];

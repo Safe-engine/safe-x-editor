@@ -14,7 +14,7 @@ export function getViewPath(panel: WebviewView, relativePath?: Uri) {
 }
 
 function getJsonData(filePath: string, absolutePath: string) {
-  console.log('getJsonData', filePath, absolutePath);
+  // console.log('getJsonData', filePath, absolutePath);
   if (filePath.endsWith('.json')) { return JSON.parse(readFileSync(absolutePath, 'utf-8')); }
   return undefined;
 }

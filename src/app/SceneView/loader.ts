@@ -14,7 +14,7 @@ import {
 } from 'helper/node'
 import { get } from 'lodash-es'
 import { drawRect } from 'sdl3'
-import { getComponent } from './component'
+import { getComponent, refreshWidget } from './component'
 import { addQuotesToTernary } from './utils'
 
 type SdlColor = { r: number; g: number; b: number; a?: number }
@@ -300,6 +300,7 @@ async function parseChildren(root, parentNode: Node, data: ProjectData, evalInit
 
   const colliderComp = getComponent(components, renderNode, designedResolution)
   if (colliderComp) renderNode.addComponent(colliderComp)
+  refreshWidget(renderNode)
 
   for (let index = 0; index < children.length; index++) {
     await parseChildren(children[index], renderNode, data, evalInit, baseProps)
