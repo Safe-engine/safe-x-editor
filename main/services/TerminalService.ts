@@ -4,7 +4,7 @@ import { log } from "console";
 
 export function lintFile(filePath: string) {
   const relativePath = filePath.replace(GlobalData.rootProject, '.')
-  const cmd = 'eslint'
+  const cmd = './node_modules/.bin/eslint'
   const args = ['--fix', relativePath]
 
   log(`Running: ${cmd} ${args.join(' ')}`, GlobalData.rootProject)
