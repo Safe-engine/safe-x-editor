@@ -5,7 +5,15 @@ import toast from 'react-hot-toast'
 import { GET_FOLDER_FILES, LOAD_COMPONENT_REQUEST } from 'shared/constant.message'
 import { Actions, createActions } from './actions'
 
-export function createMiddleware(dispatch: Dispatch<any>) {
+function findFirstComponentFile(nodes: any[]): string | undefined {
+  for (const node of nodes) {
+    if (!node.isDirectory) return node.path
+    const found = findFirstComponentFile(node.children || [])
+    if (found) return found
+  }
+}
+
+export function createMiddleware(dispatch: Dispatch<any>, appDispatch?: (action: any) => void) {
   const { getFilesSuccess, loadComponentSuccess } = createActions(dispatch)
   const middlewares: Partial<Actions> = {
     async getFiles(src: string) {
@@ -20,6 +28,11 @@ export function createMiddleware(dispatch: Dispatch<any>) {
       setLastRootFolder(src)
       getFilesSuccess(data)
       window.postMessage({ type: 'reloadProjectData' }, '*')
+
+      const firstFile = findFirstComponentFile(data.componentsTree)
+      if (firstFile && appDispatch) {
+        appDispatch({ type: 'loadComponent', data: [firstFile] })
+      }
     },
     async loadComponent(path: string) {
       const data: any = await sendRequest({
@@ -32,10 +45,13 @@ export function createMiddleware(dispatch: Dispatch<any>) {
   return middlewares
 }
 
-export const applyMiddleware = (dispatch: Dispatch<any>) => async (action: any) => {
-  const middlewares = createMiddleware(dispatch)
-  if (middlewares[action.type]) {
-    middlewares[action.type](...action.data)
+export const applyMiddleware = (dispatch: Dispatch<any>) => {
+  const appDispatch = async (action: any) => {
+    const middlewares = createMiddleware(dispatch, appDispatch)
+    if (middlewares[action.type]) {
+      middlewares[action.type](...action.data)
+    }
+    dispatch(action)
   }
-  dispatch(action)
+  return appDispatch
 }

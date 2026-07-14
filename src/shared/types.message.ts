@@ -1,7 +1,7 @@
 import {
   ADD_NEW_STATE, CHANGE_FUNCTION,
   CHANGE_LANGUAGE, CHECK_FILE_EXIST,
-  CREATE_ACTION, CREATE_ASSET_REQUEST, CREATE_I18N, CREATE_NEW_ACTION,
+  CREATE_ACTION, CREATE_ASSET_REQUEST, CREATE_I18N, CREATE_NEW_ACTION, CREATE_PROJECT_REQUEST,
   DELETE_COMPONENT, DUPLICATE_COMPONENT,
   GEN_COMPONENT_REQUEST, GEN_PROP_TYPES_REQUEST, GET_FOLDER_FILES,
   GET_COLLIDER_SETTINGS_REQUEST, LOAD_COMPONENT_REQUEST, NEW_COMPONENT,
@@ -13,6 +13,7 @@ export type IpcRequest =
   | { key: typeof CHANGE_FUNCTION }
   | { key: typeof CREATE_NEW_ACTION }
   | { key: typeof CREATE_I18N }
+  | { key: typeof CREATE_PROJECT_REQUEST, rootFolder: string, projectName: string }
   | { key: typeof CREATE_ASSET_REQUEST, rootFolder: string, assetType: string, data: any }
   | { key: typeof UPDATE_PROJECT_COLORS_REQUEST, rootFolder: string, colors: any[] }
   | { key: typeof GET_COLLIDER_SETTINGS_REQUEST }
@@ -37,6 +38,7 @@ export type IpcResponse =
   | { key: typeof CHANGE_FUNCTION }
   | { key: typeof CREATE_NEW_ACTION }
   | { key: typeof CREATE_I18N }
+  | { key: typeof CREATE_PROJECT_REQUEST }
   | { key: typeof CREATE_ASSET_REQUEST }
   | { key: typeof UPDATE_PROJECT_COLORS_REQUEST }
   | { key: typeof GET_COLLIDER_SETTINGS_REQUEST }

@@ -8,6 +8,7 @@ import {
 } from './LocalDataManager';
 
 const LAST_ROOT_FOLDER = 'LAST_ROOT_FOLDER';
+const LAST_NEW_PROJECT_ROOT_FOLDER = 'LAST_NEW_PROJECT_ROOT_FOLDER';
 const DES_LAST_ROOT_FOLDER = 'DES_LAST_ROOT_FOLDER';
 const LAST_CONVERT_KEY = 'LAST_CONVERT_KEY';
 
@@ -16,6 +17,13 @@ export const setLastRootFolder = (value: string) => {
 };
 
 export const getLastRootFolder = () => getStringForKey(LAST_ROOT_FOLDER, '');
+
+export const setLastNewProjectRootFolder = (value: string) => {
+  setStringForKey(LAST_NEW_PROJECT_ROOT_FOLDER, value);
+};
+
+export const getLastNewProjectRootFolder = () =>
+  getStringForKey(LAST_NEW_PROJECT_ROOT_FOLDER, '');
 
 export const setLastDestinationConvertFolder = (value: string) => {
   setStringForKey(DES_LAST_ROOT_FOLDER, value);

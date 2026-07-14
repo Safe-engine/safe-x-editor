@@ -1,4 +1,4 @@
-import { GEN_COMPONENT_REQUEST, GET_FOLDER_FILES } from '@shared/constant.message'
+import { GEN_COMPONENT_REQUEST, GET_FOLDER_FILES, NEW_PROJECT } from '@shared/constant.message'
 import { app, dialog, ipcMain, Menu, shell } from 'electron'
 
 export default class MenuBuilder {
@@ -41,6 +41,13 @@ export default class MenuBuilder {
     const subMenuAbout = {
       label: 'Safex',
       submenu: [
+        {
+          label: '&New...',
+          accelerator: 'Command+N',
+          click: () => {
+            ipcMain.emit(NEW_PROJECT)
+          },
+        },
         {
           label: '&Open',
           accelerator: 'Command+O',
@@ -198,29 +205,10 @@ export default class MenuBuilder {
         },
       ],
     }
-    const subMenuResizeImage = {
-      label: 'Create Files',
-      submenu: [
-        {
-          label: 'Create New Action',
-          accelerator: 'Ctrl+Command+A',
-          click: () => {
-            this.mainWindow.webContents.send('CREATE_NEW_ACTION')
-          },
-        },
-        {
-          label: 'Create I18N',
-          accelerator: 'Ctrl+Command+I',
-          click: () => {
-            this.mainWindow.webContents.send('CREATE_I18N')
-          },
-        },
-      ],
-    }
 
     const subMenuView = process.env.NODE_ENV === 'development' ? subMenuViewDev : subMenuViewProd
 
-    return [subMenuAbout, subMenuEdit, subMenuView, subMenuLanguage, subMenuResizeImage, subMenuWindow, subMenuHelp]
+    return [subMenuAbout, subMenuEdit, subMenuView, subMenuLanguage, subMenuWindow, subMenuHelp]
   }
 
   buildDefaultTemplate() {
@@ -228,6 +216,13 @@ export default class MenuBuilder {
       {
         label: '&File',
         submenu: [
+          {
+            label: '&New...',
+            accelerator: 'Ctrl+N',
+            click: () => {
+              ipcMain.emit(NEW_PROJECT)
+            },
+          },
           {
             label: '&Open',
             accelerator: 'Ctrl+O',
