@@ -143,10 +143,10 @@ function AxisInput({ axis, value, color, step = 1, onChange }) {
   );
 }
 
-function AxisRow({ label, values, step, onChange, onReset }) {
+function AxisRow({ label, values, step, onChange, onReset, isSize }) {
   const axes = [
-    { key: 'x', label: 'X', color: '#ff6565' },
-    { key: 'y', label: 'Y', color: '#71d36b' },
+    { key: 'x', label: isSize ? 'W': 'X', color: '#ff6565' },
+    { key: 'y', label: isSize ? 'H' : 'Y', color: '#71d36b' },
   ];
 
   return (
@@ -187,6 +187,7 @@ function BoxColliderFields({ props, onChange }) {
     <>
       <AxisRow
         label='Size'
+        isSize
         values={{ x: parseFloatFromValue(props.width) ?? 0, y: parseFloatFromValue(props.height) ?? 0 }}
         onChange={(axis, value) => onChange({ [axis === 'x' ? 'width' : 'height']: value })}
       />
@@ -598,6 +599,7 @@ function NodeProps() {
       />
       <AxisRow
         label='Size'
+        isSize
         values={{ x: node.width ?? textureSize.width, y: node.height ?? textureSize.height }}
         onChange={(axis, value) => updateNodeProps({ [axis === 'x' ? 'width' : 'height']: value })}
         onReset={() => updateNodeProps({ width: undefined, height: undefined })}
