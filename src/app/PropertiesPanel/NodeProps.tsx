@@ -1,9 +1,10 @@
 import { sendRequest } from 'app/app.ipc';
 import SelectBox from 'base/SelectBox';
+import { ContextMenu } from 'components/ContextMenu';
 import { parseFloatFromValue, parseOutline, parseStringFromValue } from 'helper/node';
 import { memo, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { FiEdit2, FiRotateCcw } from 'react-icons/fi';
+import { FiBox, FiCircle, FiEdit2, FiGrid, FiLink, FiRotateCcw, FiShare2, FiTriangle } from 'react-icons/fi';
 import { GET_COLLIDER_SETTINGS_REQUEST, SAVE_COLLIDER_SETTINGS_REQUEST, UPDATE_PROJECT_COLORS_REQUEST } from 'shared/constant.message';
 import { useActions, useSelector } from 'states/app.context';
 import { selectAssets, selectColors, selectDesignResolution, selectRootFolder, selectSelectedNode } from 'states/app.selectors';
@@ -65,6 +66,15 @@ function getTextureSize(spriteFrame, assets) {
     height: texture?.size?.height ?? 0,
   };
 }
+
+const COMPONENT_OPTIONS = [
+  { tag: 'BoxCollider', label: 'Box Collider', icon: FiBox, props: { width: 0, height: 0 } },
+  { tag: 'CircleCollider', label: 'Circle Collider', icon: FiCircle, props: { radius: 0 } },
+  { tag: 'PolygonCollider', label: 'Polygon Collider', icon: FiTriangle, props: { points: [] } },
+  { tag: 'Widget', label: 'Widget', icon: FiGrid, props: {} },
+  { tag: 'RigidBody', label: 'RigidBody', icon: FiLink, props: {} },
+  { tag: 'SpineBonesControl', label: 'Spine Bones Control', icon: FiShare2, props: { bonesName: [], posList: [] }, requiresSpineSkeleton: true },
+];
 
 function Field({ label, value, onChange }) {
   const isJsonValue = isObject(value) || Array.isArray(value);
@@ -145,7 +155,7 @@ function AxisInput({ axis, value, color, step = 1, onChange }) {
 
 function AxisRow({ label, values, step, onChange, onReset, isSize }) {
   const axes = [
-    { key: 'x', label: isSize ? 'W': 'X', color: '#ff6565' },
+    { key: 'x', label: isSize ? 'W' : 'X', color: '#ff6565' },
     { key: 'y', label: isSize ? 'H' : 'Y', color: '#71d36b' },
   ];
 
@@ -382,6 +392,7 @@ function NodeProps() {
   const [colliderGroups, setColliderGroups] = useState<string[]>([]);
   const [colliderMatrix, setColliderMatrix] = useState('[]');
   const [isColliderSettingsOpen, setIsColliderSettingsOpen] = useState(false);
+  const [componentMenuPosition, setComponentMenuPosition] = useState<{ x: number; y: number } | null>(null);
 
   async function loadColliderSettings() {
     const settings: any = await sendRequest({ key: GET_COLLIDER_SETTINGS_REQUEST });
@@ -465,6 +476,11 @@ function NodeProps() {
     updatePreview('components', components);
   }
 
+  function addComponent(option) {
+    updateComponents([...(selectedNode.components || []), { tag: option.tag, props: option.props }]);
+    setComponentMenuPosition(null);
+  }
+
   function updateComponent(index, updated) {
     const components = [...(selectedNode.components || [])];
     components[index] = {
@@ -507,6 +523,10 @@ function NodeProps() {
   const position = getNodePosition(node);
   const textureSize = getTextureSize(props.spriteFrame, assets);
   const components = selectedNode.components || [];
+  const availableComponentOptions = COMPONENT_OPTIONS.filter((option) => (
+    !components.some((component) => component.tag === option.tag)
+    && (!option.requiresSpineSkeleton || selectedNode.tag === 'SpineSkeleton')
+  ));
   const spineData = assets?.spineAnimations?.[parseStringFromValue(props.data)];
   const defaultProps = selectedNode.tag === 'Label'
     ? LABEL_DEFAULT_PROPS
@@ -800,10 +820,33 @@ function NodeProps() {
       </InspectorSection>
     ))}
     <div className='px-3 pt-3'>
-      <button className='h-8 w-full rounded-sm bg-[#333] text-[11px] font-bold uppercase text-[#f3f3f3] shadow-inner'>
+      <button
+        className='h-8 w-full rounded-sm bg-[#333] text-[11px] font-bold uppercase text-[#f3f3f3] shadow-inner hover:bg-[#3d3d3d]'
+        type='button'
+        onClick={(event) => {
+          if (availableComponentOptions.length === 0) return;
+          const { left, top } = event.currentTarget.getBoundingClientRect();
+          setComponentMenuPosition({ x: left, y: top - availableComponentOptions.length * 30 - 8 });
+        }}
+      >
         + Add Component
       </button>
     </div>
+    <ContextMenu
+      x={componentMenuPosition?.x ?? 0}
+      y={componentMenuPosition?.y ?? 0}
+      width={208}
+      visible={Boolean(componentMenuPosition)}
+      onClose={() => setComponentMenuPosition(null)}
+      actions={availableComponentOptions.map((option) => {
+        const Icon = option.icon;
+        return {
+          label: option.label,
+          icon: <Icon className='text-[#a8c7ff]' size={16} />,
+          onClick: () => addComponent(option),
+        };
+      })}
+    />
     <ColorEditorDialog
       colors={colors}
       isOpen={isColorEditorOpen}

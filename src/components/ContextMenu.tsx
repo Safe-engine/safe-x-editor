@@ -3,14 +3,16 @@ import React, { useEffect, useRef } from "react"
 type ContextMenuProps = {
   x: number
   y: number
+  width?: number
   visible: boolean
   onClose: () => void
-  actions: { label: string; onClick: () => void }[]
+  actions: { label: string; icon?: React.ReactNode; onClick: () => void }[]
 }
 
 export const ContextMenu: React.FC<ContextMenuProps> = ({
   x,
   y,
+  width,
   visible,
   onClose,
   actions,
@@ -42,19 +44,20 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
     <div
       ref={menuRef}
       className="fixed z-50 w-40 rounded-sm border border-[#111] bg-[#252525] py-1 text-[12px] text-[#dcdcdc] shadow-lg"
-      style={{ top: y, left: x }}
+      style={{ top: y, left: x, width }}
     >
       {actions.map((action, i) => (
         <div
           key={i}
-          className="cursor-pointer px-3 py-1.5 hover:bg-[#304766] hover:text-[#ffffff]"
+          className="flex cursor-pointer items-center gap-2 px-3 py-1.5 hover:bg-[#304766] hover:text-[#ffffff]"
           onClick={(e) => {
             e.stopPropagation()
             action.onClick()
             onClose()
           }}
         >
-          {action.label}
+          {action.icon}
+          <span>{action.label}</span>
         </div>
       ))}
     </div>
