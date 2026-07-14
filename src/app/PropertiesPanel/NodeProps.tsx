@@ -1,13 +1,14 @@
 import { sendRequest } from 'app/app.ipc';
 import SelectBox from 'base/SelectBox';
 import { parseFloatFromValue, parseOutline, parseStringFromValue } from 'helper/node';
-import { memo, useState } from 'react';
+import { memo, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { FiEdit2, FiRotateCcw } from 'react-icons/fi';
-import { UPDATE_PROJECT_COLORS_REQUEST } from 'shared/constant.message';
+import { GET_COLLIDER_SETTINGS_REQUEST, SAVE_COLLIDER_SETTINGS_REQUEST, UPDATE_PROJECT_COLORS_REQUEST } from 'shared/constant.message';
 import { useActions, useSelector } from 'states/app.context';
 import { selectAssets, selectColors, selectDesignResolution, selectRootFolder, selectSelectedNode } from 'states/app.selectors';
 import CapInsetsField from './CapInsetsField';
+import { ColliderSettingsDialog } from './ColliderSettingsDialog';
 import ColorEditorDialog from './ColorEditorDialog';
 import NodeIdentityRow from './NodeIdentityRow';
 import { LABEL_DEFAULT_PROPS, SPINE_DEFAULT_PROPS, WIDGET_DIRECTIONS } from './NodeProps.constants';
@@ -202,6 +203,30 @@ function BoxColliderFields({ props, onChange }) {
   );
 }
 
+function ColliderTagField({ value, groups, onChange, onEdit }) {
+  const parsedTag = String(parseStringFromValue(value) ?? '').replace(/^['"]|['"]$/g, '').split('.').pop();
+  const selectedTag = groups.includes(parsedTag) ? parsedTag : groups[0] || '';
+
+  return (
+    <label className='grid min-h-7 grid-cols-[70px_minmax(0,1fr)] items-center gap-2 px-2 py-0.5'>
+      <div className='truncate text-[11px] text-[#c8c8c8]'>Tag</div>
+      <div className='flex min-w-0 gap-1'>
+        <select
+          className='h-6 min-w-0 flex-1 rounded-sm border border-[#111] bg-[#151515] px-2 text-[12px] text-[#e2e2e2] outline-none focus:border-[#4a90e2]'
+          value={selectedTag}
+          onChange={(event) => onChange(event.target.value || undefined)}
+        >
+          <option value=''>None</option>
+          {groups.map((group) => <option key={group} value={group}>{group}</option>)}
+        </select>
+        <button className='flex h-6 w-6 shrink-0 items-center justify-center rounded-sm border border-[#111] bg-[#303030] text-[#bdbdbd] hover:text-[#f0f0f0]' type='button' onClick={onEdit} title='Edit collider groups'>
+          <FiEdit2 size={13} />
+        </button>
+      </div>
+    </label>
+  );
+}
+
 function ColorField({ value, colors, onChange, onEdit }) {
   const colorName = parseStringFromValue(value) ?? '';
   const selectedColor = colors.find((color) => color.key === colorName);
@@ -353,6 +378,22 @@ function NodeProps() {
   const selectedNode = useSelector(selectSelectedNode);
   const [isColorEditorOpen, setIsColorEditorOpen] = useState(false);
   const [editingBoxColliderIndex, setEditingBoxColliderIndex] = useState<number | null>(null);
+  const [colliderGroups, setColliderGroups] = useState<string[]>([]);
+  const [colliderMatrix, setColliderMatrix] = useState('[]');
+  const [isColliderSettingsOpen, setIsColliderSettingsOpen] = useState(false);
+
+  async function loadColliderSettings() {
+    const settings: any = await sendRequest({ key: GET_COLLIDER_SETTINGS_REQUEST });
+    const groups = Array.isArray(settings?.groupsList)
+      ? settings.groupsList
+      : String(settings?.groupsList || '').match(/"[^"]+"/g)?.map((group) => group.slice(1, -1)) || [];
+    setColliderGroups(groups);
+    setColliderMatrix(typeof settings?.colliderMatrix === 'string' ? settings.colliderMatrix : JSON.stringify(settings?.colliderMatrix || []));
+  }
+
+  useEffect(() => {
+    if (rootFolder) void loadColliderSettings();
+  }, [rootFolder]);
 
   async function saveColors(nextColors) {
     const response: any = await sendRequest({ key: UPDATE_PROJECT_COLORS_REQUEST, rootFolder, colors: nextColors });
@@ -362,6 +403,28 @@ function NodeProps() {
     }
     getFiles(rootFolder);
     window.postMessage({ type: 'reloadProjectData' }, '*');
+    return true;
+  }
+
+  async function saveColliderSettings(groups, matrixText) {
+    let matrix;
+    try {
+      matrix = JSON.parse(matrixText);
+    } catch {
+      toast.error('Collider matrix must be valid JSON');
+      return false;
+    }
+    if (!Array.isArray(matrix)) {
+      toast.error('Collider matrix must be an array');
+      return false;
+    }
+    const response: any = await sendRequest({ key: SAVE_COLLIDER_SETTINGS_REQUEST, groupsList: groups, colliderMatrix: matrix });
+    if (!response?.success) {
+      toast.error(response?.message || 'Unable to save collider settings');
+      return false;
+    }
+    setColliderGroups(groups);
+    setColliderMatrix(JSON.stringify(matrix));
     return true;
   }
 
@@ -667,10 +730,10 @@ function NodeProps() {
         )}
       >
         {(component.tag === 'BoxCollider' || component.tag === 'PhysicsBoxCollider') && (
-          <BoxColliderFields
-            props={component.props || {}}
-            onChange={(updated) => updateComponentProps(index, updated)}
-          />
+          <>
+            <BoxColliderFields props={component.props || {}} onChange={(updated) => updateComponentProps(index, updated)} />
+            <ColliderTagField value={component.props?.tag} groups={colliderGroups} onChange={(tag) => updateComponentProps(index, { tag })} onEdit={() => setIsColliderSettingsOpen(true)} />
+          </>
         )}
         {component.tag === 'Widget' && (
           <WidgetInsets
@@ -693,7 +756,7 @@ function NodeProps() {
         {Object.entries(component.props || {}).filter(([key]) => (
           key !== 'capInsets'
           && key !== 'tiled'
-          && (!['BoxCollider', 'PhysicsBoxCollider'].includes(component.tag) || !['width', 'height', 'offset'].includes(key))
+          && (!['BoxCollider', 'PhysicsBoxCollider'].includes(component.tag) || !['tag', 'width', 'height', 'offset'].includes(key))
           && (component.tag !== 'Widget' || (
             !WIDGET_DIRECTIONS.some((direction) => direction.key === key)
             && !['centerVertical', 'centerHorizon'].includes(key)
@@ -744,6 +807,13 @@ function NodeProps() {
       isOpen={isColorEditorOpen}
       onClose={() => setIsColorEditorOpen(false)}
       onSave={saveColors}
+    />
+    <ColliderSettingsDialog
+      isOpen={isColliderSettingsOpen}
+      groups={colliderGroups}
+      colliderMatrix={colliderMatrix}
+      onClose={() => setIsColliderSettingsOpen(false)}
+      onSave={saveColliderSettings}
     />
   </div>);
 }

@@ -4,8 +4,8 @@ import {
   CREATE_ACTION, CREATE_ASSET_REQUEST, CREATE_I18N, CREATE_NEW_ACTION,
   DELETE_COMPONENT, DUPLICATE_COMPONENT,
   GEN_COMPONENT_REQUEST, GEN_PROP_TYPES_REQUEST, GET_FOLDER_FILES,
-  LOAD_COMPONENT_REQUEST, NEW_COMPONENT,
-  NEW_PAGE, RE_NAME_COMPONENT, UPDATE_PROJECT_COLORS_REQUEST
+  GET_COLLIDER_SETTINGS_REQUEST, LOAD_COMPONENT_REQUEST, NEW_COMPONENT,
+  NEW_PAGE, RE_NAME_COMPONENT, SAVE_COLLIDER_SETTINGS_REQUEST, UPDATE_PROJECT_COLORS_REQUEST
 } from "./constant.message";
 
 export type IpcRequest =
@@ -15,6 +15,8 @@ export type IpcRequest =
   | { key: typeof CREATE_I18N }
   | { key: typeof CREATE_ASSET_REQUEST, rootFolder: string, assetType: string, data: any }
   | { key: typeof UPDATE_PROJECT_COLORS_REQUEST, rootFolder: string, colors: any[] }
+  | { key: typeof GET_COLLIDER_SETTINGS_REQUEST }
+  | { key: typeof SAVE_COLLIDER_SETTINGS_REQUEST, groupsList: string[], colliderMatrix: any[] }
   | { key: typeof GET_FOLDER_FILES, src: string, patternList?: [string] }
   | { key: typeof CHECK_FILE_EXIST, folderPath: string }
   | { key: typeof LOAD_COMPONENT_REQUEST, path: string }
@@ -37,6 +39,8 @@ export type IpcResponse =
   | { key: typeof CREATE_I18N }
   | { key: typeof CREATE_ASSET_REQUEST }
   | { key: typeof UPDATE_PROJECT_COLORS_REQUEST }
+  | { key: typeof GET_COLLIDER_SETTINGS_REQUEST }
+  | { key: typeof SAVE_COLLIDER_SETTINGS_REQUEST }
   | { key: typeof GET_FOLDER_FILES }
   | { key: typeof CHECK_FILE_EXIST }
   | { key: typeof LOAD_COMPONENT_REQUEST }

@@ -1,5 +1,5 @@
 import { IpcRequest } from 'shared/types.message';
-import { CREATE_ASSET_REQUEST, GET_FOLDER_FILES, LOAD_COMPONENT_REQUEST, UPDATE_PROJECT_COLORS_REQUEST } from 'shared/constant.message';
+import { CREATE_ASSET_REQUEST, GET_COLLIDER_SETTINGS_REQUEST, GET_FOLDER_FILES, LOAD_COMPONENT_REQUEST, SAVE_COLLIDER_SETTINGS_REQUEST, UPDATE_PROJECT_COLORS_REQUEST } from 'shared/constant.message';
 
 const getIpcRenderer = () => {
   const electronRequire = (globalThis as any).require
@@ -26,6 +26,12 @@ const getBrowserFallback = (key: string) => {
     return { success: true }
   }
   if (key === UPDATE_PROJECT_COLORS_REQUEST) {
+    return { success: true }
+  }
+  if (key === GET_COLLIDER_SETTINGS_REQUEST) {
+    return { groupsList: '', colliderMatrix: '[]' }
+  }
+  if (key === SAVE_COLLIDER_SETTINGS_REQUEST) {
     return { success: true }
   }
   return undefined

@@ -4,6 +4,8 @@ export const CREATE_NEW_ACTION = 'CREATE_NEW_ACTION';
 export const CREATE_I18N = 'CREATE_I18N';
 export const CREATE_ASSET_REQUEST = 'CREATE_ASSET_REQUEST';
 export const UPDATE_PROJECT_COLORS_REQUEST = 'Update Project Colors';
+export const GET_COLLIDER_SETTINGS_REQUEST = 'Get Collider Settings';
+export const SAVE_COLLIDER_SETTINGS_REQUEST = 'Save Collider Settings';
 
 export const GET_FOLDER_FILES = 'GET_FOLDER_FILES';
 export const CHECK_FILE_EXIST = 'CHECK_FILE_EXIST';

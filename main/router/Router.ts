@@ -4,6 +4,7 @@ import {
 } from '@@/services/ComponentService';
 import { createAsset } from '@@/services/AssetCreateService';
 import { updateProjectColors } from '@@/services/ColorService';
+import { getSettings, saveSettings } from '@@/services/settings.service';
 import {
   checkFileExist,
   deleteFolder,
@@ -19,8 +20,10 @@ import {
   GEN_COMPONENT_REQUEST,
   GET_FOLDER_FILES,
   LOAD_COMPONENT_REQUEST,
+  GET_COLLIDER_SETTINGS_REQUEST,
   RE_NAME_COMPONENT,
-  UPDATE_PROJECT_COLORS_REQUEST
+  UPDATE_PROJECT_COLORS_REQUEST,
+  SAVE_COLLIDER_SETTINGS_REQUEST
 } from '@shared/constant.message';
 import { IpcRequest, RequestMessage } from '@shared/types.message';
 import { ipcMain } from 'electron';
@@ -56,4 +59,6 @@ export default function Router() {
   addListener(CREATE_I18N, createI18n);
   addListener(CREATE_ASSET_REQUEST, createAsset);
   addListener(UPDATE_PROJECT_COLORS_REQUEST, updateProjectColors);
+  addListener(GET_COLLIDER_SETTINGS_REQUEST, getSettings);
+  addListener(SAVE_COLLIDER_SETTINGS_REQUEST, ({ groupsList, colliderMatrix }) => saveSettings(groupsList, colliderMatrix));
 }

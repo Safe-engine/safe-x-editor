@@ -14,7 +14,7 @@ export function saveSettings(groupsList = [], colliderMatrix = []) {
   const code = readFileSync(settingsFile, 'utf-8')
   const parsed: any = parse((code));
   // console.log('Parsed settings:', parsed);
-  let newCode = code;
+  const replacements: Array<{ start: number; end: number; value: string }> = [];
   // Traverse the AST to find replace the colliderMatrix
   ESTraverse.traverse(parsed, {
     enter: function (node: any) {
@@ -23,24 +23,21 @@ export function saveSettings(groupsList = [], colliderMatrix = []) {
         // console.log(' traverse:', node.init);
         const newColliderMatrix = JSON.stringify(colliderMatrix);
         const [start, end] = node.init.range
-        newCode = newCode.substring(0, start) + newColliderMatrix + newCode.substring(end);
+        replacements.push({ start, end, value: newColliderMatrix });
+      } else if (node.type === 'TSEnumBody') {
+        const groupNames = groupsList.map((group: string) => group.trim()).filter(Boolean);
+        if (groupNames.some((group: string) => !/^[A-Za-z_$][\w$]*$/.test(group))) {
+          throw Error('Group names must be valid identifiers.');
+        }
+        const [start, end] = node.range;
+        replacements.push({ start, end, value: `{\n  ${groupNames.join(',\n  ')}\n}` });
       }
     },
     fallback: 'iteration',
   });
-  // ESTraverse.traverse(parsed, {
-  //   enter: function (node: any) {
-  //     // console.log(' traverse:', node);
-  //     if ('TSEnumBody' === node.type) {
-  //       const newGroupsList = groupsList.map((g: string) => `${g},`).join('\n  ');
-  //       const [start, end] = node.range
-  //       newCode = newCode.substring(0, start + 1) + '\n  ' + newGroupsList + '\n' + newCode.substring(end - 1);
-  //     }
-  //   },
-  //   fallback: 'iteration',
-  // });
-  // Write the modified code back to the file
-  // console.log('New settings code:', newCode);
+  const newCode = replacements
+    .sort((left, right) => right.start - left.start)
+    .reduce((content, replacement) => content.slice(0, replacement.start) + replacement.value + content.slice(replacement.end), code);
   writeFileSync(settingsFile, newCode, 'utf-8');
   return { success: true };
 }
