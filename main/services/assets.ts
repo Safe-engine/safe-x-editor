@@ -123,7 +123,7 @@ export function parseJsonCache(cacheFile, jsonAssets) {
     leave(node: any, parent) {
       if (node.type === 'AssignmentExpression') {
         const { left, right } = node;
-        console.log('JsonCache', left.property, right.argument.arguments[0]);
+        // console.log('JsonCache', left.property, right.argument.arguments[0]);
         const name = parseValue(left.property);
         const assetKey = get(right, 'arguments[0].name') || get(right, 'argument.arguments[0].name');
         varsList[name] = jsonAssets.find(a => a.key === assetKey);

@@ -211,7 +211,7 @@ const genPropsLine = (props: { [key: string]: any }) => {
       if (val === true) { return key; }
       if (val === false) { return `${key}={false}`; }
       if (typeof val === 'number') { return `${key}={${val}}`; }
-      if (key === 'capInsets' && Array.isArray(val)) {
+      if ((key === 'capInsets' || key === 'offset') && Array.isArray(val)) {
         return `${key}={${JSON.stringify(val)}}`;
       }
       if (key === 'node') {

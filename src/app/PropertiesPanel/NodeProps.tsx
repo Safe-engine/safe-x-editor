@@ -1,6 +1,6 @@
 import { sendRequest } from 'app/app.ipc';
 import SelectBox from 'base/SelectBox';
-import { parseOutline, parseStringFromValue } from 'helper/node';
+import { parseFloatFromValue, parseOutline, parseStringFromValue } from 'helper/node';
 import { memo, useState } from 'react';
 import toast from 'react-hot-toast';
 import { FiEdit2, FiRotateCcw } from 'react-icons/fi';
@@ -179,6 +179,29 @@ function AxisRow({ label, values, step, onChange, onReset }) {
   );
 }
 
+function BoxColliderFields({ props, onChange }) {
+  const [offsetX = 0, offsetY = 0] = String(props.offset ?? [0, 0]).match(/-?\d+(\.\d+)?/g)?.map(Number) || [];
+
+  return (
+    <>
+      <AxisRow
+        label='Size'
+        values={{ x: parseFloatFromValue(props.width) ?? 0, y: parseFloatFromValue(props.height) ?? 0 }}
+        onChange={(axis, value) => onChange({ [axis === 'x' ? 'width' : 'height']: value })}
+      />
+      <div className='grid min-h-7 grid-cols-[70px_minmax(0,1fr)] items-center gap-2 px-2 py-0.5'>
+        <div className='truncate text-[11px] text-[#c8c8c8]'>Offset</div>
+        <div className='flex min-w-0 gap-1'>
+          <div className='grid min-w-0 flex-1 grid-cols-2 gap-1'>
+            <AxisInput axis='X' color='#ff6565' value={offsetX} onChange={(value) => onChange({ offset: [value, offsetY] })} />
+            <AxisInput axis='Y' color='#71d36b' value={offsetY} onChange={(value) => onChange({ offset: [offsetX, value] })} />
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
 function ColorField({ value, colors, onChange, onEdit }) {
   const colorName = parseStringFromValue(value) ?? '';
   const selectedColor = colors.find((color) => color.key === colorName);
@@ -329,6 +352,7 @@ function NodeProps() {
   const rootFolder = useSelector(selectRootFolder);
   const selectedNode = useSelector(selectSelectedNode);
   const [isColorEditorOpen, setIsColorEditorOpen] = useState(false);
+  const [editingBoxColliderIndex, setEditingBoxColliderIndex] = useState<number | null>(null);
 
   async function saveColors(nextColors) {
     const response: any = await sendRequest({ key: UPDATE_PROJECT_COLORS_REQUEST, rootFolder, colors: nextColors });
@@ -394,6 +418,12 @@ function NodeProps() {
         ...updated,
       },
     });
+  }
+
+  function toggleBoxColliderEditor(index) {
+    const isEditing = editingBoxColliderIndex === index;
+    setEditingBoxColliderIndex(isEditing ? null : index);
+    window.postMessage({ type: 'toggleBoxColliderEditor', componentIndex: isEditing ? undefined : index }, '*');
   }
 
   function isSpriteComponent(component) {
@@ -618,7 +648,30 @@ function NodeProps() {
       </InspectorSection>
     )}
     {components.map((component, index) => (
-      <InspectorSection key={`${component.tag}-${index}`} title={component.tag || `Component ${index + 1}`}>
+      <InspectorSection
+        key={`${component.tag}-${index}`}
+        title={component.tag || `Component ${index + 1}`}
+        headerContent={(component.tag === 'BoxCollider' || component.tag === 'PhysicsBoxCollider') && (
+          <button
+            className={`ml-2 flex h-5 w-5 items-center justify-center rounded-sm ${editingBoxColliderIndex === index ? 'bg-[#3569a8] text-white' : 'text-[#bdbdbd] hover:text-[#f0f0f0]'}`}
+            type='button'
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              toggleBoxColliderEditor(index);
+            }}
+            title={editingBoxColliderIndex === index ? 'Hide collider editor' : 'Edit collider in preview'}
+          >
+            <FiEdit2 size={13} />
+          </button>
+        )}
+      >
+        {(component.tag === 'BoxCollider' || component.tag === 'PhysicsBoxCollider') && (
+          <BoxColliderFields
+            props={component.props || {}}
+            onChange={(updated) => updateComponentProps(index, updated)}
+          />
+        )}
         {component.tag === 'Widget' && (
           <WidgetInsets
             props={component.props || {}}
@@ -640,6 +693,7 @@ function NodeProps() {
         {Object.entries(component.props || {}).filter(([key]) => (
           key !== 'capInsets'
           && key !== 'tiled'
+          && (!['BoxCollider', 'PhysicsBoxCollider'].includes(component.tag) || !['width', 'height', 'offset'].includes(key))
           && (component.tag !== 'Widget' || (
             !WIDGET_DIRECTIONS.some((direction) => direction.key === key)
             && !['centerVertical', 'centerHorizon'].includes(key)

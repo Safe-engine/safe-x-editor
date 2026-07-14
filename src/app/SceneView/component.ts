@@ -126,7 +126,7 @@ export function getComponent(components = [], node: Node, designedResolution: { 
         component = new BoxCollider({
           width: parseFloatFromValue(width),
           height: parseFloatFromValue(height),
-          offset: parseNumbersArray(offset),
+          offset: offset ? parseNumbersArray(offset) : undefined,
         })
         break
       }
@@ -135,7 +135,7 @@ export function getComponent(components = [], node: Node, designedResolution: { 
         const { radius, offset } = props
         component = new CircleCollider({
           radius: parseFloatFromValue(radius),
-          offset: parseNumbersArray(offset),
+          offset: offset ? parseNumbersArray(offset) : undefined,
         })
         break
       }
@@ -144,7 +144,7 @@ export function getComponent(components = [], node: Node, designedResolution: { 
         const { points, offset } = props
         component = new PolygonCollider({
           points: parsePoints(points),
-          offset: parseNumbersArray(offset),
+          offset: offset ? parseNumbersArray(offset) : undefined,
         })
         break
       }

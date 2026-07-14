@@ -2,7 +2,7 @@ import { MeshAttachment, RegionAttachment } from '@esotericsoftware/spine-core'
 import { Label, loadAll, Node, Scene, SpineBonesControl, SpineSkeleton, Sprite, Touch } from '@safe-engine/sdl'
 import { getLastLoadedFile, getLastRootFolder, getLastSceneScale, getLastSceneX, getLastSceneY, setLastSceneScale, setLastSceneX, setLastSceneY } from 'data/AppData'
 import { GlobalState } from 'data/GloablState'
-import { normalizeNodeProps, parseBoolFromValue, parseNumbersArray, parseStringsArray } from 'helper/node'
+import { normalizeNodeProps, parseBoolFromValue, parseFloatFromValue, parseNumbersArray, parseStringsArray } from 'helper/node'
 import { cloneDeep, first, isNumber, parseInt, set } from 'lodash-es'
 import { setAssetRoot } from 'sdl3'
 import { sendRequest } from '../app.ipc'
@@ -29,6 +29,7 @@ export class PreviewScene extends Scene {
   selectionAnchorNode: Node
   selectionCornerNodes: Node[]
   rotationHandleNode: Node
+  boxColliderEditorNode?: Node
   marqueeSelectionNode: Node
   spineBonesControlNode: Node
   spineBoneTooltipNode?: HTMLDivElement
@@ -57,6 +58,9 @@ export class PreviewScene extends Scene {
   activeResizeEdge?: ResizeHandle
   isRotating = false
   activeSpineBonePoint?: { componentIndex: number; pointIndex: number }
+  activeBoxColliderOffset?: { componentIndex: number }
+  activeBoxColliderResizeEdge?: 'left' | 'right' | 'top' | 'bottom'
+  boxColliderEditor?: { path: string; componentIndex: number }
   rotationDragStart?: { angle: number; rotation: number }
   marqueeSelection?: MarqueeSelection
 
@@ -211,6 +215,17 @@ export class PreviewScene extends Scene {
         canvas.style.cursor = 'grab'
         return
       }
+      const colliderResizeEdge = !this.isShiftPressed && !this.isMultiSelectModifierPressed
+        ? this.getActiveBoxColliderResizeEdge(x, y)
+        : undefined
+      if (colliderResizeEdge) {
+        canvas.style.cursor = colliderResizeEdge === 'left' || colliderResizeEdge === 'right' ? 'ew-resize' : 'ns-resize'
+        return
+      }
+      if (!this.isShiftPressed && !this.isMultiSelectModifierPressed && this.getActiveBoxColliderEditor(x, y)) {
+        canvas.style.cursor = 'move'
+        return
+      }
       const handle = !this.isShiftPressed && !this.isMultiSelectModifierPressed ? this.getActiveResizeEdge(x, y) : undefined
       const canResizeX = handle?.includes('left') || handle?.includes('right') ? !this.lockX : false
       const canResizeY = handle?.includes('top') || handle?.includes('bottom') ? !this.lockY : false
@@ -262,6 +277,8 @@ export class PreviewScene extends Scene {
         void this.reloadProjectData()
       } else if (message.type === 'updateSelectedNode') {
         void this.updateSelectedNode(message.component, message.updated)
+      } else if (message.type === 'toggleBoxColliderEditor') {
+        this.toggleBoxColliderEditor(message.componentIndex)
       }
     }
     window.addEventListener('message', listener)
@@ -691,6 +708,7 @@ export class PreviewScene extends Scene {
     this.createDrawNode()
     await loadSceneViewSdl({ name: this.editingComponentName, treeData: this.editingComponent }, GlobalState.data, this.drawNode)
     this.syncEditingFlag()
+    this.updateBoxColliderEditor()
     this.updateArrowPosition()
   }
 
@@ -712,7 +730,126 @@ export class PreviewScene extends Scene {
     this.createDrawNode()
     await loadSceneViewSdl({ name: this.editingComponentName, treeData: this.editingComponent }, GlobalState.data, this.drawNode)
     this.syncEditingFlag()
+    this.updateBoxColliderEditor()
     this.updateArrowPosition()
+  }
+
+  toggleBoxColliderEditor(componentIndex?: number) {
+    if (componentIndex === undefined || !this.editingPaths[0]) {
+      this.boxColliderEditor = undefined
+      this.updateBoxColliderEditor()
+      return
+    }
+    this.boxColliderEditor = { path: this.editingPaths[0], componentIndex }
+    this.updateBoxColliderEditor()
+  }
+
+  updateBoxColliderEditor() {
+    this.boxColliderEditorNode?.destroy()
+    this.boxColliderEditorNode = undefined
+    const editor = this.boxColliderEditor
+    if (!editor || this.editingPaths.length !== 1 || this.editingPaths[0] !== editor.path) return
+    const editNode = this.getEditingNodeByPath(editor.path)
+    const component = editNode?.components?.[editor.componentIndex]
+    if (!component || !['BoxCollider', 'PhysicsBoxCollider'].includes(component.tag)) return
+    const [offsetX = 0, offsetY = 0] = String(component.props?.offset ?? '0, 0').match(/-?\d+(\.\d+)?/g)?.map(Number) || []
+    const node = createNode('BoxColliderEditor')
+    node.width = parseFloatFromValue(component.props?.width) || 0
+    node.height = parseFloatFromValue(component.props?.height) || 0
+    node.x = offsetX
+    node.y = offsetY
+    node.anchorX = 0.5
+    node.anchorY = 0.5
+    node.zIndex = Infinity
+    node.addComponent(new RectRender({ fillColor: { r: 59, g: 130, b: 246, a: 40 }, strokeColor: { r: 96, g: 165, b: 250, a: 255 }, lineWidth: 2 }))
+    const currentNode = getCurrentNode(this.drawNode, this.getChildrenIndex(editor.path))
+    currentNode?.addChild(node)
+    this.boxColliderEditorNode = node
+  }
+
+  getActiveBoxColliderEditor(x: number, y: number) {
+    const node = this.boxColliderEditorNode
+    if (!node || !this.boxColliderEditor) return undefined
+    return this.isPointInsideNode(node, x, y) ? { componentIndex: this.boxColliderEditor.componentIndex } : undefined
+  }
+
+  getActiveBoxColliderResizeEdge(x: number, y: number) {
+    const node = this.boxColliderEditorNode
+    if (!node) return undefined
+    const bounds = this.getNodeBounds(node)
+    if (!bounds) return undefined
+    const hitSize = PreviewScene.RESIZE_EDGE_HIT_SIZE
+    if (x >= bounds.left - hitSize && x <= bounds.right + hitSize) {
+      if (Math.abs(y - bounds.top) <= hitSize) return 'top' as const
+      if (Math.abs(y - bounds.bottom) <= hitSize) return 'bottom' as const
+    }
+    if (y >= bounds.top - hitSize && y <= bounds.bottom + hitSize) {
+      if (Math.abs(x - bounds.left) <= hitSize) return 'left' as const
+      if (Math.abs(x - bounds.right) <= hitSize) return 'right' as const
+    }
+    return undefined
+  }
+
+  moveBoxColliderOffset(x: number, y: number) {
+    const active = this.activeBoxColliderOffset
+    const editor = this.boxColliderEditor
+    if (!active || !editor || this.editingPaths.length !== 1) return false
+    const currentNode = getCurrentNode(this.drawNode, this.getChildrenIndex(editor.path))
+    const radians = (-currentNode.worldRotation * Math.PI) / 180
+    const dx = x - currentNode.worldX
+    const dy = y - currentNode.worldY
+    const offsetX = Math.round((dx * Math.cos(radians) - dy * Math.sin(radians)) / currentNode.worldScaleX)
+    const offsetY = Math.round((dx * Math.sin(radians) + dy * Math.cos(radians)) / currentNode.worldScaleY)
+    if (!Number.isFinite(offsetX) || !Number.isFinite(offsetY)) return false
+    const editNode = this.getEditingNodeByPath(editor.path)
+    const component = editNode?.components?.[active.componentIndex]
+    if (!component) return false
+    component.props = { ...component.props, offset: [offsetX, offsetY] }
+    if (this.boxColliderEditorNode) {
+      this.boxColliderEditorNode.x = offsetX
+      this.boxColliderEditorNode.y = offsetY
+    }
+    this.syncEditingFlag()
+    window.postMessage({ type: 'previewUpdateSelectedNodes', selectPaths: this.editingPaths, nodes: [{ component: 'components', updated: editNode.components }] }, '*')
+    return true
+  }
+
+  resizeBoxCollider(edge: 'left' | 'right' | 'top' | 'bottom', dx: number, dy: number) {
+    const editor = this.boxColliderEditor
+    const node = this.boxColliderEditorNode
+    if (!editor || !node) return false
+    const currentNode = getCurrentNode(this.drawNode, this.getChildrenIndex(editor.path))
+    const radians = (-currentNode.worldRotation * Math.PI) / 180
+    const localDx = (dx * Math.cos(radians) - dy * Math.sin(radians)) / currentNode.worldScaleX
+    const localDy = (dx * Math.sin(radians) + dy * Math.cos(radians)) / currentNode.worldScaleY
+    let width = node.width
+    let height = node.height
+    let offsetX = node.x
+    let offsetY = node.y
+    if (edge === 'left') {
+      width = Math.max(1, width - localDx)
+      offsetX += (node.width - width) / 2
+    } else if (edge === 'right') {
+      width = Math.max(1, width + localDx)
+      offsetX += (width - node.width) / 2
+    } else if (edge === 'top') {
+      height = Math.max(1, height - localDy)
+      offsetY += (node.height - height) / 2
+    } else {
+      height = Math.max(1, height + localDy)
+      offsetY += (height - node.height) / 2
+    }
+    const editNode = this.getEditingNodeByPath(editor.path)
+    const component = editNode?.components?.[editor.componentIndex]
+    if (!component) return false
+    node.width = Math.round(width)
+    node.height = Math.round(height)
+    node.x = Math.round(offsetX)
+    node.y = Math.round(offsetY)
+    component.props = { ...component.props, width: node.width, height: node.height, offset: [node.x, node.y] }
+    this.syncEditingFlag()
+    window.postMessage({ type: 'previewUpdateSelectedNodes', selectPaths: this.editingPaths, nodes: [{ component: 'components', updated: editNode.components }] }, '*')
+    return true
   }
 
   async updateSelectedNode(component: string, updated: any) {
@@ -1023,6 +1160,10 @@ export class PreviewScene extends Scene {
 
   changeSelectPath(paths: string[], notify = true) {
     this.editingPaths = [...new Set(paths.map((path) => this.getEditablePath(path)).filter(Boolean))]
+    if (this.boxColliderEditor && this.editingPaths[0] !== this.boxColliderEditor.path) {
+      this.boxColliderEditor = undefined
+      this.updateBoxColliderEditor()
+    }
     this.updateArrowPosition()
     if (notify) window.postMessage({ type: 'previewSelectPaths', selectPaths: this.editingPaths }, '*')
   }
@@ -1314,12 +1455,36 @@ export class PreviewScene extends Scene {
       this.activeResizeEdge = undefined
       this.isRotating = false
       this.activeSpineBonePoint = undefined
+      this.activeBoxColliderOffset = undefined
+      this.activeBoxColliderResizeEdge = undefined
       this.rotationDragStart = undefined
       this.updateArrowOpacity()
       return
     }
     const isModifierSelecting = this.isMultiSelectModifierPressed && !this.isMiddleMouse
     this.activeSpineBonePoint = isModifierSelecting || this.isShiftPressed ? undefined : this.getActiveSpineBonePoint(x, y)
+    this.activeBoxColliderResizeEdge = isModifierSelecting || this.isShiftPressed ? undefined : this.getActiveBoxColliderResizeEdge(x, y)
+    this.activeBoxColliderOffset = this.activeBoxColliderResizeEdge || isModifierSelecting || this.isShiftPressed
+      ? undefined
+      : this.getActiveBoxColliderEditor(x, y)
+    if (this.activeBoxColliderResizeEdge) {
+      this.pushUndoHistory()
+      this.didCaptureDragHistory = true
+      this.activeArrowAxis = undefined
+      this.activeResizeEdge = undefined
+      this.isRotating = false
+      this.updateArrowOpacity()
+      return
+    }
+    if (this.activeBoxColliderOffset) {
+      this.pushUndoHistory()
+      this.didCaptureDragHistory = true
+      this.activeArrowAxis = undefined
+      this.activeResizeEdge = undefined
+      this.isRotating = false
+      this.updateArrowOpacity()
+      return
+    }
     if (this.activeSpineBonePoint) {
       this.pushUndoHistory()
       this.didCaptureDragHistory = true
@@ -1403,6 +1568,14 @@ export class PreviewScene extends Scene {
       this.moveSpineBonePoint(x, y)
       return
     }
+    if (this.activeBoxColliderOffset) {
+      this.moveBoxColliderOffset(x, y)
+      return
+    }
+    if (this.activeBoxColliderResizeEdge) {
+      this.resizeBoxCollider(this.activeBoxColliderResizeEdge, dx, dy)
+      return
+    }
     if (!this.editingPaths[0] || this.isMiddleMouse) {
       this.drawNode.x += dx
       this.drawNode.y += dy
@@ -1468,6 +1641,8 @@ export class PreviewScene extends Scene {
     this.activeResizeEdge = undefined
     this.isRotating = false
     this.activeSpineBonePoint = undefined
+    this.activeBoxColliderOffset = undefined
+    this.activeBoxColliderResizeEdge = undefined
     this.rotationDragStart = undefined
     this.didCaptureDragHistory = false
     this.updateArrowOpacity()
