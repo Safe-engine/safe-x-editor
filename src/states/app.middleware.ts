@@ -19,6 +19,7 @@ export function createMiddleware(dispatch: Dispatch<any>) {
       }
       setLastRootFolder(src)
       getFilesSuccess(data)
+      window.postMessage({ type: 'reloadProjectData' }, '*')
     },
     async loadComponent(path: string) {
       const data: any = await sendRequest({

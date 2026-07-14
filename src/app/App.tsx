@@ -1,5 +1,6 @@
 import { Allotment } from 'allotment'
 import { useEffect, useMemo } from 'react'
+import { Toaster } from 'react-hot-toast'
 
 import { useSelector } from 'states/app.context'
 import { selectDesignResolution } from 'states/app.selectors'
@@ -22,6 +23,7 @@ export function App() {
 
   return (
     <main className="h-screen bg-[#1e1e1e] text-[#dcdcdc]">
+      <Toaster position="top-center" />
       <Allotment>
         <Allotment.Pane snap minSize={200} maxSize={250}>
           <AssetsPanel />

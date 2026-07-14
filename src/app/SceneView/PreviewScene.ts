@@ -259,7 +259,7 @@ export class PreviewScene extends Scene {
       } else if (message.type === 'focusPreviewNode') {
         this.focusNode(message.path)
       } else if (message.type === 'reloadProjectData') {
-        void this.loadProjectData().then(() => this.reloadEditingComponent())
+        void this.reloadProjectData()
       } else if (message.type === 'updateSelectedNode') {
         void this.updateSelectedNode(message.component, message.updated)
       }
@@ -294,6 +294,13 @@ export class PreviewScene extends Scene {
     if (defaultFont) Label.defaultFont = defaultFont
     await preloadSdlAssets(assets)
     await loadAll([arrow]).catch(() => undefined)
+  }
+
+  async reloadProjectData() {
+    await this.loadProjectData()
+    this.borderNode.width = GlobalState.data.designedResolution.width
+    this.borderNode.height = GlobalState.data.designedResolution.height
+    await this.reloadEditingComponent()
   }
 
   setRootScale(offset: number) {
