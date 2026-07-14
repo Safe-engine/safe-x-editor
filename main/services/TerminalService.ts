@@ -1,5 +1,5 @@
 import { GlobalData } from "@@/parser/global";
-import { spawnSync } from "child_process";
+import { execSync, spawnSync } from "child_process";
 import { log } from "console";
 
 export function lintFile(filePath: string) {
@@ -22,21 +22,14 @@ export function lintFile(filePath: string) {
   }
 }
 
-export function syncResConst() {
-  const cmd = 'bun'
-  const args = ['./node_modules/safex-sync-res/src/index.ts']
+export function syncResConst(rootFolder?: string) {
+  const cwd = rootFolder || GlobalData.rootProject;
+  log(`Running: bun run sync-res in ${cwd}`);
+  execSync('bun run sync-res', { cwd, stdio: 'inherit' });
+}
 
-  log(`Running: ${cmd} ${args.join(' ')}`, GlobalData.rootProject)
-
-  const res = spawnSync(cmd, args, {
-    cwd: GlobalData.rootProject,
-    stdio: 'inherit',
-    shell: false,
-  })
-
-  if (res.error) {
-    log('Lỗi khi chạy eslint:', res.error)
-  } else if (res.status !== 0) {
-    log(`eslint exited with code ${res.status}`)
-  }
+export function installDependencies(rootFolder?: string) {
+  const cwd = rootFolder || GlobalData.rootProject;
+  log(`Running: bun install in ${cwd}`);
+  execSync('bun install', { cwd, stdio: 'inherit' });
 }

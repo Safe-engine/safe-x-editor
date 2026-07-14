@@ -3,7 +3,7 @@ import {
   CHANGE_LANGUAGE, CHECK_FILE_EXIST,
   CREATE_ACTION, CREATE_ASSET_REQUEST, CREATE_I18N, CREATE_NEW_ACTION, CREATE_PROJECT_REQUEST,
   DELETE_COMPONENT, DUPLICATE_COMPONENT,
-  GEN_COMPONENT_REQUEST, GEN_PROP_TYPES_REQUEST, GET_FOLDER_FILES,
+  SYNC_RES_REQUEST, GEN_COMPONENT_REQUEST, GEN_PROP_TYPES_REQUEST, GET_FOLDER_FILES,
   GET_COLLIDER_SETTINGS_REQUEST, LOAD_COMPONENT_REQUEST, NEW_COMPONENT,
   NEW_PAGE, RE_NAME_COMPONENT, SAVE_COLLIDER_SETTINGS_REQUEST, UPDATE_PROJECT_COLORS_REQUEST
 } from "./constant.message";
@@ -29,6 +29,7 @@ export type IpcRequest =
   | { key: typeof DELETE_COMPONENT }
   | { key: typeof CREATE_ACTION }
   | { key: typeof ADD_NEW_STATE }
+  | { key: typeof SYNC_RES_REQUEST, rootFolder: string }
   | { key: typeof NEW_PAGE }
 
 export type RequestMessage = IpcRequest['key'];
@@ -54,6 +55,7 @@ export type IpcResponse =
   | { key: typeof DELETE_COMPONENT }
   | { key: typeof CREATE_ACTION }
   | { key: typeof ADD_NEW_STATE }
+  | { key: typeof SYNC_RES_REQUEST }
   | { key: typeof NEW_PAGE }
 
 export type ResponseMessage = IpcResponse['key'];

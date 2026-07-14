@@ -1,31 +1,33 @@
+import { createAsset } from '@@/services/AssetCreateService';
+import { updateProjectColors } from '@@/services/ColorService';
 import {
   duplicateComponent,
   loadComponent, renameComponent, updateComponentTag,
 } from '@@/services/ComponentService';
-import { createAsset } from '@@/services/AssetCreateService';
-import { updateProjectColors } from '@@/services/ColorService';
-import { getSettings, saveSettings } from '@@/services/settings.service';
 import {
   checkFileExist,
   deleteFolder,
   getFilesInFolder,
 } from '@@/services/FilesService';
 import { createI18n } from '@@/services/LanguageService';
+import { installDependencies, syncResConst } from '@@/services/TerminalService';
 import { initProject } from '@@/services/project';
+import { getSettings, saveSettings } from '@@/services/settings.service';
 import {
   CHECK_FILE_EXIST,
+  CREATE_ASSET_REQUEST,
   CREATE_I18N,
   CREATE_PROJECT_REQUEST,
-  CREATE_ASSET_REQUEST,
   DELETE_COMPONENT,
   DUPLICATE_COMPONENT,
   GEN_COMPONENT_REQUEST,
+  GET_COLLIDER_SETTINGS_REQUEST,
   GET_FOLDER_FILES,
   LOAD_COMPONENT_REQUEST,
-  GET_COLLIDER_SETTINGS_REQUEST,
   RE_NAME_COMPONENT,
-  UPDATE_PROJECT_COLORS_REQUEST,
-  SAVE_COLLIDER_SETTINGS_REQUEST
+  SAVE_COLLIDER_SETTINGS_REQUEST,
+  SYNC_RES_REQUEST,
+  UPDATE_PROJECT_COLORS_REQUEST
 } from '@shared/constant.message';
 import { IpcRequest, RequestMessage } from '@shared/types.message';
 import { ipcMain } from 'electron';
@@ -65,10 +67,16 @@ export default function Router() {
     if (!name || name !== basename(name) || name.includes('\\')) throw Error('Invalid project name.');
     const workspacePath = join(rootFolder, name);
     await initProject(workspacePath);
+    await installDependencies(workspacePath);
+    await syncResConst(workspacePath);
     return { success: true, workspacePath };
   });
   addListener(CREATE_ASSET_REQUEST, createAsset);
   addListener(UPDATE_PROJECT_COLORS_REQUEST, updateProjectColors);
   addListener(GET_COLLIDER_SETTINGS_REQUEST, getSettings);
   addListener(SAVE_COLLIDER_SETTINGS_REQUEST, ({ groupsList, colliderMatrix }) => saveSettings(groupsList, colliderMatrix));
+  addListener(SYNC_RES_REQUEST, ({ rootFolder }) => {
+    syncResConst(rootFolder);
+    return { success: true };
+  });
 }

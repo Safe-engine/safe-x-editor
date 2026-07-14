@@ -7,13 +7,12 @@ import { ipcMain } from 'helper/electronRemote'
 import pathUtils from 'path-browserify'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Tree, TreeApi } from 'react-arborist'
-import { FiPlus, FiX } from 'react-icons/fi'
+import { FiRefreshCw, FiX } from 'react-icons/fi'
 import toast from 'react-hot-toast'
-import { ADD_NEW_STATE, CREATE_ACTION, CREATE_ASSET_REQUEST, DELETE_COMPONENT, GET_FOLDER_FILES, NEW_COMPONENT, RE_NAME_COMPONENT } from 'shared/constant.message'
+import { ADD_NEW_STATE, CREATE_ACTION, CREATE_ASSET_REQUEST, DELETE_COMPONENT, GET_FOLDER_FILES, SYNC_RES_REQUEST, NEW_COMPONENT, RE_NAME_COMPONENT } from 'shared/constant.message'
 import { useActions, useSelector } from 'states/app.context'
 import { selectFilesData, selectPreviewAsset, selectResourceFilesData, selectRootFolder } from 'states/app.selectors'
 import { AssetTypeBlock } from '../../components/common'
-import { ContextMenu } from '../../components/ContextMenu'
 import AssetPreview from './AssetPreview'
 import CreateAnimationAssetDialog from './CreateAnimationAssetDialog'
 import CreateAudioAssetDialog from './CreateAudioAssetDialog'
@@ -21,7 +20,7 @@ import CreateImageAssetDialog from './CreateImageAssetDialog'
 
 const textureExtensions = new Set(['.png', '.jpg', '.jpeg', '.webp', '.gif', '.bmp', '.svg']);
 const PANEL_HEADER_HEIGHT = 32;
-const RESOURCE_FILTER_HEIGHT = 40;
+const FILTER_HEIGHT = 40;
 const ASSET_PREVIEW_HEIGHT = 320;
 type CreateAssetDialogType = 'image' | 'audio' | 'animation' | null;
 
@@ -116,19 +115,23 @@ export default function AssetsPanel() {
   const [isOpenNewState, setOpenNewState] = useState(false);
   const [selectedTab, setSelectedTab] = useState('components');
   const [resourceFilter, setResourceFilter] = useState('');
+  const [componentFilter, setComponentFilter] = useState('');
   const [createAssetDialog, setCreateAssetDialog] = useState<CreateAssetDialogType>(null);
-  const [createAssetMenu, setCreateAssetMenu] = useState({ visible: false, x: 0, y: 0 });
   const filteredResourceTreeData = useMemo(
     () => filterResourceTreeData(resourceTreeData, resourceFilter),
     [resourceTreeData, resourceFilter]
   );
-  const selectedTreeData = selectedTab === 'res' ? filteredResourceTreeData : treeData;
+  const filteredComponentTreeData = useMemo(
+    () => filterResourceTreeData(treeData, componentFilter),
+    [treeData, componentFilter]
+  );
+  const selectedTreeData = selectedTab === 'res' ? filteredResourceTreeData : filteredComponentTreeData;
   const previewAsset = useSelector(selectPreviewAsset);
   const showPreview = selectedTab === 'res' && Boolean(previewAsset?.type);
   const [panelHeight, setPanelHeight] = useState(() => Math.max(0, window.innerHeight - PANEL_HEADER_HEIGHT));
   const treeHeight = Math.max(
     0,
-    panelHeight - (selectedTab === 'res' ? RESOURCE_FILTER_HEIGHT : 0) - (showPreview ? ASSET_PREVIEW_HEIGHT : 0)
+    panelHeight - FILTER_HEIGHT - (showPreview ? ASSET_PREVIEW_HEIGHT : 0)
   );
 
   useEffect(() => {
@@ -231,20 +234,6 @@ export default function AssetsPanel() {
     }
   }
 
-  function openCreateAssetMenu(event) {
-    const rect = event.currentTarget.getBoundingClientRect();
-    setCreateAssetMenu({
-      visible: true,
-      x: rect.left,
-      y: rect.bottom + 4,
-    });
-  }
-
-  function openCreateAssetDialog(type: CreateAssetDialogType) {
-    setCreateAssetMenu({ ...createAssetMenu, visible: false });
-    setCreateAssetDialog(type);
-  }
-
   async function handleCreateAsset(type: string, data: any) {
     if (!rootFolder) {
       toast.error('No project is loaded')
@@ -279,6 +268,36 @@ export default function AssetsPanel() {
         >Resources</AssetTypeBlock>
       </div>
       <div className='h-[calc(100vh-2rem)] overflow-hidden'>
+        {selectedTab === 'components' && (
+          <div className='flex h-10 items-center gap-2 border-b border-[#151515] bg-[#202020] px-2'>
+            <Input
+              value={componentFilter}
+              onChange={(event) => setComponentFilter(event.target.value)}
+              placeholder='Filter components'
+              aria-label='Filter components'
+            />
+            <button
+              type='button'
+              className='flex h-7 w-7 items-center justify-center rounded-sm border border-[#111] bg-[#2a2a2a] text-[#dcdcdc] hover:bg-[#343434]'
+              onClick={() => getFiles(rootFolder)}
+              aria-label='Reload project'
+              title='Reload project'
+            >
+              <FiRefreshCw size={15} />
+            </button>
+            {componentFilter && (
+              <button
+                type='button'
+                className='flex h-7 w-7 items-center justify-center rounded-sm border border-[#111] bg-[#2a2a2a] text-[#dcdcdc] hover:bg-[#343434]'
+                onClick={() => setComponentFilter('')}
+                aria-label='Clear component filter'
+                title='Clear component filter'
+              >
+                <FiX size={14} />
+              </button>
+            )}
+          </div>
+        )}
         {selectedTab === 'res' && (
           <div className='flex h-10 items-center gap-2 border-b border-[#151515] bg-[#202020] px-2'>
             <Input
@@ -290,11 +309,18 @@ export default function AssetsPanel() {
             <button
               type='button'
               className='flex h-7 w-7 items-center justify-center rounded-sm border border-[#111] bg-[#2a2a2a] text-[#dcdcdc] hover:bg-[#343434]'
-              onClick={openCreateAssetMenu}
-              aria-label='Create asset'
-              title='Create asset'
+              onClick={async () => {
+                if (!rootFolder) {
+                  toast.error('No project is loaded')
+                  return
+                }
+                await sendRequest({ key: SYNC_RES_REQUEST, rootFolder })
+                getFiles(rootFolder)
+              }}
+              aria-label='Reload resources'
+              title='Reload resources (sync-res)'
             >
-              <FiPlus size={15} />
+              <FiRefreshCw size={15} />
             </button>
             {resourceFilter && (
               <button
@@ -307,17 +333,6 @@ export default function AssetsPanel() {
                 <FiX size={14} />
               </button>
             )}
-            <ContextMenu
-              x={createAssetMenu.x}
-              y={createAssetMenu.y}
-              visible={createAssetMenu.visible}
-              onClose={() => setCreateAssetMenu({ ...createAssetMenu, visible: false })}
-              actions={[
-                { label: 'Create Image', onClick: () => openCreateAssetDialog('image') },
-                { label: 'Create Audio', onClick: () => openCreateAssetDialog('audio') },
-                { label: 'Create Animation', onClick: () => openCreateAssetDialog('animation') },
-              ]}
-            />
           </div>
         )}
         <Tree

@@ -65,7 +65,14 @@ export default function NewProjectDialog() {
 
   return (
     <Modal isOpen={isOpen} onClose={() => !isCreating && setOpen(false)} title='New Project'>
-      <div className='relative mt-4 flex w-[420px] flex-col gap-3 text-[12px]'>
+      <div
+        className='relative mt-4 flex w-[420px] flex-col gap-3 text-[12px]'
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' && rootFolder.trim() && projectName.trim() && !isCreating) {
+            createProject()
+          }
+        }}
+      >
         {isCreating && (
           <div className='absolute inset-0 z-10 flex items-center justify-center rounded-sm bg-[#1e1e1e]/80'>
             <svg className='h-8 w-8 animate-spin text-[#4a90e2]' viewBox='0 0 24 24' fill='none'>
