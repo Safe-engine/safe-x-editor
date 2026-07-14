@@ -2,7 +2,7 @@ import { MeshAttachment, RegionAttachment } from '@esotericsoftware/spine-core'
 import { Label, loadAll, Node, Scene, SpineBonesControl, SpineSkeleton, Sprite, Touch } from '@safe-engine/sdl'
 import { getLastLoadedFile, getLastRootFolder, getLastSceneScale, getLastSceneX, getLastSceneY, setLastSceneScale, setLastSceneX, setLastSceneY } from 'data/AppData'
 import { GlobalState } from 'data/GloablState'
-import { normalizeNodeProps } from 'helper/node'
+import { normalizeNodeProps, parseNumbersArray, parseStringsArray } from 'helper/node'
 import { cloneDeep, first, isNumber, parseInt, set } from 'lodash-es'
 import { setAssetRoot } from 'sdl3'
 import { sendRequest } from '../app.ipc'
@@ -424,14 +424,8 @@ export class PreviewScene extends Scene {
     const points = editNode.components[componentIndex].props?.posList
     if (!Array.isArray(points) && typeof points !== 'string') return undefined
     const bonesNameValue = editNode.components[componentIndex].props?.bonesName
-    const bonesName = (Array.isArray(bonesNameValue)
-      ? bonesNameValue
-      : typeof bonesNameValue === 'string' ? bonesNameValue.replace(/[\{\|\[\]\'\}]/g, '').split(',') : [])
-      .map((name) => String(name).trim())
-    const values = (Array.isArray(points)
-      ? points
-      : points.replace(/^\{|\}$/g, '').split(',').filter((value) => value.trim()))
-      .map(Number)
+    const bonesName = parseStringsArray(bonesNameValue)
+    const values = parseNumbersArray(points)
     const parsedPoints = Array.from({ length: Math.ceil(values.length / 2) }, (_, index) => ({
       x: Number.isFinite(values[index * 2]) ? values[index * 2] : 0,
       y: Number.isFinite(values[index * 2 + 1]) ? values[index * 2 + 1] : 0,

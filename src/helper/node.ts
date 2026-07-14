@@ -60,7 +60,7 @@ export function parseStringFromValue(value) {
 
 function splitValues(value) {
   if (Array.isArray(value)) return value
-  return parseStringFromValue(value).split(',').map((item) => item.trim()).filter(Boolean)
+  return parseStringFromValue(value.replace(/[\[\]\'\"]/g, '')).split(',').map((item) => item.trim())
 }
 
 export function parseNumbersArray(value) {
