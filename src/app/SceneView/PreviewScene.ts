@@ -486,7 +486,7 @@ export class PreviewScene extends Scene {
     return control.parsedPoints.map((point) => {
       const x = point.x * node.worldScaleX
       const y = point.y * node.worldScaleY
-      return { x: node.worldX + x * cosine - y * sine, y: node.worldY + x * sine + y * cosine }
+      return { x: node.worldX + x * cosine - y * sine, y: node.worldY + x * sine - y * cosine }
     })
   }
 
@@ -514,7 +514,7 @@ export class PreviewScene extends Scene {
     const dx = x - node.worldX
     const dy = y - node.worldY
     const localX = (dx * Math.cos(radians) - dy * Math.sin(radians)) / node.worldScaleX
-    const localY = (dx * Math.sin(radians) + dy * Math.cos(radians)) / node.worldScaleY
+    const localY = (dx * Math.sin(radians) - dy * Math.cos(radians)) / node.worldScaleY
     if (!Number.isFinite(localX) || !Number.isFinite(localY)) return false
     const pointIndex = this.activeSpineBonePoint.pointIndex
     control.parsedPoints[pointIndex] = { x: Math.round(localX), y: Math.round(localY) }
@@ -524,10 +524,9 @@ export class PreviewScene extends Scene {
     const posList = control.parsedPoints.flatMap((point) => [point.x, point.y])
     component.props = {
       ...component.props,
-      posList: Array.isArray(control.points)
-        ? posList
-        : `${String(control.points).startsWith('{') ? '{' : ''}${posList.join(',')}${String(control.points).endsWith('}') ? '}' : ''}`,
+      posList
     }
+    // console.log('moveSpineBonePoint', control.points, component.props)
     const currentNode = getCurrentNode(this.drawNode, this.getChildrenIndex(this.editingPaths[0]))
     const liveControl = currentNode.getComponent(SpineBonesControl)
     if (liveControl) liveControl.props.posList = posList

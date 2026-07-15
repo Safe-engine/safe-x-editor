@@ -211,7 +211,7 @@ const genPropsLine = (props: { [key: string]: any }) => {
       if (val === true) { return key; }
       if (val === false) { return `${key}={false}`; }
       if (typeof val === 'number') { return `${key}={${val}}`; }
-      if ((key === 'capInsets' || key === 'offset') && Array.isArray(val)) {
+      if ((key === 'capInsets' || key === 'offset' || key === 'posList') && Array.isArray(val)) {
         return `${key}={${JSON.stringify(val)}}`;
       }
       if (key === 'node') {
@@ -222,7 +222,7 @@ const genPropsLine = (props: { [key: string]: any }) => {
         // if (val.xy === [0,0]) { return ''; }
         return `node={{${nodeEntries.map(([key, nodeValue]) => {
           if (key === 'xy') {
-            return `${key}: [${(nodeValue as any[]).map(v=>typeof v === 'number' ? Math.round(v) : v)}]`;
+            return `${key}: [${(nodeValue as any[]).map(v => typeof v === 'number' ? Math.round(v) : v)}]`;
           }
           return `${key}: ${nodeValue}`;
         }).join(', ')}}}`;

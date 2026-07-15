@@ -1,5 +1,4 @@
 import { Dialog, Transition } from '@headlessui/react';
-import PropTypes from 'prop-types';
 import { Fragment, useEffect } from 'react';
 import { BiXCircle } from "react-icons/bi";
 
@@ -70,16 +69,5 @@ function Modal({ children, onClose, isOpen, title }) {
     </Dialog>
   </Transition>;
 }
-
-Modal.propTypes = {
-  children: PropTypes.any.isRequired,
-  onClose: PropTypes.func.isRequired,
-  isOpen: PropTypes.bool.isRequired,
-  title: PropTypes.string,
-};
-
-Modal.defaultProps = {
-  title: '',
-};
 
 export default Modal;
