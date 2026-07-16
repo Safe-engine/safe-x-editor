@@ -276,15 +276,14 @@ async function parseChildren(root, parentNode: Node, data: ProjectData, evalInit
     }
   } else if (tag === 'UILayout') {
     const { direction, gap, paddingBottom, paddingTop, paddingLeft, paddingRight } = props
-    // console.log('UILayout Props:', props, 'Direction:', direction, 'Gap:', gap, 'Padding:', paddingTop, paddingRight, paddingBottom, paddingLeft)
-    renderNode.addComponent(UILayout,{
-      direction,
-      gap: parseIntFromValue(gap),
-      paddingBottom: parseIntFromValue(paddingBottom),
-      paddingTop: parseIntFromValue(paddingTop),
-      paddingLeft: parseIntFromValue(paddingLeft),
-      paddingRight: parseIntFromValue(paddingRight),
-    })
+    const layoutProps: Record<string, unknown> = {}
+    if (direction !== undefined) layoutProps.direction = direction
+    if (gap !== undefined) layoutProps.gap = parseIntFromValue(gap)
+    if (paddingTop !== undefined) layoutProps.paddingTop = parseIntFromValue(paddingTop)
+    if (paddingRight !== undefined) layoutProps.paddingRight = parseIntFromValue(paddingRight)
+    if (paddingBottom !== undefined) layoutProps.paddingBottom = parseIntFromValue(paddingBottom)
+    if (paddingLeft !== undefined) layoutProps.paddingLeft = parseIntFromValue(paddingLeft)
+    renderNode.addComponent(UILayout, layoutProps)
   } else if (componentsCache[tag]) {
     renderNode = await parseChildren(componentsCache[tag], parentNode, data, evalInit, { ...baseProps, ...props })
   }
@@ -318,7 +317,6 @@ async function parseChildren(root, parentNode: Node, data: ProjectData, evalInit
   for (let index = 0; index < children.length; index++) {
     await parseChildren(children[index], renderNode, data, evalInit, baseProps)
   }
-  // renderNode.getComponent(UILayout)?.layoutChildren()
   return renderNode
 }
 
