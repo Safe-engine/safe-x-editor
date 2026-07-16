@@ -20,6 +20,7 @@ export const getFilesInFolder = async ({ src }, panel: WebviewView) => {
   if (!content.includes("@safe-engine")) {
     throw Error('Not Safex project.');
   }
+  const projectName = JSON.parse(content).name;
   GlobalData.rootProject = src;
   workspace.workspaceFolders = [{ uri: Uri.file(GlobalData.rootProject) }]
   await getClassesMetaData(src);
@@ -74,6 +75,7 @@ export const getFilesInFolder = async ({ src }, panel: WebviewView) => {
     componentsTree: getTreeData(filterTree([DirectoryTree(join(src, 'src'), jsxOption)])),
     colors,
     enumsList,
+    projectName,
     assets: {
       assetsTextureList,
       fontAssets,

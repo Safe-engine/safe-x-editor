@@ -1,4 +1,3 @@
-import { typesMap } from "./constants";
 import { GlobalData } from "./global";
 
 function getObjectType(obj, isPointer = false) {
@@ -48,7 +47,7 @@ function getObjectType(obj, isPointer = false) {
         return 'float';
       if (isPointer || name.includes('Data') || name === 'Touch')
         return `${name}*`;
-      return typesMap[name] || `ComponentHandle<${name}>`;
+      return `ComponentHandle<${name}>`;
     // return getCCPType(name);
     case 'TSTypeReference':
       // console.log('typeName', typeName);

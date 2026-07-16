@@ -1,4 +1,4 @@
-import { AssetManager, ComponentX, Label, Node, ScrollView, SpineSkeleton, Sprite, TiledMap } from '@safe-engine/sdl'
+import { AssetManager, ComponentX, Label, Node, ScrollView, SpineSkeleton, Sprite, TiledMap, UILayout } from '@safe-engine/sdl'
 import { DragonBones } from '@safe-engine/sdl/lib/dragonbones'
 import { getLastRootFolder } from 'data/AppData'
 import { ProjectData } from 'data/GloablState'
@@ -182,7 +182,7 @@ async function parseChildren(root, parentNode: Node, data: ProjectData, evalInit
     return parseStringFromValue(string) ?? string
   }
 
-  if (tag === 'Sprite') {
+  if (tag === 'Sprite' || tag === 'Button' || tag === 'ProgressBar' || tag === 'CircleProgressBar') {
     const texture = await getTexture(props.spriteFrame)
     if (texture) renderNode.addComponent(new Sprite({ spriteFrame: texture, tiled: props.tiled ?? false }))
   } else if (tag === 'ProgressBar') {
@@ -237,7 +237,7 @@ async function parseChildren(root, parentNode: Node, data: ProjectData, evalInit
       typeof spineValue === 'object' && spineValue
         ? spineValue
         : { skeleton: spineValue, atlas: atlasAsset?.value ?? atlasKey }
-        // console.log('Spine Config:', spineConfig, 'Props:', props, 'Spine Asset:', spineAsset, 'Atlas Asset:', atlasAsset)
+    // console.log('Spine Config:', spineConfig, 'Props:', props, 'Spine Asset:', spineAsset, 'Atlas Asset:', atlasAsset)
     if (typeof spineConfig.skeleton === 'string' && typeof spineConfig.atlas === 'string') {
       const resolvedSpineData = {
         ...spineConfig,
@@ -271,6 +271,15 @@ async function parseChildren(root, parentNode: Node, data: ProjectData, evalInit
       const tiledMap = renderNode.addComponent(new TiledMap({ mapFile: mapFilePath }))
       await tiledMap.reload()
     }
+  } else if (tag === 'UILayout') {
+    const { direction, gap, paddingBottom, paddingTop, paddingLeft, paddingRight } = props
+    renderNode.addComponent(new UILayout({
+      direction, gap: parseIntFromValue(gap),
+      paddingBottom: parseIntFromValue(paddingBottom),
+      paddingTop: parseIntFromValue(paddingTop),
+      paddingLeft: parseIntFromValue(paddingLeft),
+      paddingRight: parseIntFromValue(paddingRight),
+    }))
   } else if (componentsCache[tag]) {
     renderNode = await parseChildren(componentsCache[tag], parentNode, data, evalInit, { ...baseProps, ...props })
   }
@@ -305,6 +314,7 @@ async function parseChildren(root, parentNode: Node, data: ProjectData, evalInit
   for (let index = 0; index < children.length; index++) {
     await parseChildren(children[index], renderNode, data, evalInit, baseProps)
   }
+  renderNode.getComponent(UILayout)?.layoutChildren()
   return renderNode
 }
 

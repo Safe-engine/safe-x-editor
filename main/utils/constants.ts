@@ -5,14 +5,12 @@ const physicsCompList = ['PhysicsCollider', 'PhysicsBoxCollider', 'PhysicsCircle
 export const noRenderList = [
   ...collidersCompList,
   ...physicsCompList,
-  'BlockInputEventsComp',
   'RigidBody', 'Collider',
   'ExtraDataComp', 'TouchEventRegister', 'EventRegister',
-  'LabelShadowComp', 'LabelOutlineComp'
 ];
 
 export const renderList = [
-  'ListView', 'ScrollView', 'Slider', 'RenderTexture',
+  'ListView', 'ScrollView', 'Slider', 'RenderTexture', 'UILayout',
   'DragonBones', 'ProgressBar', 'Label', 'TextInput', 'Button',
   'Container', 'Sprite', 'Mask', 'Particle', 'Graphics', 'TiledMap',
   'RichText', 'SpineSkeleton', 'Scene', 'CircleProgress'

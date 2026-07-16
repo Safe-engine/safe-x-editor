@@ -27,13 +27,13 @@ export function getNodePosition(node, evalInit = '') {
     const { x, y } = parseVec2(position, evalInit);
     return { x, y };
   } else if (xy) {
-    // console.log('getNodePosition', xy, evalInit)
     const [x, y] = xy.map(parseEval(evalInit));
     return { x, y };
   } else if (nodeX !== undefined || nodeY !== undefined) {
+    // console.log('getNodePosition', nodeX, nodeY, evalInit)
     return {
-      x: nodeX !== undefined ? parseEval(evalInit)(nodeX) : 0,
-      y: nodeY !== undefined ? parseEval(evalInit)(nodeY) : 0,
+      x: nodeX !== undefined ? parseEval(evalInit)(nodeX.replace('this.props', 'baseProps')) : 0,
+      y: nodeY !== undefined ? parseEval(evalInit)(nodeY.replace('this.props', 'baseProps')) : 0,
     };
   }
   return { x: 0, y: 0 };

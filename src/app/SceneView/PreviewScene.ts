@@ -292,7 +292,7 @@ export class PreviewScene extends Scene {
       key: 'GET_FOLDER_FILES',
       src: rootProject,
     })
-    const { designedResolution, assets, componentsCache, colors, defaultProps, jsonCaches, staticPropsMap, enumsList, ...rest } = data
+    const { designedResolution, assets, componentsCache, colors, defaultProps, jsonCaches, staticPropsMap, enumsList, projectName, ...rest } = data
     GlobalState.data = {
       ...assets,
       ...rest,
@@ -304,6 +304,7 @@ export class PreviewScene extends Scene {
       staticPropsMap,
       enumsList,
     }
+    if (projectName) document.title = projectName
     const defaultFontKey = 'REPLACE_WITH_DEFAULT_FONT_PATH'
     const defaultFontSize = Number.parseInt('REPLACE_WITH_DEFAULT_FONT_SIZE', 10)
     const defaultFont = assets?.fontAssets?.find((font) => font.key === defaultFontKey)?.value ?? assets?.fontAssets?.[0]?.value

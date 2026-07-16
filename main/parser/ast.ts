@@ -3,7 +3,6 @@ import { get, upperFirst } from 'lodash';
 import { getParamsType } from './component';
 import { GlobalData } from './global';
 import { getTypeAnnotation } from './helper';
-import { praseJSXElement } from './jsx';
 import { parseParams } from './parse-data';
 
 const templatesList = ['getComponent', 'getComponentInChildren', 'getComponentsInChildren', 'hasComponentInChildren'];
@@ -41,9 +40,8 @@ function parseMemberExpression(member, isLeft?) {
       }
       const obj = parseValue(object, false);
       // console.log(obj);
-      const isDot = ['Vec2', 'Size'].includes(GlobalData.objectTypeMap[obj]);
-      const prop = isDot ? parseValue(property) : parseMemberExpressionProperty(property, isLeft);
-      return `${obj}${isDot ? '.' : '->'}${prop}`;
+      const prop = parseValue(property)
+      return `${obj}.${prop}`;
     }
     case 'ThisExpression':
       return `${parseMemberExpressionProperty(property, isLeft)}`;
@@ -193,11 +191,11 @@ function parseCallExpression(value) {
       if ('addComponent' === callee.property.name) {
         return `${parseValue(callee)}<${args[0].callee.name}>()`;
       }
-      if ('bind' === callee.property.name) {
-        // console.log('bind', callee)
-        const cbParamNum = GlobalData.cbParamsMap[callee.object.name] || 1
-        return `AX_CALLBACK_${cbParamNum}(${GlobalData.currentClassName}::${callee.object.name}, ${parseValue(args[0])})`;
-      }
+      // if ('bind' === callee.property.name) {
+      //   // console.log('bind', callee)
+      //   const cbParamNum = GlobalData.cbParamsMap[callee.object.name] || 1
+      //   return `AX_CALLBACK_${cbParamNum}(${GlobalData.currentClassName}::${callee.object.name}, ${parseValue(args[0])})`;
+      // }
       if (callee.property.name === 'forEach') {
         const { params, body } = args[0];
         if (!params[1]) {
@@ -251,11 +249,7 @@ function parseVariableDeclaration(declaration) {
           return id.properties
             .map(prop => {
               const obj = parseValue(init, false)
-              const isDot = ['Vec2', 'Size'].includes(GlobalData.objectTypeMap[obj]);
-              const specialMember = init.type === 'MemberExpression' && ['winSize', 'size', 'offset'].includes(init.property.name);
-              const callProp = (specialMember || isDot) ?
-                `.${prop.key.name}` :
-                `->get${upperFirst(prop.key.name)}()`;
+              const callProp = `.${prop.key.name}`
               return `auto ${prop.value ? prop.value.name : prop.key.name} = ${obj}${callProp};`;
             })
             .join('\n');
@@ -364,8 +358,6 @@ function parseBlock(block, depth) {
     case 'ConditionalExpression':
       return parseIfStatement(block);
     case 'ReturnStatement':
-      if (block.argument && block.argument.type === 'JSXElement')
-        return praseJSXElement(block.argument)
       return `return ${parseValue(block.argument)};`;
     case 'BlockStatement':
       return parseMethodBodyCpp(block, depth + 1);
