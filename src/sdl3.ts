@@ -1,40 +1,3 @@
-type VoidCallback = () => void
-type UpdateCallback = (dt: number) => void
-type TouchCallback = (x: number, y: number) => void
-type TextInputCallback = (text: string) => void
-type KeyCallback = (key: string) => void
-type InterruptionCallback = (active: boolean) => void
-type OrientationCallback = (orientation: number, width: number, height: number) => void
-type ResolutionPolicy = 'letterbox' | 'overscan' | 'stretch' | 'fixed-width' | 'fixed-height' | 'integer-scale'
-
-interface TextureAsset {
-  texture: WebGLTexture | null
-  width: number
-  height: number
-  refs: number
-  key: string
-  textFontId?: number
-  text?: string
-}
-
-interface FontAsset {
-  family: string
-  path: string
-  size: number
-  refs: number
-  loaded: boolean
-}
-
-interface AudioAsset {
-  url: string
-  refs: number
-}
-
-interface AudioVoice {
-  element: HTMLAudioElement
-  ended: boolean
-}
-
 let canvas: HTMLCanvasElement | null = null
 let gl: WebGLRenderingContext | null = null
 let program: WebGLProgram | null = null
@@ -58,9 +21,9 @@ let nextAudioId = 0
 let nextAudioVoiceId = 0
 let running = false
 let lastFrameTime = 0
+let frameDrawCalls = 0
 let pointerDown = false
 let resizeObserver: ResizeObserver | null = null
-let resizeFrame = 0
 
 const textures = new Map<number, TextureAsset>()
 const textureIds = new Map<string, number>()
@@ -89,6 +52,103 @@ let orientationCallback: OrientationCallback | null = null
 let terminateCallback: VoidCallback | null = null
 let hiddenTextInput: HTMLInputElement | null = null
 let assetRoot = ''
+
+export interface RendererStats {
+  fps: number
+  frameTimeMs: number
+  drawCalls: number
+}
+
+const rendererStats: RendererStats = {
+  fps: 0,
+  frameTimeMs: 0,
+  drawCalls: 0,
+}
+
+const MAX_BATCH_VERTICES = 6000
+let batchTexture: WebGLTexture | null = null
+let batchColor: [number, number, number, number] | null = null
+const batchPositions: number[] = []
+const batchUvs: number[] = []
+
+function colorToUniform(
+  red: number,
+  green: number,
+  blue: number,
+  alpha: number,
+): [number, number, number, number] {
+  return [
+    Math.max(0, Math.min(255, red)) / 255,
+    Math.max(0, Math.min(255, green)) / 255,
+    Math.max(0, Math.min(255, blue)) / 255,
+    Math.max(0, Math.min(255, alpha)) / 255,
+  ]
+}
+
+function sameBatch(
+  texture: WebGLTexture,
+  color: [number, number, number, number],
+): boolean {
+  return batchTexture === texture
+    && !!batchColor
+    && batchColor[0] === color[0]
+    && batchColor[1] === color[1]
+    && batchColor[2] === color[2]
+    && batchColor[3] === color[3]
+}
+
+function queueDraw(
+  asset: TextureAsset,
+  positions: readonly number[],
+  uvs: readonly number[],
+  color: [number, number, number, number],
+): void {
+  if (!asset.texture || !program || !positionBuffer || !uvBuffer) return
+  const vertexCount = positions.length / 2
+  if (!sameBatch(asset.texture, color)
+    || batchPositions.length / 2 + vertexCount > MAX_BATCH_VERTICES) {
+    flushDrawBatch()
+  }
+
+  batchTexture = asset.texture
+  batchColor = color
+  for (let i = 0; i < positions.length; i++) batchPositions.push(positions[i])
+  for (let i = 0; i < uvs.length; i++) batchUvs.push(uvs[i])
+}
+
+function flushDrawBatch(): void {
+  if (!batchTexture || !batchColor || batchPositions.length === 0) return
+  if (!program || !positionBuffer || !uvBuffer) {
+    batchTexture = null
+    batchColor = null
+    batchPositions.length = 0
+    batchUvs.length = 0
+    return
+  }
+
+  const context = requireGl()
+  context.useProgram(program)
+  context.uniform2f(resolutionLocation, logicalWidth, logicalHeight)
+  context.uniform1i(samplerLocation, 0)
+  context.uniform4f(colorLocation, batchColor[0], batchColor[1], batchColor[2], batchColor[3])
+  context.activeTexture(context.TEXTURE0)
+  context.bindTexture(context.TEXTURE_2D, batchTexture)
+  context.bindBuffer(context.ARRAY_BUFFER, positionBuffer)
+  context.bufferData(context.ARRAY_BUFFER, new Float32Array(batchPositions), context.STREAM_DRAW)
+  context.enableVertexAttribArray(positionLocation)
+  context.vertexAttribPointer(positionLocation, 2, context.FLOAT, false, 0, 0)
+  context.bindBuffer(context.ARRAY_BUFFER, uvBuffer)
+  context.bufferData(context.ARRAY_BUFFER, new Float32Array(batchUvs), context.STREAM_DRAW)
+  context.enableVertexAttribArray(uvLocation)
+  context.vertexAttribPointer(uvLocation, 2, context.FLOAT, false, 0, 0)
+  context.drawArrays(context.TRIANGLES, 0, batchPositions.length / 2)
+  frameDrawCalls += 1
+
+  batchTexture = null
+  batchColor = null
+  batchPositions.length = 0
+  batchUvs.length = 0
+}
 
 function ensureHiddenTextInput(): HTMLInputElement {
   if (hiddenTextInput) return hiddenTextInput
@@ -139,9 +199,7 @@ function compileShader(type: number, source: string): WebGLShader {
 
 function createProgram(): WebGLProgram {
   const context = requireGl()
-  const vertexShader = compileShader(
-    context.VERTEX_SHADER,
-    `
+  const vertexShader = compileShader(context.VERTEX_SHADER, `
     attribute vec2 a_position;
     attribute vec2 a_uv;
     uniform vec2 u_resolution;
@@ -152,11 +210,8 @@ function createProgram(): WebGLProgram {
       gl_Position = vec4(clip.x, -clip.y, 0.0, 1.0);
       v_uv = a_uv;
     }
-  `,
-  )
-  const fragmentShader = compileShader(
-    context.FRAGMENT_SHADER,
-    `
+  `)
+  const fragmentShader = compileShader(context.FRAGMENT_SHADER, `
     precision mediump float;
     uniform sampler2D u_texture;
     uniform vec4 u_color;
@@ -166,8 +221,7 @@ function createProgram(): WebGLProgram {
       vec4 color = vec4(u_color.rgb * u_color.a, u_color.a);
       gl_FragColor = texture2D(u_texture, v_uv) * color;
     }
-  `,
-  )
+  `)
   const result = context.createProgram()
   if (!result) throw new Error('Unable to create WebGL program')
   context.attachShader(result, vertexShader)
@@ -209,6 +263,7 @@ function assetUrl(path: string): string {
   return `${publicPath}`
 }
 
+
 export function loadAudio(path: string): number {
   const existingId = audioIds.get(path)
   if (existingId !== undefined) {
@@ -234,7 +289,11 @@ export function releaseAudio(id: number): void {
   }
 }
 
-export function playAudio(audioId: number, loop: boolean, volume: number): number {
+export function playAudio(
+  audioId: number,
+  loop: boolean,
+  volume: number,
+): number {
   const asset = audioAssets.get(audioId)
   if (!asset) return -1
 
@@ -244,13 +303,9 @@ export function playAudio(audioId: number, loop: boolean, volume: number): numbe
   element.loop = loop
   element.volume = Math.max(0, Math.min(1, volume))
   element.preload = 'auto'
-  element.addEventListener(
-    'ended',
-    () => {
-      voice.ended = true
-    },
-    { once: true },
-  )
+  element.addEventListener('ended', () => {
+    voice.ended = true
+  }, { once: true })
   audioVoices.set(voiceId, voice)
   void element.play().catch(() => {
     voice.ended = true
@@ -294,53 +349,47 @@ export function updateAudio(): void {
   }
 }
 
-function uploadSource(asset: TextureAsset, source: TexImageSource, width: number, height: number): void {
+function uploadSource(
+  asset: TextureAsset,
+  source: TexImageSource,
+  width: number,
+  height: number,
+): void {
   const context = requireGl()
   const texture = asset.texture ?? context.createTexture()
   if (!texture) throw new Error(`Unable to create texture: ${asset.key}`)
   asset.texture = texture
+  asset.width = width
+  asset.height = height
   context.bindTexture(context.TEXTURE_2D, texture)
   context.pixelStorei(context.UNPACK_PREMULTIPLY_ALPHA_WEBGL, 1)
   context.texParameteri(context.TEXTURE_2D, context.TEXTURE_WRAP_S, context.CLAMP_TO_EDGE)
   context.texParameteri(context.TEXTURE_2D, context.TEXTURE_WRAP_T, context.CLAMP_TO_EDGE)
   context.texParameteri(context.TEXTURE_2D, context.TEXTURE_MIN_FILTER, context.LINEAR)
   context.texParameteri(context.TEXTURE_2D, context.TEXTURE_MAG_FILTER, context.LINEAR)
-  try {
-    context.texImage2D(context.TEXTURE_2D, 0, context.RGBA, context.RGBA, context.UNSIGNED_BYTE, source)
-    asset.width = width
-    asset.height = height
-  } catch (error) {
-    console.error(`Failed to upload texture: ${asset.key}`, error)
-  }
+  context.texImage2D(
+    context.TEXTURE_2D,
+    0,
+    context.RGBA,
+    context.RGBA,
+    context.UNSIGNED_BYTE,
+    source,
+  )
 }
 
 function pointerPosition(event: PointerEvent): [number, number] {
   if (!canvas) return [0, 0]
   const rect = canvas.getBoundingClientRect()
-  return [((event.clientX - rect.left) * logicalWidth) / rect.width, ((event.clientY - rect.top) * logicalHeight) / rect.height]
-}
-
-function viewportSize(): [number, number] {
-  const html = document.documentElement
-  const body = document.body
-  const visualViewport = window.visualViewport
-  const width = Math.floor(html.clientWidth || body?.clientWidth || visualViewport?.width || window.innerWidth || 1)
-  const height = Math.floor(html.clientHeight || body?.clientHeight || visualViewport?.height || window.innerHeight || 1)
-  return [Math.max(1, width), Math.max(1, height)]
-}
-
-function scheduleResize(): void {
-  if (resizeFrame) return
-  resizeFrame = requestAnimationFrame(() => {
-    resizeFrame = 0
-    resizeDrawingBuffer()
-    emitOrientation()
-  })
+  return [
+    (event.clientX - rect.left) * logicalWidth / rect.width,
+    (event.clientY - rect.top) * logicalHeight / rect.height,
+  ]
 }
 
 function safeAreaInsets(): [number, number, number, number] {
   const style = getComputedStyle(document.documentElement)
-  const value = (name: string) => Number.parseFloat(style.getPropertyValue(name)) || 0
+  const value = (name: string) =>
+    Number.parseFloat(style.getPropertyValue(name)) || 0
   return [
     value('--safe-area-inset-top'),
     value('--safe-area-inset-right'),
@@ -367,21 +416,27 @@ function fitCanvasToViewport(): void {
   logicalWidth = designedLogicalWidth
   logicalHeight = designedLogicalHeight
 
-  const [viewportWidth, viewportHeight] = viewportSize()
-  let width = viewportWidth
-  let height = viewportHeight
+  let width = window.innerWidth
+  let height = window.innerHeight
   if (resolutionPolicy === 'fixed-width') {
-    const scale = viewportWidth / designedLogicalWidth
-    logicalHeight = viewportHeight / scale
+    const scale = window.innerWidth / designedLogicalWidth
+    logicalHeight = window.innerHeight / scale
   } else if (resolutionPolicy === 'fixed-height') {
-    const scale = viewportHeight / designedLogicalHeight
-    logicalWidth = viewportWidth / scale
+    const scale = window.innerHeight / designedLogicalHeight
+    logicalWidth = window.innerWidth / scale
   } else if (resolutionPolicy !== 'stretch') {
-    const scale =
-      resolutionPolicy === 'overscan'
-        ? Math.max(viewportWidth / logicalWidth, viewportHeight / logicalHeight)
-        : Math.min(viewportWidth / logicalWidth, viewportHeight / logicalHeight)
-    const finalScale = resolutionPolicy === 'integer-scale' ? Math.max(1, Math.floor(scale)) : scale
+    const scale = resolutionPolicy === 'overscan'
+      ? Math.max(
+          window.innerWidth / logicalWidth,
+          window.innerHeight / logicalHeight,
+        )
+      : Math.min(
+          window.innerWidth / logicalWidth,
+          window.innerHeight / logicalHeight,
+        )
+    const finalScale = resolutionPolicy === 'integer-scale'
+      ? Math.max(1, Math.floor(scale))
+      : scale
     width = logicalWidth * finalScale
     height = logicalHeight * finalScale
   }
@@ -392,26 +447,37 @@ function fitCanvasToViewport(): void {
   const styleHeight = `${height}px`
   canvas.style.maxWidth = 'none'
   canvas.style.maxHeight = 'none'
-  canvas.style.aspectRatio =
-    resolutionPolicy === 'stretch' || resolutionPolicy === 'fixed-width' || resolutionPolicy === 'fixed-height'
-      ? 'auto'
-      : `${logicalWidth} / ${logicalHeight}`
+  canvas.style.aspectRatio = resolutionPolicy === 'stretch'
+    || resolutionPolicy === 'fixed-width'
+    || resolutionPolicy === 'fixed-height'
+    ? 'auto'
+    : `${logicalWidth} / ${logicalHeight}`
   if (canvas.style.width !== styleWidth) canvas.style.width = styleWidth
   if (canvas.style.height !== styleHeight) canvas.style.height = styleHeight
 }
 
-export function getViewportMetrics(): [number, number, number, number, number, number, number, number, number, number, number, number] {
+export function getViewportMetrics(): [
+  number, number, number, number,
+  number, number, number, number,
+  number, number, number, number,
+] {
   if (!canvas) {
-    return [logicalWidth, logicalHeight, logicalWidth, logicalHeight, 0, 0, logicalWidth, logicalHeight, 0, 0, logicalWidth, logicalHeight]
+    return [
+      logicalWidth, logicalHeight, logicalWidth, logicalHeight,
+      0, 0, logicalWidth, logicalHeight,
+      0, 0, logicalWidth, logicalHeight,
+    ]
   }
 
   const rect = canvas.getBoundingClientRect()
-  const [viewportWidth, viewportHeight] = viewportSize()
   const [safeTop, safeRight, safeBottom, safeLeft] = safeAreaInsets()
   const safeScreenLeft = Math.max(rect.left, safeLeft)
   const safeScreenTop = Math.max(rect.top, safeTop)
-  const safeScreenRight = Math.min(rect.right, viewportWidth - safeRight)
-  const safeScreenBottom = Math.min(rect.bottom, viewportHeight - safeBottom)
+  const safeScreenRight = Math.min(rect.right, window.innerWidth - safeRight)
+  const safeScreenBottom = Math.min(
+    rect.bottom,
+    window.innerHeight - safeBottom,
+  )
   const scaleX = rect.width / logicalWidth
   const scaleY = rect.height / logicalHeight
   const safeX = Math.max(0, (safeScreenLeft - rect.left) / scaleX)
@@ -422,8 +488,8 @@ export function getViewportMetrics(): [number, number, number, number, number, n
   return [
     logicalWidth,
     logicalHeight,
-    viewportWidth,
-    viewportHeight,
+    window.innerWidth,
+    window.innerHeight,
     rect.left,
     rect.top,
     rect.width,
@@ -435,14 +501,19 @@ export function getViewportMetrics(): [number, number, number, number, number, n
   ]
 }
 
+export function getWinSize(): Size {
+  if (!canvas) return { width: logicalWidth, height: logicalHeight }
+  resizeDrawingBuffer()
+  return { width: canvas.width, height: canvas.height }
+}
+
 function orientationValue(): number {
   const type = screen.orientation?.type
   if (type === 'landscape-primary') return 1
   if (type === 'landscape-secondary') return 2
   if (type === 'portrait-primary') return 3
   if (type === 'portrait-secondary') return 4
-  const [viewportWidth, viewportHeight] = viewportSize()
-  return viewportWidth >= viewportHeight ? 1 : 3
+  return window.innerWidth >= window.innerHeight ? 1 : 3
 }
 
 function emitOrientation(): void {
@@ -455,7 +526,11 @@ function frame(time: number): void {
   const dt = lastFrameTime === 0 ? 0 : Math.min((time - lastFrameTime) / 1000, 0.1)
   lastFrameTime = time
   updateCallback?.(dt)
+  frameDrawCalls = 0
   renderCallback?.()
+  rendererStats.fps = dt > 0 ? 1 / dt : 0
+  rendererStats.frameTimeMs = dt * 1000
+  rendererStats.drawCalls = frameDrawCalls
   requestAnimationFrame(frame)
 }
 
@@ -466,7 +541,12 @@ function startLoop(): void {
   requestAnimationFrame(frame)
 }
 
-export function createWindow(title: string, width: number, height: number, policy: ResolutionPolicy = 'letterbox'): void {
+export function createWindow(
+  title: string,
+  width: number,
+  height: number,
+  policy: ResolutionPolicy = 'letterbox',
+): void {
   document.title = title
   designedLogicalWidth = width
   designedLogicalHeight = height
@@ -504,15 +584,26 @@ export function createWindow(title: string, width: number, height: number, polic
   gl.bindTexture(gl.TEXTURE_2D, whiteTexture)
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST)
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
-  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([255, 255, 255, 255]))
+  gl.texImage2D(
+    gl.TEXTURE_2D,
+    0,
+    gl.RGBA,
+    1,
+    1,
+    0,
+    gl.RGBA,
+    gl.UNSIGNED_BYTE,
+    new Uint8Array([255, 255, 255, 255]),
+  )
   gl.enable(gl.BLEND)
   gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
   gl.viewport(0, 0, width, height)
   resizeObserver?.disconnect()
-  resizeObserver = new ResizeObserver(scheduleResize)
-  resizeObserver.observe(document.documentElement)
-  resizeObserver.observe(document.body)
-  window.visualViewport?.addEventListener('resize', scheduleResize)
+  resizeObserver = new ResizeObserver(() => {
+    resizeDrawingBuffer()
+    emitOrientation()
+  })
+  resizeObserver.observe(canvas)
 
   canvas.addEventListener('pointerdown', (event) => {
     pointerDown = true
@@ -529,10 +620,10 @@ export function createWindow(title: string, width: number, height: number, polic
   }
   canvas.addEventListener('pointerup', endPointer)
   canvas.addEventListener('pointercancel', endPointer)
-  window.addEventListener('resize', scheduleResize)
-  window.addEventListener('focus', scheduleResize)
-  document.addEventListener('visibilitychange', scheduleResize)
-  scheduleResize()
+  window.addEventListener('resize', () => {
+    resizeDrawingBuffer()
+    emitOrientation()
+  })
 }
 
 export function loadTexture(path: string): number {
@@ -555,7 +646,6 @@ export function loadTexture(path: string): number {
   textureIds.set(path, id)
 
   const image = new Image()
-  image.crossOrigin = 'anonymous'
   image.decoding = 'async'
   image.onload = () => {
     if (textures.get(id) === asset) {
@@ -590,8 +680,7 @@ export function loadFont(path: string, ptsize: number): number {
   fonts.set(id, asset)
   fontIds.set(key, id)
   const face = new FontFace(family, `url("${assetUrl(path)}")`)
-  face
-    .load()
+  face.load()
     .then((loaded) => {
       document.fonts.add(loaded)
       asset.loaded = true
@@ -608,8 +697,12 @@ function renderTextSurface(font: FontAsset, text: string): HTMLCanvasElement | n
 
   context.font = `${font.size}px "${font.family}", sans-serif`
   const metrics = context.measureText(text)
-  const ascent = metrics.fontBoundingBoxAscent ?? metrics.actualBoundingBoxAscent ?? font.size * 0.8
-  const descent = metrics.fontBoundingBoxDescent ?? metrics.actualBoundingBoxDescent ?? font.size * 0.2
+  const ascent = metrics.fontBoundingBoxAscent
+    ?? metrics.actualBoundingBoxAscent
+    ?? font.size * 0.8
+  const descent = metrics.fontBoundingBoxDescent
+    ?? metrics.actualBoundingBoxDescent
+    ?? font.size * 0.2
   const width = Math.max(1, Math.ceil(metrics.width))
   const height = Math.max(1, Math.ceil(ascent + descent))
 
@@ -672,6 +765,7 @@ export function loadTextTexture(fontId: number, text: string): number {
 export function releaseTexture(id: number): void {
   const asset = textures.get(id)
   if (!asset || --asset.refs > 0) return
+  if (asset.texture === batchTexture) flushDrawBatch()
   if (asset.texture && gl) gl.deleteTexture(asset.texture)
   textures.delete(id)
   textureIds.delete(asset.key)
@@ -693,6 +787,7 @@ export function getTextureHeight(id: number): number {
 }
 
 export function clear(): void {
+  flushDrawBatch()
   const context = requireGl()
   context.clearColor(9 / 255, 15 / 255, 29 / 255, 1)
   context.clear(context.COLOR_BUFFER_BIT)
@@ -720,20 +815,25 @@ function draw(
 ): void {
   const asset = textures.get(id)
   if (!asset?.texture || !program || !positionBuffer || !uvBuffer) return
-  const context = requireGl()
-  const radians = (angle * Math.PI) / 180
+  const radians = angle * Math.PI / 180
   const cosine = Math.cos(radians)
   const sine = Math.sin(radians)
   const point = (px: number, py: number): [number, number] => {
     const localX = px - centerX
     const localY = py - centerY
-    return [x + centerX + localX * cosine - localY * sine, y + centerY + localX * sine + localY * cosine]
+    return [
+      x + centerX + localX * cosine - localY * sine,
+      y + centerY + localX * sine + localY * cosine,
+    ]
   }
   const topLeft = point(0, 0)
   const topRight = point(width, 0)
   const bottomLeft = point(0, height)
   const bottomRight = point(width, height)
-  const positions = new Float32Array([...topLeft, ...topRight, ...bottomLeft, ...bottomLeft, ...topRight, ...bottomRight])
+  const positions = [
+    ...topLeft, ...topRight, ...bottomLeft,
+    ...bottomLeft, ...topRight, ...bottomRight,
+  ]
 
   let u0 = sx / asset.width
   let v0 = sy / asset.height
@@ -741,29 +841,12 @@ function draw(
   let v1 = (sy + sh) / asset.height
   if (flipX) [u0, u1] = [u1, u0]
   if (flipY) [v0, v1] = [v1, v0]
-  const uvs = new Float32Array([u0, v0, u1, v0, u0, v1, u0, v1, u1, v0, u1, v1])
+  const uvs = [
+    u0, v0, u1, v0, u0, v1,
+    u0, v1, u1, v0, u1, v1,
+  ]
 
-  context.useProgram(program)
-  context.uniform2f(resolutionLocation, logicalWidth, logicalHeight)
-  context.uniform1i(samplerLocation, 0)
-  context.uniform4f(
-    colorLocation,
-    Math.max(0, Math.min(255, red)) / 255,
-    Math.max(0, Math.min(255, green)) / 255,
-    Math.max(0, Math.min(255, blue)) / 255,
-    Math.max(0, Math.min(255, alpha)) / 255,
-  )
-  context.activeTexture(context.TEXTURE0)
-  context.bindTexture(context.TEXTURE_2D, asset.texture)
-  context.bindBuffer(context.ARRAY_BUFFER, positionBuffer)
-  context.bufferData(context.ARRAY_BUFFER, positions, context.STREAM_DRAW)
-  context.enableVertexAttribArray(positionLocation)
-  context.vertexAttribPointer(positionLocation, 2, context.FLOAT, false, 0, 0)
-  context.bindBuffer(context.ARRAY_BUFFER, uvBuffer)
-  context.bufferData(context.ARRAY_BUFFER, uvs, context.STREAM_DRAW)
-  context.enableVertexAttribArray(uvLocation)
-  context.vertexAttribPointer(uvLocation, 2, context.FLOAT, false, 0, 0)
-  context.drawArrays(context.TRIANGLES, 0, 6)
+  queueDraw(asset, positions, uvs, colorToUniform(red, green, blue, alpha))
 }
 
 export function drawTexture(id: number, x: number, y: number): void {
@@ -790,7 +873,11 @@ export function drawTextureRotated(
 ): void {
   const asset = textures.get(id)
   if (!asset) return
-  draw(id, 0, 0, asset.width, asset.height, x, y, width, height, angle, centerX, centerY, flipX, flipY, red, green, blue, alpha)
+  draw(
+    id, 0, 0, asset.width, asset.height,
+    x, y, width, height, angle, centerX, centerY, flipX, flipY,
+    red, green, blue, alpha,
+  )
 }
 
 export function drawTextureRegionRotated(
@@ -813,7 +900,11 @@ export function drawTextureRegionRotated(
   blue = 255,
   alpha = 255,
 ): void {
-  draw(id, sourceX, sourceY, sourceWidth, sourceHeight, x, y, width, height, angle, centerX, centerY, flipX, flipY, red, green, blue, alpha)
+  draw(
+    id, sourceX, sourceY, sourceWidth, sourceHeight,
+    x, y, width, height, angle, centerX, centerY, flipX, flipY,
+    red, green, blue, alpha,
+  )
 }
 
 export function drawTextureQuad(
@@ -841,36 +932,29 @@ export function drawTextureQuad(
 ): void {
   const asset = textures.get(id)
   if (!asset?.texture || !program || !positionBuffer || !uvBuffer) return
-  const context = requireGl()
-  const positions = new Float32Array([x0, y0, x1, y1, x2, y2, x2, y2, x1, y1, x3, y3])
-  const uvs = new Float32Array([u0, v0, u1, v1, u2, v2, u2, v2, u1, v1, u3, v3])
+  const positions = [
+    x0, y0, x1, y1, x2, y2,
+    x2, y2, x1, y1, x3, y3,
+  ]
+  const uvs = [
+    u0, v0, u1, v1, u2, v2,
+    u2, v2, u1, v1, u3, v3,
+  ]
 
-  context.useProgram(program)
-  context.uniform2f(resolutionLocation, logicalWidth, logicalHeight)
-  context.uniform1i(samplerLocation, 0)
-  context.uniform4f(
-    colorLocation,
-    Math.max(0, Math.min(255, red)) / 255,
-    Math.max(0, Math.min(255, green)) / 255,
-    Math.max(0, Math.min(255, blue)) / 255,
-    Math.max(0, Math.min(255, alpha)) / 255,
-  )
-  context.activeTexture(context.TEXTURE0)
-  context.bindTexture(context.TEXTURE_2D, asset.texture)
-  context.bindBuffer(context.ARRAY_BUFFER, positionBuffer)
-  context.bufferData(context.ARRAY_BUFFER, positions, context.STREAM_DRAW)
-  context.enableVertexAttribArray(positionLocation)
-  context.vertexAttribPointer(positionLocation, 2, context.FLOAT, false, 0, 0)
-  context.bindBuffer(context.ARRAY_BUFFER, uvBuffer)
-  context.bufferData(context.ARRAY_BUFFER, uvs, context.STREAM_DRAW)
-  context.enableVertexAttribArray(uvLocation)
-  context.vertexAttribPointer(uvLocation, 2, context.FLOAT, false, 0, 0)
-  context.drawArrays(context.TRIANGLES, 0, 6)
+  queueDraw(asset, positions, uvs, colorToUniform(red, green, blue, alpha))
 }
 
-export function drawRect(x: number, y: number, width: number, height: number, red: number, green: number, blue: number, alpha = 255): void {
+export function drawRect(
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  red: number,
+  green: number,
+  blue: number,
+  alpha = 255,
+): void {
   if (!whiteTexture || !program || !positionBuffer || !uvBuffer) return
-  const context = requireGl()
   const id = -1
   textures.set(id, {
     texture: whiteTexture,
@@ -879,7 +963,8 @@ export function drawRect(x: number, y: number, width: number, height: number, re
     refs: 1,
     key: '__white',
   })
-  draw(id, 0, 0, 1, 1, x, y, width, height, 0, 0, 0, false, false, red, green, blue, alpha)
+  draw(id, 0, 0, 1, 1, x, y, width, height, 0, 0, 0, false, false,
+    red, green, blue, alpha)
   textures.delete(id)
 }
 
@@ -888,10 +973,19 @@ export interface DrawPoint {
   y: number
 }
 
-export function drawLine(x1: number, y1: number, x2: number, y2: number, red: number, green: number, blue: number, alpha = 255): void {
+export function drawLine(
+  x1: number,
+  y1: number,
+  x2: number,
+  y2: number,
+  red: number,
+  green: number,
+  blue: number,
+  alpha = 255,
+): void {
   const length = Math.hypot(x2 - x1, y2 - y1)
   if (length <= 0 || !whiteTexture) return
-  const angle = (Math.atan2(y2 - y1, x2 - x1) * 180) / Math.PI
+  const angle = Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI
   const id = -1
   textures.set(id, {
     texture: whiteTexture,
@@ -900,11 +994,19 @@ export function drawLine(x1: number, y1: number, x2: number, y2: number, red: nu
     refs: 1,
     key: '__white',
   })
-  draw(id, 0, 0, 1, 1, x1, y1 - 0.5, length, 1, angle, 0, 0, false, false, red, green, blue, alpha)
+  draw(id, 0, 0, 1, 1, x1, y1 - 0.5, length, 1, angle, 0, 0, false, false,
+    red, green, blue, alpha)
   textures.delete(id)
 }
 
-export function drawPoint(x: number, y: number, red: number, green: number, blue: number, alpha = 255): void {
+export function drawPoint(
+  x: number,
+  y: number,
+  red: number,
+  green: number,
+  blue: number,
+  alpha = 255,
+): void {
   drawRect(x - 1, y - 1, 2, 2, red, green, blue, alpha)
 }
 
@@ -921,7 +1023,7 @@ export function drawCircle(
   const segments = Math.max(12, Math.ceil(radius / 2))
   let previous = { x: x + radius, y }
   for (let i = 1; i <= segments; i++) {
-    const angle = (i / segments) * Math.PI * 2
+    const angle = i / segments * Math.PI * 2
     const current = {
       x: x + Math.cos(angle) * radius,
       y: y + Math.sin(angle) * radius,
@@ -932,7 +1034,14 @@ export function drawCircle(
   }
 }
 
-export function drawPolyline(points: DrawPoint[], red: number, green: number, blue: number, alpha = 255, closed = false): void {
+export function drawPolyline(
+  points: DrawPoint[],
+  red: number,
+  green: number,
+  blue: number,
+  alpha = 255,
+  closed = false,
+): void {
   for (let i = 1; i < points.length; i++) {
     drawLine(points[i - 1].x, points[i - 1].y, points[i].x, points[i].y, red, green, blue, alpha)
   }
@@ -943,7 +1052,12 @@ export function drawPolyline(points: DrawPoint[], red: number, green: number, bl
   }
 }
 
-export function pushClipRect(x: number, y: number, width: number, height: number): void {
+export function pushClipRect(
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+): void {
   const previous = clipStack[clipStack.length - 1]
   if (previous) {
     const right = Math.min(x + width, previous[0] + previous[2])
@@ -963,6 +1077,7 @@ export function popClipRect(): void {
 }
 
 function applyClipRect(): void {
+  flushDrawBatch()
   if (!canvas || !gl) return
   const clip = clipStack[clipStack.length - 1]
   if (!clip) {
@@ -981,7 +1096,12 @@ function applyClipRect(): void {
 }
 
 export function present(): void {
+  flushDrawBatch()
   gl?.flush()
+}
+
+export function getRendererStats(): RendererStats {
+  return { ...rendererStats }
 }
 
 export function onInit(callback: VoidCallback): void {

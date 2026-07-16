@@ -1,8 +1,8 @@
+import { hasRender } from '@@/utils/Helper';
 import { parse } from '@typescript-eslint/typescript-estree';
 import { get } from 'lodash';
 import { Position } from 'vscode';
 import { GlobalData } from '../parser/global';
-import { hasRender } from '../parser/jsx';
 
 /**
  * Trả về mảng index các node dẫn đến vị trí con trỏ,

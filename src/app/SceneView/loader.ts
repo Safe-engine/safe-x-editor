@@ -14,7 +14,7 @@ import {
 } from 'helper/node'
 import { get } from 'lodash-es'
 import { drawRect } from 'sdl3'
-import { getComponent, refreshWidget } from './component'
+import { getComponent } from './component'
 import { addQuotesToTernary } from './utils'
 
 type SdlColor = { r: number; g: number; b: number; a?: number }
@@ -208,9 +208,12 @@ async function parseChildren(root, parentNode: Node, data: ProjectData, evalInit
     renderNode.width = size.width
     renderNode.height = size.height
     if (data.previewScrollView) {
-      const scroll = new ScrollView()
-      scroll.horizontal = [1, 3].includes(parseDirection(direction))
-      scroll.vertical = [2, 3].includes(parseDirection(direction))
+      const scroll = new ScrollView({
+        contentSize: parseSize(contentSize, evalInit),
+        viewSize: parseSize(viewSize, evalInit),
+        horizontal: [1, 3].includes(parseDirection(direction)),
+        vertical: [2, 3].includes(parseDirection(direction))
+      })
       renderNode.addComponent(scroll)
     } else {
       const content = parseSize(contentSize, evalInit)
@@ -220,8 +223,8 @@ async function parseChildren(root, parentNode: Node, data: ProjectData, evalInit
       const contentNode = makeNode('ScrollViewContentPreview')
       contentNode.width = content.width
       contentNode.height = content.height
-      contentNode.anchorX = 0
-      contentNode.anchorY = 0
+      // contentNode.anchorX = 0
+      // contentNode.anchorY = 0
       contentNode.addComponent(new RectRender({ fillColor: { r: 175, g: 85, b: 255, a: 155 } }))
       renderNode.addChild(contentNode)
     }
@@ -273,13 +276,15 @@ async function parseChildren(root, parentNode: Node, data: ProjectData, evalInit
     }
   } else if (tag === 'UILayout') {
     const { direction, gap, paddingBottom, paddingTop, paddingLeft, paddingRight } = props
-    renderNode.addComponent(new UILayout({
-      direction, gap: parseIntFromValue(gap),
+    // console.log('UILayout Props:', props, 'Direction:', direction, 'Gap:', gap, 'Padding:', paddingTop, paddingRight, paddingBottom, paddingLeft)
+    renderNode.addComponent(UILayout,{
+      direction,
+      gap: parseIntFromValue(gap),
       paddingBottom: parseIntFromValue(paddingBottom),
       paddingTop: parseIntFromValue(paddingTop),
       paddingLeft: parseIntFromValue(paddingLeft),
       paddingRight: parseIntFromValue(paddingRight),
-    }))
+    })
   } else if (componentsCache[tag]) {
     renderNode = await parseChildren(componentsCache[tag], parentNode, data, evalInit, { ...baseProps, ...props })
   }
@@ -309,12 +314,11 @@ async function parseChildren(root, parentNode: Node, data: ProjectData, evalInit
 
   const colliderComp = getComponent(components, renderNode, designedResolution)
   if (colliderComp) renderNode.addComponent(colliderComp)
-  refreshWidget(renderNode)
 
   for (let index = 0; index < children.length; index++) {
     await parseChildren(children[index], renderNode, data, evalInit, baseProps)
   }
-  renderNode.getComponent(UILayout)?.layoutChildren()
+  // renderNode.getComponent(UILayout)?.layoutChildren()
   return renderNode
 }
 

@@ -29,7 +29,7 @@ export default function NodeTree() {
           key: GEN_COMPONENT_REQUEST,
           nodesData: treeData[0], filePath
         });
-        toast.success('Gen React Component Success');
+        toast.success('Generate Component Success');
       }
       ipcMain.on(GEN_COMPONENT_REQUEST, genComponentCB);
       return () => {

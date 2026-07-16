@@ -1,5 +1,5 @@
 export function parseEval(evalInit: string) {
-  return (v: string) => eval(evalInit + v)
+  return (v: string = '') => eval(evalInit + `${v}`.replace('this.props', 'baseProps'))
 }
 
 export function parseVec2(position = 'Vec2(0,0)', evalInit = '') {
@@ -32,18 +32,20 @@ export function getNodePosition(node, evalInit = '') {
   } else if (nodeX !== undefined || nodeY !== undefined) {
     // console.log('getNodePosition', nodeX, nodeY, evalInit)
     return {
-      x: nodeX !== undefined ? parseEval(evalInit)(nodeX.replace('this.props', 'baseProps')) : 0,
-      y: nodeY !== undefined ? parseEval(evalInit)(nodeY.replace('this.props', 'baseProps')) : 0,
+      x: nodeX !== undefined ? parseEval(evalInit)(nodeX) : 0,
+      y: nodeY !== undefined ? parseEval(evalInit)(nodeY) : 0,
     };
   }
   return { x: 0, y: 0 };
 }
 
 export function parseIntFromValue(value) {
+  if(!value) return
   return parseInt(parseStringFromValue(value))
 }
 
 export function parseFloatFromValue(value) {
+  if(!value) return
   return parseFloat(parseStringFromValue(value))
 }
 

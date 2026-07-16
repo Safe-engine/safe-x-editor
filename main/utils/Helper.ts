@@ -2,6 +2,7 @@ import Tree, { TreeNode } from '@colin-luo/tree';
 import { DirectoryTree } from 'directory-tree';
 import fs from 'fs';
 import pathUtil from 'path';
+import { renderList } from './constants';
 
 export interface TreeViewData {
   id?: string;
@@ -127,4 +128,8 @@ export function getPropsType({ typeAnnotation }) {
     return `${typeName.name}<${typeParameters.params.map(({ typeName }) => typeName.name).join(', ')}>`;
   }
   return typeName.name;
+}
+
+export function hasRender(tagName) {
+  return renderList.includes(tagName)
 }

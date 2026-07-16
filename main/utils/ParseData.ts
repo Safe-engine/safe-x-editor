@@ -8,7 +8,7 @@ import startsWith from 'lodash/startsWith';
 import { basename } from 'path';
 import { parseValue } from '../parser/ast';
 import { GlobalData } from '../parser/global';
-import { renderList } from './constants';
+import { hasRender } from './Helper';
 
 export function fallback(node) {
   // console.log(node.type, 'fallback')
@@ -57,7 +57,7 @@ const getAttributeProps = (openingElement, fileOrigin) => {
 };
 
 function hasTreeRender(tagName) {
-  return renderList.includes(tagName) || !!GlobalData.componentsCache[tagName];
+  return hasRender(tagName) || !!GlobalData.componentsCache[tagName];
 }
 
 const parseTreeData = (root, fileOrigin = '', childrenIndex = [], index = 0) => {

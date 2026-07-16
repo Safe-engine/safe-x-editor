@@ -83,7 +83,6 @@ export class PreviewScene extends Scene {
     this.mouseHandler()
     this.messageHandler()
     await this.loadLastComponent()
-    // this.loadComponent('/Users/antn/Documents/js-snake/client-snake/src/scene/Home.tsx')
   }
 
   async loadLastComponent() {
