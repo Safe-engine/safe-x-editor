@@ -220,12 +220,12 @@ const genPropsLine = (props: { [key: string]: any }) => {
         const nodeEntries = Object.entries(val).filter(([, nodeValue]) => nodeValue !== null && nodeValue !== undefined);
         if (!nodeEntries.length) { return ''; }
         // if (val.xy === [0,0]) { return ''; }
-        return `node={{${nodeEntries.map(([key, nodeValue]) => {
+        return `node={{ ${nodeEntries.map(([key, nodeValue]) => {
           if (key === 'xy') {
-            return `${key}: [${(nodeValue as any[]).map(v => typeof v === 'number' ? Math.round(v) : v)}]`;
+            return `${key}: [${(nodeValue as any[]).map(v => typeof v === 'number' ? Math.round(v) : v).join(', ')}]`;
           }
           return `${key}: ${nodeValue}`;
-        }).join(', ')}}}`;
+        }).join(', ')} }}`;
       }
       if (val === '') {
         return `${key}=""`;
@@ -238,7 +238,9 @@ const genPropsLine = (props: { [key: string]: any }) => {
   return lines.join(' ');
 };
 
-const createTag = (root, imports) => {
+const INDENT = '  ';
+
+const createTag = (root, imports, baseIndent = '') => {
   // if (!root.tag) return `${root.name}`;
   const {
     tag, name, props = {}, children = [], title, components = [], imported, isSubModule, loop
@@ -262,19 +264,23 @@ const createTag = (root, imports) => {
     // console.log('loop found:', loop);
     const { startIndex, startIndexSymbol, count, mapFrom, itemSymbol = '_' } = loop;
     const listSource = mapFrom || `Array(${count})`;
+    const childIndent = baseIndent + INDENT;
     return `{${listSource}.map((${itemSymbol}, ${startIndexSymbol}${startIndex ? ' = ' + startIndex : ''}) => (
-           ${createTag({ tag, name, props, children, title, components, imported, isSubModule }, imports)}
-          ))}`;
+${childIndent}${createTag({ tag, name, props, children, title, components, imported, isSubModule }, imports, childIndent)}
+${baseIndent}))}`;
   }
   const propsLine = genPropsLine(props);
   // console.log('propsLine', propsLine, ';');
   if (!children.length && isEmpty(components)) {
-    return `<${tag}${!isEmpty(propsLine) ? ' ' : ''}${propsLine}/>`;
+    return `<${tag}${!isEmpty(propsLine) ? ' ' : ''}${propsLine} />`;
   }
-  const renderChildren = children.length ? '\n' + children.map(child => createTag(child, imports)).join('\n') : '';
-  const renderComponents = components.length ? '\n' + components.map(child => createTag(child, imports)).join('\n') : '';
-  return `<${tag}${!isEmpty(propsLine) ? ' ' : ''}${propsLine}>${renderChildren}${renderComponents}
-</${tag}>`;
+  const childIndent = baseIndent + INDENT;
+  const tagWithProps = `<${tag}${!isEmpty(propsLine) ? ' ' : ''}${propsLine}>`;
+  const close = `</${tag}>`;
+  const renderChildren = children.length ? '\n' + children.map(child => childIndent + createTag(child, imports, childIndent)).join('\n') : '';
+  const renderComponents = components.length ? '\n' + components.map(child => childIndent + createTag(child, imports, childIndent)).join('\n') : '';
+  return `${tagWithProps}${renderChildren}${renderComponents}
+${baseIndent}${close}`;
 };
 
 export function genReactComponentString(treeData) {

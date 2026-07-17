@@ -1,10 +1,10 @@
 
 import { parse } from '@typescript-eslint/typescript-estree';
+import assert from 'assert';
 import fs from 'fs';
 import pathUtil from 'path';
 import { convertComponentData, genReactComponentString, getJSXBlock } from '../utils/ParseData';
 import { spliceString } from '../utils/StringHelper';
-import { lintFile } from './TerminalService';
 
 export const loadComponent = async ({ path }) => {
   // console.log('loadComponent', path);
@@ -77,18 +77,28 @@ export async function duplicateComponent({ componentPath, path }) {
   return true;
 }
 
+function indent(string, w) {
+  if (1 == arguments.length) w = 2;
+  assert('string' == typeof string);
+  assert('string' == typeof w || 'number' == typeof w);
+  if ('number' == typeof w) w = new Array(w + 1).join(' ');
+  return string.replace(/^(?!$)/mg, w);
+};
+
 export const updateComponentTag = ({ nodesData, filePath }) => {
   console.log('updateComponentTag', nodesData, filePath);
   const { component, imports } = genReactComponentString(nodesData);
   const input = fs.readFileSync(filePath, { encoding: 'utf8' });
   const parsed = parse(input, { jsx: true, range: true });
   const [start, end] = getJSXBlock(parsed).range;
+  const indentLength = input.slice(0, start).match(/([ \t]+)$/)?.[1]?.length || 0;
+  console.log('updateComponentTag', start, end, indentLength);
   // const logOutput = writeFileSync(pathUtil.join(genFolder,'component.html.parsed.)
   fs.writeFileSync(
     filePath,
-    spliceString(input, start, end - start, component)
+    spliceString(input, start - indentLength, end - start + indentLength, indent(component, indentLength)),
   );
-  lintFile(filePath)
+  // lintFile(filePath)
   const content = fs.readFileSync(filePath, { encoding: 'utf-8' });
   if (!imports.length) return true;
   const filtered = imports.filter((imp) => !content.includes(imp));
