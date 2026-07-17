@@ -19,7 +19,7 @@ function getJsonData(filePath: string, absolutePath: string) {
   return undefined;
 }
 
-function getTexturePath(base, relativePath: string) {
+function getTexturePath(base: Uri, relativePath: string) {
   if (!relativePath) { return undefined; }
   if (relativePath.endsWith('.json')) { return Uri.joinPath(base, 'res', relativePath.replace('.json', '.png')); }
   if (relativePath.endsWith('.plist')) { return Uri.joinPath(base, 'res', relativePath.replace('.plist', '.png')); }
@@ -27,7 +27,7 @@ function getTexturePath(base, relativePath: string) {
 
 export function parseAssets(parsed, panel?: WebviewView, isColor = false) {
   const ret = [];
-  const base = GlobalData.rootProject;
+  const base = Uri.file(GlobalData.rootProject);
   ESTraverse.traverse(parsed, {
     enter: function (node, parent) {
       if (node.type === 'VariableDeclarator') {
@@ -36,11 +36,11 @@ export function parseAssets(parsed, panel?: WebviewView, isColor = false) {
           if (isColor) { return; }
           // console.log(node.init.properties)
           const relativePath = node.init.value as string;
-          const fileUri = join(base, 'res', relativePath);
+          const fileUri = Uri.joinPath(base, 'res', relativePath);
           let size;
           if (relativePath.endsWith('.png') || relativePath.endsWith('.jpg')) {
-            if (existsSync(fileUri)) {
-              const { width, height } = sizeOf(readFileSync(fileUri));
+            if (existsSync(fileUri.fsPath)) {
+              const { width, height } = sizeOf(readFileSync(fileUri.fsPath));
               // console.log(fileUri, width, height);
               size = { width, height };
             }
@@ -50,8 +50,8 @@ export function parseAssets(parsed, panel?: WebviewView, isColor = false) {
               size,
               path: relativePath,
               key: name,
-              json: getJsonData(relativePath, fileUri),
-              value: relativePath
+              json: getJsonData(relativePath, fileUri.fsPath),
+              value: panel.webview.asWebviewUri(fileUri).toString()
             });
             return;
           }
@@ -59,10 +59,10 @@ export function parseAssets(parsed, panel?: WebviewView, isColor = false) {
           ret.push({
             size,
             path: relativePath,
-            json: getJsonData(relativePath, fileUri),
+            json: getJsonData(relativePath, fileUri.fsPath),
             key: name,
             texture: getViewPath(panel, texturePath),
-            value: fileUri
+            value: panel.webview.asWebviewUri(fileUri).toString()
           });
         } else if ('CallExpression' === node.init.type) {
           ret.push({

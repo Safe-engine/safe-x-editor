@@ -7,9 +7,9 @@ import { ipcMain } from 'helper/electronRemote'
 import pathUtils from 'path-browserify'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Tree, TreeApi } from 'react-arborist'
-import { FiRefreshCw, FiX } from 'react-icons/fi'
 import toast from 'react-hot-toast'
-import { ADD_NEW_STATE, CREATE_ACTION, CREATE_ASSET_REQUEST, DELETE_COMPONENT, GET_FOLDER_FILES, SYNC_RES_REQUEST, NEW_COMPONENT, RE_NAME_COMPONENT } from 'shared/constant.message'
+import { FiRefreshCw, FiX } from 'react-icons/fi'
+import { ADD_NEW_STATE, CREATE_ACTION, CREATE_ASSET_REQUEST, DELETE_COMPONENT, GET_FOLDER_FILES, NEW_COMPONENT, RE_NAME_COMPONENT, SYNC_RES_REQUEST } from 'shared/constant.message'
 import { useActions, useSelector } from 'states/app.context'
 import { selectFilesData, selectPreviewAsset, selectResourceFilesData, selectRootFolder } from 'states/app.selectors'
 import { AssetTypeBlock } from '../../components/common'
@@ -65,10 +65,7 @@ function getPreviewAsset(data: any, rootFolder: string) {
   if (data.type === 'spine' || data.type === 'dragonBones') {
     return {
       ...data,
-      value: Object.entries(data.value || {}).reduce((result, [key, value]) => {
-        result[key] = typeof value === 'string' ? resourceFileUrl(value, rootFolder) : value
-        return result
-      }, {}),
+      value: data.value,
     };
   }
   if (!isTexture(data)) return null;

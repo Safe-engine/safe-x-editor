@@ -6,6 +6,7 @@
     "target": "ES6",
     "esModuleInterop": true,
     "experimentalDecorators": true,
+    "strict": false,
     "lib": [
       "es2017",
       "dom",
@@ -15,9 +16,9 @@
       "@types",
       "node_modules/@types"
     ],
-    "moduleResolution": "node"
   },
   "include": [
+    "@types",
     "./src/**/*"
   ],
 }

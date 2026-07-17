@@ -191,7 +191,7 @@ async function parseChildren(root, parentNode: Node, data: ProjectData, evalInit
     // Render the authored sprite frame directly so the visual matches layout assets exactly.
     if (texture) renderNode.addComponent(new Sprite({ spriteFrame: texture }))
   } else if (tag === 'Label' || tag === 'RichText') {
-    const { string, font = '', size, outline, shadow } = props
+    const { string, font = '', size, outline, shadow, align, verticalAlign } = props
     const foundFont =
       fontAssets.find((item) => item.key === parseStringFromValue(font)) ?? fontAssets.find((item) => item.key === 'defaultFont')
     const label = new Label({
@@ -200,6 +200,8 @@ async function parseChildren(root, parentNode: Node, data: ProjectData, evalInit
       size: size ? parseIntFromValue(size) : Label.defaultSize,
       outline: getOutline(outline),
       shadow: getShadow(shadow),
+      align,
+      verticalAlign
     })
     renderNode.addComponent(label)
   } else if (tag === 'ScrollView' || tag === 'ListView') {

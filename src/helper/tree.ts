@@ -5,7 +5,8 @@ export interface TreeNode {
 
 function getId(name: string, isDirectory: boolean, data, type: string) {
   if (isDirectory) return name
-  if (type === 'dragonBones') return data.value.atlas
+  if (type === 'dragonBones') return data.value?.atlas
+  if (type === 'spine') return data.path
   if (type === 'frame') {
     return name
   }

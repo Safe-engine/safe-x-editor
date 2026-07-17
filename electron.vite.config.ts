@@ -1,5 +1,5 @@
-import path from 'node:path'
 import { defineConfig, externalizeDepsPlugin } from 'electron-vite'
+import path from 'node:path'
 import { viteSingleFile } from 'vite-plugin-singlefile'
 
 const resolve = (directory: string) => path.resolve(__dirname, directory)
@@ -53,7 +53,7 @@ export default defineConfig({
         components: resolve('src/components'),
         data: resolve('src/data'),
         helper: resolve('src/helper'),
-        sdl3: resolve('src/sdl3.ts'),
+        sdl3: resolve('node_modules/@safe-engine/sdl/lib/sdl3.js'),
         shared: resolve('src/shared'),
         states: resolve('src/states'),
         box2d: resolve('node_modules/@safe-engine/sdl/lib/physics/box2d.js'),

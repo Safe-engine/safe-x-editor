@@ -6,6 +6,11 @@ import { useState } from "react";
 import { NodeRendererProps } from "react-arborist";
 import { AiFillFolderOpen } from "react-icons/ai";
 import { CiImageOn } from 'react-icons/ci';
+import { FaMusic } from "react-icons/fa";
+import { FaFont } from "react-icons/fa6";
+import { GiSkeletonInside } from 'react-icons/gi';
+import { IoMdCube } from "react-icons/io";
+import { SiSpine } from 'react-icons/si';
 
 const textureExtensions = new Set(['.png', '.jpg', '.jpeg', '.webp', '.gif', '.bmp', '.svg']);
 
@@ -113,6 +118,21 @@ function getFrameIcon(data: any, textureIconSrc: string) {
 function renderIcon(data: any) {
   if (data.isDirectory) {
     return <AiFillFolderOpen color="#d6d6d6" />;
+  }
+  if (data.type === 'component') {
+    return <IoMdCube color="cyan" />
+  }
+  if (data.type === 'dragonBones') {
+    return <GiSkeletonInside color="blue" />
+  }
+  if (data.type === 'spine') {
+    return <SiSpine color="orange" />
+  }
+  if (data.type === 'font') {
+    return <FaFont color="white" />
+  }
+  if (data.type === 'audio') {
+    return <FaMusic color="yellow" />
   }
   const textureIconSrc = getTextureIconSrc(data);
   if (textureIconSrc) {

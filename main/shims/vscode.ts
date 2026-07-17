@@ -1,5 +1,5 @@
 import { GlobalData } from '@@/parser/global';
-import path from 'path';
+import { join } from 'path';
 
 export class Uri {
   fsPath: string;
@@ -17,12 +17,12 @@ export class Uri {
   }
 
   static joinPath(base: Uri, ...paths: string[]) {
-    return new Uri(path.join(base.fsPath, ...paths));
+    return new Uri(join(base.fsPath, ...paths));
   }
 }
 
 export class Position {
-  constructor(public line: number, public character: number) {}
+  constructor(public line: number, public character: number) { }
 }
 
 export const CompletionItemKind = {

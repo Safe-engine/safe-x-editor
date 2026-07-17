@@ -14,7 +14,7 @@ import { useSelector } from '../../states/app.context'
 import { selectPreviewAsset } from '../../states/app.selectors'
 import { Sprite } from './Sprite'
 
-const PREVIEW_CANVAS_ID = 'sdl-canvas'
+const PREVIEW_CANVAS_ID = 'asset-preview-canvas'
 const PREVIEW_SIZE = 300
 
 type AnimationPreviewType = 'spine' | 'dragonBones'
@@ -362,7 +362,7 @@ let sdlEngineStarted = false
 
 function ensurePreviewScene() {
   if (!sdlEngineStarted) {
-    Engine.start('Safex SDL Asset Preview', PREVIEW_SIZE, PREVIEW_SIZE)
+    Engine.start('Safex SDL Asset Preview', PREVIEW_SIZE, PREVIEW_SIZE, 'overscan', PREVIEW_CANVAS_ID)
     sdlEngineStarted = true
   }
   if (!previewScene) {
@@ -411,13 +411,12 @@ function AssetPreview() {
 
   useEffect(() => {
     if (!canvasRef.current) return
-    sceneRef.current = ensurePreviewScene()
-    setSdlReady(true)
-  }, [])
-
-  useEffect(() => {
-    const scene = sceneRef.current
-    if (!scene || !sdlReady) return
+    if (!sceneRef.current) {
+      sceneRef.current = ensurePreviewScene()
+      if (!sdlReady) setSdlReady(true)
+      return
+    }
+    if (!sdlReady) return
 
     let cancelled = false
     setAnimations([])
@@ -426,12 +425,12 @@ function AssetPreview() {
     setSelectedSkin('')
 
     if (!isAnimationPreviewType(type) || !value) {
-      scene.clearPreview()
+      sceneRef.current.clearPreview()
       setCanvasZoomPercent(100)
       return
     }
 
-    void scene.showPreview(type, value).then((metadata) => {
+    void sceneRef.current.showPreview(type, value).then((metadata) => {
       if (cancelled) return
       setAnimations(metadata.animations)
       setSkins(metadata.skins)
@@ -443,7 +442,7 @@ function AssetPreview() {
     return () => {
       cancelled = true
     }
-  }, [key, sdlReady, type, value])
+  }, [key, type, value, canvasRef.current, sdlReady])
 
   useEffect(() => {
     if (!isImagePreviewType) return

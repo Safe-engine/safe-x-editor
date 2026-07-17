@@ -10,7 +10,16 @@ import { getClassesMetaData } from '../parser/metadata';
 import { parseAssetsSrcFile, parseEnums, parseJsonCache } from './assets';
 import { loadComponent } from './ComponentService';
 
-export const getFilesInFolder = async ({ src }, panel: WebviewView) => {
+const panel: WebviewView = {
+  webview: {
+    asWebviewUri: (uri: Uri) => {
+      console.log('asWebviewUri', uri);
+      return 'file://' + uri.fsPath
+    }, // Giả lập phương thức để trả về đường dẫn file
+  }
+};
+
+export const getFilesInFolder = async ({ src }) => {
   const packageJson = join(src, 'package.json').replace(/\\/g, '/');
   // console.log('getFilesInFolder', src, packageJson)
   if (!existsSync(packageJson)) {

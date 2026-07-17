@@ -65,7 +65,7 @@ export default function NodeTree() {
   }, [selectedPaths]);
 
   function onItemClick(node) {
-    console.log('onItemClick node', node.data)
+    // console.log('onItemClick node', node.data)
     const { id: key, tag } = node.data;
     if (tag) {
       selectEditingTagNode(key);

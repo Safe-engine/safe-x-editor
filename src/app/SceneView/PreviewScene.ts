@@ -4,7 +4,6 @@ import { getLastLoadedFile, getLastRootFolder, getLastSceneScale, getLastSceneX,
 import { GlobalState } from 'data/GloablState'
 import { normalizeNodeProps, parseBoolFromValue, parseFloatFromValue, parseNumbersArray, parseStringsArray } from 'helper/node'
 import { cloneDeep, first, isNumber, parseInt, set } from 'lodash-es'
-import { setAssetRoot } from 'sdl3'
 import { sendRequest } from '../app.ipc'
 import { arrow } from './assets'
 import { CircleRender } from './CircleRender'
@@ -286,7 +285,6 @@ export class PreviewScene extends Scene {
   async loadProjectData() {
     const rootProject = getLastRootFolder()
     if (!rootProject) return
-    setAssetRoot(`${rootProject}/res`)
     const data: any = await sendRequest({
       key: 'GET_FOLDER_FILES',
       src: rootProject,
