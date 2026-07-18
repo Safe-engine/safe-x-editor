@@ -86,13 +86,13 @@ function indent(string, w) {
 };
 
 export const updateComponentTag = ({ nodesData, filePath }) => {
-  console.log('updateComponentTag', nodesData, filePath);
+  // console.log('updateComponentTag', nodesData, filePath);
   const { component, imports } = genReactComponentString(nodesData);
   const input = fs.readFileSync(filePath, { encoding: 'utf8' });
   const parsed = parse(input, { jsx: true, range: true });
   const [start, end] = getJSXBlock(parsed).range;
   const indentLength = input.slice(0, start).match(/([ \t]+)$/)?.[1]?.length || 0;
-  console.log('updateComponentTag', start, end, indentLength);
+  // console.log('updateComponentTag', start, end, indentLength);
   // const logOutput = writeFileSync(pathUtil.join(genFolder,'component.html.parsed.)
   fs.writeFileSync(
     filePath,

@@ -59,7 +59,7 @@ export function getSettings() {
     enter: function (node: any) {
       // console.log(' traverse:', node);
       if (node.type === 'VariableDeclarator' && node.id.name === 'colliderMatrix') {
-        console.log(' traverse:', node);
+        // console.log(' traverse:', node);
         const [start, end] = node.init.range
         colliderMatrix = code.substring(start, end);
       } else if ('TSEnumBody' === node.type) {

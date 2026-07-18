@@ -232,7 +232,6 @@ export default class MenuBuilder {
                 properties: ['openDirectory'],
               })
               // const files = getFilesInFolder({ src: root })
-              console.log(root)
               // this.mainWindow.webContents.send(GET_FOLDER_FILES, { src: root });
               ipcMain.emit(GET_FOLDER_FILES, root)
             },

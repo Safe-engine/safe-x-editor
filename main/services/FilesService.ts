@@ -13,7 +13,7 @@ import { loadComponent } from './ComponentService';
 const panel: WebviewView = {
   webview: {
     asWebviewUri: (uri: Uri) => {
-      console.log('asWebviewUri', uri);
+      // console.log('asWebviewUri', uri);
       return 'file://' + uri.fsPath
     }, // Giả lập phương thức để trả về đường dẫn file
   }

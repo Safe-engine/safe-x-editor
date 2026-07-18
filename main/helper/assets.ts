@@ -10,7 +10,6 @@ export function parseAssets(parsed) {
     enter: function (node: any, parent) {
       if (node.type === 'VariableDeclarator') {
         if (node.id.type === 'Identifier') {
-          // console.log(node);
           // console.log(node.init.properties)
           const { name } = node.id;
           // const values = node.init.properties.map((v: any) => ({
