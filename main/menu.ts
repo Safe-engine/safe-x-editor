@@ -1,5 +1,15 @@
 import { GEN_COMPONENT_REQUEST, GET_FOLDER_FILES, NEW_PROJECT } from '@shared/constant.message'
+import { execFile } from 'child_process'
 import { app, dialog, ipcMain, Menu, shell } from 'electron'
+import { existsSync, readFileSync, writeFileSync } from 'fs'
+import { basename, join } from 'path'
+import { GlobalData } from './parser/global'
+
+const OPEN_WITH_SETTINGS_FILE = 'open-with.json'
+
+type OpenWithSettings = {
+  customAppPath?: string
+}
 
 export default class MenuBuilder {
   mainWindow
@@ -13,12 +23,98 @@ export default class MenuBuilder {
       this.setupDevelopmentEnvironment()
     }
 
+    return this.refreshMenu()
+  }
+
+  refreshMenu() {
     const template: any = process.platform === 'darwin' ? this.buildDarwinTemplate() : this.buildDefaultTemplate()
 
     const menu = Menu.buildFromTemplate(template)
     Menu.setApplicationMenu(menu)
 
     return menu
+  }
+
+  getOpenWithSettings(): OpenWithSettings {
+    const settingsPath = join(app.getPath('userData'), OPEN_WITH_SETTINGS_FILE)
+    if (!existsSync(settingsPath)) return {}
+
+    try {
+      return JSON.parse(readFileSync(settingsPath, 'utf-8'))
+    } catch {
+      return {}
+    }
+  }
+
+  saveOpenWithSettings(settings: OpenWithSettings) {
+    writeFileSync(join(app.getPath('userData'), OPEN_WITH_SETTINGS_FILE), JSON.stringify(settings), 'utf-8')
+  }
+
+  openProjectInApp(application: string) {
+    const projectPath = GlobalData.rootProject
+    if (!projectPath) return
+
+    if (process.platform === 'darwin') {
+      execFile('open', ['-a', application, projectPath], error => {
+        if (error) dialog.showErrorBox('Unable to open project', `Could not open ${application}.`)
+      })
+      return
+    }
+
+    execFile(application, [projectPath], error => {
+      if (error) dialog.showErrorBox('Unable to open project', `Could not open ${application}.`)
+    })
+  }
+
+  showProjectInFinder() {
+    if (GlobalData.rootProject) shell.showItemInFolder(GlobalData.rootProject)
+  }
+
+  configureOpenWithApp() {
+    const [customAppPath] = dialog.showOpenDialogSync(this.mainWindow, {
+      title: 'Select an application to open projects',
+      properties: ['openFile', 'openDirectory'],
+    }) || []
+    if (!customAppPath) return
+
+    this.saveOpenWithSettings({ customAppPath })
+    this.openProjectInApp(customAppPath)
+    this.refreshMenu()
+  }
+
+  buildOpenWithSubmenu() {
+    const { customAppPath } = this.getOpenWithSettings()
+    const submenu: any[] = [
+      {
+        label: 'Finder',
+        click: () => this.showProjectInFinder(),
+      },
+      {
+        label: 'VS Code',
+        click: () => this.openProjectInApp('Visual Studio Code'),
+      },
+      {
+        label: 'Codex',
+        click: () => this.openProjectInApp('Codex'),
+      },
+    ]
+
+    if (customAppPath) {
+      submenu.push({
+        label: basename(customAppPath, '.app'),
+        click: () => this.openProjectInApp(customAppPath),
+      })
+    }
+
+    submenu.push(
+      { type: 'separator' },
+      {
+        label: 'Configure Other App…',
+        click: () => this.configureOpenWithApp(),
+      },
+    )
+
+    return submenu
   }
 
   setupDevelopmentEnvironment() {
@@ -67,6 +163,10 @@ export default class MenuBuilder {
           click: () => {
             ipcMain.emit(GEN_COMPONENT_REQUEST)
           },
+        },
+        {
+          label: 'Open With',
+          submenu: this.buildOpenWithSubmenu(),
         },
         { type: 'separator' },
         {
@@ -144,25 +244,6 @@ export default class MenuBuilder {
         },
       ],
     }
-    const subMenuLanguage = {
-      label: 'Language',
-      submenu: [
-        {
-          label: 'English',
-          accelerator: 'Ctrl+Command+E',
-          click: () => {
-            this.mainWindow.webContents.send('CHANGE_LANGUAGE', 'en')
-          },
-        },
-        {
-          label: 'Vietnamese',
-          accelerator: 'Ctrl+Command+V',
-          click: () => {
-            this.mainWindow.webContents.send('CHANGE_LANGUAGE', 'vn')
-          },
-        },
-      ],
-    }
     const subMenuWindow = {
       label: 'Window',
       submenu: [
@@ -208,7 +289,7 @@ export default class MenuBuilder {
 
     const subMenuView = process.env.NODE_ENV === 'development' ? subMenuViewDev : subMenuViewProd
 
-    return [subMenuAbout, subMenuEdit, subMenuView, subMenuLanguage, subMenuWindow, subMenuHelp]
+    return [subMenuAbout, subMenuEdit, subMenuView, subMenuWindow, subMenuHelp]
   }
 
   buildDefaultTemplate() {
@@ -235,6 +316,10 @@ export default class MenuBuilder {
               // this.mainWindow.webContents.send(GET_FOLDER_FILES, { src: root });
               ipcMain.emit(GET_FOLDER_FILES, root)
             },
+          },
+          {
+            label: 'Open With',
+            submenu: this.buildOpenWithSubmenu(),
           },
           {
             label: '&Close',
