@@ -4,7 +4,7 @@ import { ContextMenu } from 'components/ContextMenu';
 import { parseFloatFromValue, parseOutline, parseStringFromValue } from 'helper/node';
 import { memo, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { FiBox, FiCircle, FiEdit2, FiGrid, FiLink, FiRotateCcw, FiShare2, FiTriangle } from 'react-icons/fi';
+import { FiBox, FiCircle, FiEdit2, FiGrid, FiLink, FiPlus, FiRotateCcw, FiShare2, FiTrash2, FiTriangle } from 'react-icons/fi';
 import { GET_COLLIDER_SETTINGS_REQUEST, SAVE_COLLIDER_SETTINGS_REQUEST, UPDATE_PROJECT_COLORS_REQUEST } from 'shared/constant.message';
 import { useActions, useSelector } from 'states/app.context';
 import { selectAssets, selectColors, selectDesignResolution, selectRootFolder, selectSelectedNode } from 'states/app.selectors';
@@ -73,7 +73,7 @@ const COMPONENT_OPTIONS = [
   { tag: 'PolygonCollider', label: 'Polygon Collider', icon: FiTriangle, props: { points: [] } },
   { tag: 'Widget', label: 'Widget', icon: FiGrid, props: {} },
   { tag: 'RigidBody', label: 'RigidBody', icon: FiLink, props: {} },
-  { tag: 'SpineBonesControl', label: 'Spine Bones Control', icon: FiShare2, props: { bonesName: [], posList: [] }, requiresSpineSkeleton: true },
+  { tag: 'SpineBonesControl', label: 'Spine Bones Control', icon: FiShare2, props: { bones: [] }, requiresSpineSkeleton: true },
 ];
 
 function Field({ label, value, onChange }) {
@@ -135,6 +135,69 @@ function SpineSelectField({ label, value, items, onChange }) {
       <div className='truncate text-[11px] text-[#c8c8c8]' title={label}>{label}</div>
       <SelectBox items={options} selected={value ?? ''} setSelected={onChange} />
     </label>
+  );
+}
+
+function SpineBonesList({ value, onChange }) {
+  let boneValues = value;
+  if (typeof boneValues === 'string') {
+    try {
+      boneValues = JSON.parse(parseStringFromValue(boneValues).replace(/'/g, '"'));
+    } catch {
+      boneValues = [];
+    }
+  }
+  const bones = Array.isArray(boneValues)
+    ? boneValues.filter((bone) => Array.isArray(bone)).map(([name, x, y]) => [String(name ?? ''), Number(x) || 0, Number(y) || 0])
+    : [];
+
+  function update(index, updated) {
+    onChange(bones.map((bone, boneIndex) => boneIndex === index ? updated : bone));
+  }
+
+  return (
+    <div className='px-2 py-1'>
+      <div className='mb-1 flex items-center justify-between text-[11px] text-[#c8c8c8]'>
+        <span>Bones</span>
+        <button
+          className='flex h-5 items-center gap-1 rounded-sm border border-[#111] bg-[#303030] px-1.5 text-[#bdbdbd] hover:text-[#f0f0f0]'
+          type='button'
+          onClick={() => onChange([...bones, ['', 0, 0]])}
+        >
+          <FiPlus size={12} /> Add
+        </button>
+      </div>
+      {bones.length === 0 ? (
+        <div className='py-1 text-[11px] text-[#8f8f8f]'>No bones.</div>
+      ) : (
+        <div className='space-y-1'>
+          {bones.map(([name, x, y], index) => (
+            <div key={`${name}-${index}`} className='flex min-w-0 gap-1'>
+              <input
+                className='h-6 min-w-0 flex-1 rounded-sm border border-[#111] bg-[#151515] px-2 text-[12px] text-[#e2e2e2] outline-none focus:border-[#4a90e2]'
+                value={name}
+                placeholder='Bone name'
+                onChange={(event) => update(index, [event.target.value, x, y])}
+              />
+              <div className='w-14 shrink-0'>
+                <AxisInput axis='X' color='#ff6565' value={x} onChange={(nextX) => update(index, [name, nextX, y])} />
+              </div>
+              <div className='w-14 shrink-0'>
+                <AxisInput axis='Y' color='#71d36b' value={y} onChange={(nextY) => update(index, [name, x, nextY])} />
+              </div>
+              <button
+                className='flex h-6 w-6 shrink-0 items-center justify-center rounded-sm border border-[#111] bg-[#303030] text-[#bdbdbd] hover:text-[#f0f0f0]'
+                type='button'
+                onClick={() => onChange(bones.filter((_, boneIndex) => boneIndex !== index))}
+                title={`Remove ${name || 'bone'}`}
+              >
+                <FiTrash2 size={12} />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -784,7 +847,13 @@ function NodeProps() {
             && !['centerVertical', 'centerHorizon'].includes(key)
           ))
         )).map(([key, value]) => (
-          key === 'spriteFrame' ? (
+          component.tag === 'SpineBonesControl' && key === 'bones' ? (
+            <SpineBonesList
+              key={`${component.tag}-${index}-${key}`}
+              value={value}
+              onChange={(nextValue) => updateComponentProps(index, { [key]: nextValue })}
+            />
+          ) : key === 'spriteFrame' ? (
             <SpriteFrameField
               key={`${component.tag}-${index}-${key}`}
               value={value}

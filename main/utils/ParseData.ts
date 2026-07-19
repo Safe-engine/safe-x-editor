@@ -10,6 +10,8 @@ import { parseValue } from '../parser/ast';
 import { GlobalData } from '../parser/global';
 import { hasRender } from './Helper';
 
+type BoneControl = [name: string, x: number, y: number];
+
 export function fallback(node) {
   // console.log(node.type, 'fallback')
   return Object.keys(node);
@@ -211,7 +213,15 @@ const genPropsLine = (props: { [key: string]: any }) => {
       if (val === true) { return key; }
       if (val === false) { return `${key}={false}`; }
       if (typeof val === 'number') { return `${key}={${val}}`; }
-      if ((key === 'capInsets' || key === 'offset' || key === 'posList') && Array.isArray(val)) {
+      if (key === 'bones' && Array.isArray(val)) {
+        const bones: BoneControl[] = val.map(([name, x, y]) => [
+          typeof name === 'string' ? name : '',
+          typeof x === 'number' ? x : 0,
+          typeof y === 'number' ? y : 0,
+        ]);
+        return `${key}={${JSON.stringify(bones)}}`;
+      }
+      if ((key === 'capInsets' || key === 'offset') && Array.isArray(val)) {
         return `${key}={${JSON.stringify(val)}}`;
       }
       if (key === 'node') {

@@ -2,12 +2,12 @@ import { MeshAttachment, RegionAttachment } from '@esotericsoftware/spine-core'
 import { Label, loadAll, Node, Scene, SpineBonesControl, SpineSkeleton, Sprite, Touch } from '@safe-engine/sdl'
 import { getLastLoadedFile, getLastRootFolder, getLastSceneScale, getLastSceneX, getLastSceneY, setLastSceneScale, setLastSceneX, setLastSceneY } from 'data/AppData'
 import { GlobalState } from 'data/GloablState'
-import { normalizeNodeProps, parseBoolFromValue, parseFloatFromValue, parseNumbersArray, parseStringsArray } from 'helper/node'
+import { normalizeNodeProps, parseBoolFromValue, parseFloatFromValue } from 'helper/node'
 import { cloneDeep, first, isNumber, parseInt, set } from 'lodash-es'
 import { sendRequest } from '../app.ipc'
 import { arrow } from './assets'
 import { CircleRender } from './CircleRender'
-import { updatePreviewWidgetInsets } from './component'
+import { parseBoneControls, updatePreviewWidgetInsets } from './component'
 import { loadSceneViewSdl, preloadSdlAssets, RectRender } from './loader'
 import { SpineBonesControlRender } from './SpineBonesControlRender'
 import { createNode, getComponentChildrenNum, getCurrentNode, getEditingRoot, KEY, setNodePositionProps } from './utils'
@@ -444,16 +444,9 @@ export class PreviewScene extends Scene {
     const editNode = this.getEditingNodeByPath(this.editingPaths[0])
     const componentIndex = editNode?.components?.findIndex((component) => component.tag === 'SpineBonesControl') ?? -1
     if (componentIndex < 0) return undefined
-    const points = editNode.components[componentIndex].props?.posList
-    if (!Array.isArray(points) && typeof points !== 'string') return undefined
-    const bonesNameValue = editNode.components[componentIndex].props?.bonesName
-    const bonesName = parseStringsArray(bonesNameValue)
-    const values = parseNumbersArray(points)
-    const parsedPoints = Array.from({ length: Math.ceil(values.length / 2) }, (_, index) => ({
-      x: Number.isFinite(values[index * 2]) ? values[index * 2] : 0,
-      y: Number.isFinite(values[index * 2 + 1]) ? values[index * 2 + 1] : 0,
-    }))
-    return { componentIndex, points, parsedPoints, bonesName }
+    const bonesValue = parseBoneControls(editNode.components[componentIndex].props?.bones)
+    // console.log('getSpineBonesControl', bonesValue, editNode.components[componentIndex].props?.bones)
+    return { componentIndex, bones: bonesValue }
   }
 
   updateSpineBoneTooltip(x: number, y: number, clientX: number, clientY: number) {
@@ -462,7 +455,7 @@ export class PreviewScene extends Scene {
     const pointIndex = control
       ? this.getSpineBoneControlPoints().findIndex((point) => Math.hypot(x - point.x, y - point.y) <= 10)
       : -1
-    const boneName = pointIndex >= 0 ? control?.bonesName[pointIndex] : undefined
+    const boneName = pointIndex >= 0 ? control?.bones[pointIndex][0] : undefined
     if (!boneName) {
       this.spineBoneTooltipNode.style.display = 'none'
       return
@@ -481,9 +474,9 @@ export class PreviewScene extends Scene {
     const radians = (node.worldRotation * Math.PI) / 180
     const cosine = Math.cos(radians)
     const sine = Math.sin(radians)
-    return control.parsedPoints.map((point) => {
-      const x = point.x * node.worldScaleX
-      const y = point.y * node.worldScaleY
+    return control.bones.map(([, x, y]) => {
+      x *= node.worldScaleX
+      y *= node.worldScaleY
       return { x: node.worldX + x * cosine - y * sine, y: node.worldY + x * sine - y * cosine }
     })
   }
@@ -515,19 +508,17 @@ export class PreviewScene extends Scene {
     const localY = (dx * Math.sin(radians) - dy * Math.cos(radians)) / node.worldScaleY
     if (!Number.isFinite(localX) || !Number.isFinite(localY)) return false
     const pointIndex = this.activeSpineBonePoint.pointIndex
-    control.parsedPoints[pointIndex] = { x: Math.round(localX), y: Math.round(localY) }
+    control.bones[pointIndex] = [control.bones[pointIndex][0], Math.round(localX), Math.round(localY)]
     const editNode = this.getEditingNodeByPath(this.editingPaths[0])
     const component = editNode?.components?.[control.componentIndex]
     if (!component) return false
-    const posList = control.parsedPoints.flatMap((point) => [point.x, point.y])
     component.props = {
       ...component.props,
-      posList
+      bones: control.bones,
     }
-    // console.log('moveSpineBonePoint', control.points, component.props)
     const currentNode = getCurrentNode(this.drawNode, this.getChildrenIndex(this.editingPaths[0]))
     const liveControl = currentNode.getComponent(SpineBonesControl)
-    if (liveControl) liveControl.props.posList = posList
+    if (liveControl) liveControl.props.bones = control.bones
     this.syncEditingFlag()
     window.postMessage({
       type: 'previewUpdateSelectedNodes',
@@ -871,7 +862,7 @@ export class PreviewScene extends Scene {
     if (control) {
       const currentNode = getCurrentNode(this.drawNode, this.getChildrenIndex(this.editingPaths[0]))
       const liveControl = currentNode?.getComponent(SpineBonesControl)
-      if (liveControl) liveControl.props.posList = control.parsedPoints.flatMap((point) => [point.x, point.y])
+      if (liveControl) liveControl.props.bones = control.bones
     }
   }
 

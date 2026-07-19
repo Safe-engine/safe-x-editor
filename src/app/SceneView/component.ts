@@ -1,5 +1,5 @@
 import { BoxCollider, CircleCollider, ComponentX, Node, PolygonCollider, SpineBonesControl } from '@safe-engine/sdl'
-import { parseBoolFromValue, parseFloatFromValue, parseIntFromValue, parseNumbersArray, parsePoints, parseStringsArray } from 'helper/node'
+import { parseBoolFromValue, parseFloatFromValue, parseIntFromValue, parseNumbersArray, parsePoints, parseStringFromValue } from 'helper/node'
 import { forEach } from 'lodash-es'
 
 type PreviewWidgetProps = {
@@ -11,6 +11,24 @@ type PreviewWidgetProps = {
   centerHorizon?: boolean
   designWidth: number
   designHeight: number
+}
+
+type BoneControl = [name: string, x: number, y: number]
+
+export function parseBoneControls(value: unknown): BoneControl[] {
+  let bones = value
+  if (typeof bones === 'string') {
+    try {
+      bones = JSON.parse(parseStringFromValue(bones).replace(/'/g, '"'))
+    } catch (error) {
+      console.warn('Failed to parse bones string:', error)
+      return []
+    }
+  }
+  if (!Array.isArray(bones)) return []
+  return bones
+    .filter((bone) => Array.isArray(bone))
+    .map(([name, x, y]) => [String(name), Number(x) || 0, Number(y) || 0] as BoneControl)
 }
 
 function normalizeInset(value?: number) {
@@ -102,10 +120,9 @@ export function getComponent(components = [], node: Node, designedResolution: { 
   forEach(components, ({ tag, props = {} }) => {
     switch (tag) {
       case 'SpineBonesControl': {
-        const { bonesName, posList } = props
+        const bones = parseBoneControls(props.bones)
         component = new SpineBonesControl({
-          bonesName: parseStringsArray(bonesName),
-          posList: parseNumbersArray(posList),
+          bones,
         } as any)
         break
       }
