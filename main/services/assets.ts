@@ -3,7 +3,7 @@ import ESTraverse from "estraverse";
 import { readFileSync } from 'fs';
 import { existsSync } from 'fs-extra';
 import sizeOf from 'image-size';
-import { get } from "lodash";
+import { get } from "lodash-es";
 import { join } from 'path';
 import { Uri, WebviewView, workspace } from "vscode";
 import { parseValue } from "../parser/ast";

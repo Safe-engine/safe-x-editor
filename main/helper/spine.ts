@@ -1,5 +1,5 @@
 import { readFileSync } from "fs-extra";
-import { last } from "lodash";
+import { last } from "lodash-es";
 // SkeletonBinary cần một AttachmentLoader.
 // Nếu bạn có .atlas, dùng AtlasAttachmentLoader kết hợp TextureLoader.
 // Nếu chỉ muốn đọc cấu trúc (bones, slots, animations) và không care attachment textures,

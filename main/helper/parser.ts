@@ -2,7 +2,7 @@ import { parse as ESParser } from '@typescript-eslint/typescript-estree';
 import ESTraverse from "estraverse";
 import { readFileSync } from 'fs';
 import sizeOf from 'image-size';
-import { get } from 'lodash';
+import { get } from 'lodash-es';
 import { join } from 'path';
 import { CompletionItemKind, Position } from 'vscode';
 import { GlobalData } from '../parser/global';

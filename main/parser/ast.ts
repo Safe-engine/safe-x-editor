@@ -1,5 +1,5 @@
 
-import { get, upperFirst } from 'lodash';
+import { get, upperFirst } from 'lodash-es';
 import { getParamsType } from './component';
 import { GlobalData } from './global';
 import { getTypeAnnotation } from './helper';

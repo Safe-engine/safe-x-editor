@@ -1,4 +1,4 @@
-import { camelCase, capitalize, snakeCase } from 'lodash';
+import { camelCase, capitalize, snakeCase } from 'lodash-es';
 import fs from 'fs-extra';
 import path from 'path';
 import Handlebars from 'handlebars';

@@ -1,6 +1,6 @@
 import { hasRender } from '@@/utils/Helper';
 import { parse } from '@typescript-eslint/typescript-estree';
-import { get } from 'lodash';
+import { get } from 'lodash-es';
 import { Position } from 'vscode';
 import { GlobalData } from '../parser/global';
 
