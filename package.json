@@ -1,7 +1,7 @@
 {
   "name": "safe-x-editor",
   "version": "1.0.0",
-  "description": "react parcel socket io web editor",
+  "description": "react electron safex editor",
   "main": "build/main/index.js",
   "scripts": {
     "package-win": "electron-builder build --win --publish never",

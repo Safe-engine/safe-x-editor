@@ -8,7 +8,7 @@
         "@colin-luo/tree": "^4.3.0",
         "@electron/remote": "^2.1.3",
         "@headlessui/react": "^1.7.19",
-        "@safe-engine/sdl": "^1.2.4",
+        "@safe-engine/sdl": "^1.2.5",
         "@types/estraverse": "^5.1.7",
         "@types/fs-extra": "^11.0.4",
         "@types/lodash-es": "^4.17.12",
