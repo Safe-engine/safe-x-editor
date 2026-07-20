@@ -18,6 +18,7 @@ const mainExternal = (id: string) =>
     'handlebars',
     'image-size',
     'lodash',
+    'typescript',
   ].includes(id) || id.startsWith('lodash/')
 
 export default defineConfig({

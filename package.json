@@ -16,7 +16,19 @@
   ],
   "author": "",
   "license": "ISC",
-  "dependencies": {},
+  "dependencies": {
+    "@colin-luo/tree": "^4.3.0",
+    "@electron/remote": "^2.1.3",
+    "@typescript-eslint/typescript-estree": "8.34.1",
+    "directory-tree": "^3.6.0",
+    "electron-devtools-installer": "^4.0.0",
+    "estraverse": "^5.3.0",
+    "fs-extra": "11.3.0",
+    "glob": "11.0.3",
+    "image-size": "^1.2.1",
+    "lodash": "4.17.21",
+    "typescript": "5.8.3"
+  },
   "parcelCleanPaths": [
     "dist"
   ],
@@ -25,8 +37,6 @@
     "watcherGlob": "**"
   },
   "devDependencies": {
-    "@colin-luo/tree": "^4.3.0",
-    "@electron/remote": "^2.1.3",
     "@headlessui/react": "^1.7.19",
     "@safe-engine/sdl": "^1.2.5",
     "@types/estraverse": "^5.1.7",
@@ -37,24 +47,17 @@
     "@types/react-dom": "19.1.6",
     "@typescript-eslint/eslint-plugin": "8.34.1",
     "@typescript-eslint/parser": "8.34.1",
-    "@typescript-eslint/typescript-estree": "8.34.1",
     "ajv": "^8.20.0",
     "allotment": "1.20.4",
     "autoprefixer": "10.4.21",
     "clsx": "^2.1.1",
-    "directory-tree": "^3.6.0",
     "electron": "^36.9.5",
     "electron-builder": "^23.6.0",
-    "electron-devtools-installer": "^4.0.0",
     "electron-vite": "^5.0.0",
     "eslint": "9.29.0",
     "eslint-config-prettier": "10.1.5",
     "eslint-plugin-prettier": "5.5.0",
-    "estraverse": "^5.3.0",
-    "fs-extra": "11.3.0",
-    "glob": "11.0.3",
     "handlebars": "^4.7.9",
-    "image-size": "^1.2.1",
     "immer": "^10.2.0",
     "lodash-es": "^4.18.1",
     "path-browserify": "^1.0.1",
@@ -71,7 +74,6 @@
     "reselect": "^5.2.0",
     "tailwind-styled-components": "^2.2.0",
     "tailwindcss": "^3.4.19",
-    "typescript": "5.8.3",
     "vite": "^8.1.5",
     "vite-plugin-singlefile": "^2.3.3"
   }
