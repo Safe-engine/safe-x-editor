@@ -1,8 +1,8 @@
-import { Node } from '@safe-engine/sdl'
+import { instantiate, NodeComp, NodeRender } from '@safe-engine/webgl'
 import { GlobalState } from 'data/GloablState'
 import { first, set } from 'lodash-es'
 
-export function getCurrentNode(node: Node, childrenIndex: number[]) {
+export function getCurrentNode(node: NodeComp, childrenIndex: number[]) {
   let currentNode = node
   childrenIndex.forEach((index) => {
     if (currentNode?.children?.[index]) {
@@ -40,7 +40,7 @@ export const KEY = {
 }
 
 export function createNode(name: string) {
-  return new Node(name)
+  return instantiate(NodeRender).node
 }
 
 export function getComponentChildrenNum(tag: string) {

@@ -11,14 +11,9 @@ import {
   Texture,
   TextureAtlas,
 } from '@esotericsoftware/spine-core'
-import { loadScene } from '@safe-engine/sdl/lib/core/instantiate'
-import { Node } from '@safe-engine/sdl/lib/core/Node'
-import { Scene } from '@safe-engine/sdl/lib/core/Scene'
-import { DragonBones } from '@safe-engine/sdl/lib/dragonbones'
-import { SdlSlot } from '@safe-engine/sdl/lib/dragonbones/display'
-import { transformPoint as transformDragonBonesPoint } from '@safe-engine/sdl/lib/dragonbones/math'
-import { Engine } from '@safe-engine/sdl/lib/Engine'
-import { SpineSkeleton } from '@safe-engine/sdl/lib/spine/SpineSkeleton'
+import { loadScene, Scene } from '@safe-engine/webgl'
+import { DragonBonesComp } from '@safe-engine/webgl/dist/dragonbones'
+import { SpineSkeleton } from '@safe-engine/webgl/dist/spine'
 import { round } from 'lodash-es'
 import { useEffect, useRef, useState } from 'react'
 import SelectBox from '../../base/SelectBox'
@@ -335,7 +330,7 @@ class AssetPreviewScene extends Scene {
   private readonly previewRoot = new Node('AssetPreviewRoot')
   private previewNode: Node | null = null
   private spineComponent: SpineSkeleton | null = null
-  private dragonBonesComponent: DragonBones | null = null
+  private dragonBonesComponent: DragonBonesComp | null = null
   private previewVersion = 0
   private currentType: AnimationPreviewType | null = null
   private currentAnimation = ''
@@ -412,7 +407,7 @@ class AssetPreviewScene extends Scene {
       return { animations, skins, defaultAnimation, defaultSkin, zoomScale }
     }
 
-    const component = previewNode.addComponent(new DragonBones({ data: value as DragonBonesPreviewValue, playTimes: 0 }))
+    const component = previewNode.addComponent(new DragonBonesComp({ data: value as DragonBonesPreviewValue, playTimes: 0 }))
     this.dragonBonesComponent = component
     this.startPreviewNode(previewNode)
     const armature = await this.waitFor(() => (component as any).armature, version)

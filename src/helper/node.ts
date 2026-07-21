@@ -114,6 +114,12 @@ export function parseOutline(value) {
   return [color, Number(width)]
 }
 
+export function parseShadow(shadow: string): [string, number, number, number] | undefined {
+  if (!shadow) return undefined
+  const [color, blur, width, height] = parseStringFromValue(shadow).replace('[', '').replace('Size(', '').split(',')
+  return [color, parseInt(blur), parseInt(width), parseInt(height)]
+}
+
 export function normalizeNodeProps(props) {
   const node = props?.node
   if (!node) return props

@@ -14,11 +14,11 @@ type GitHubTreeResponse = {
 };
 
 function getRemoteUrl(filePath: string) {
-  return baseUrl.replace('heads/main/', `heads/sdl-vite/`) + filePath;
+  return baseUrl.replace('heads/main/', `heads/webgl-vite/`) + filePath;
 }
 
 async function getProjectFiles() {
-  const url = `${repositoryTreeUrl}sdl-vite?recursive=1`;
+  const url = `${repositoryTreeUrl}webgl-vite?recursive=1`;
   const res = await fetch(url);
   if (!res.ok) {
     throw Error(`Failed to fetch template files: ${res.statusText}`);

@@ -1,68 +1,119 @@
-import { AssetManager, ComponentX, Label, Node, ScrollView, SpineSkeleton, Sprite, TiledMap, UILayout } from '@safe-engine/sdl'
-import { DragonBones } from '@safe-engine/sdl/lib/dragonbones'
-import { getLastRootFolder } from 'data/AppData'
-import { ProjectData } from 'data/GloablState'
+import {
+  Color4B,
+  director,
+  GraphicsRender,
+  instantiate,
+  LabelComp,
+  loader,
+  log,
+  NodeComp,
+  NodeRender,
+  p,
+  RichTextComp,
+  ScrollViewComp,
+  Size,
+  SpriteRender,
+} from '@safe-engine/webgl'
+import { DragonBonesComp } from '@safe-engine/webgl/dist/dragonbones'
+import { TiledMapComp as JSONTiledMap } from '@safe-engine/webgl/dist/fasttiled/TiledMapComp'
+import { SliderComp } from '@safe-engine/webgl/dist/gui/SliderComp'
+import { SpineSkeleton } from '@safe-engine/webgl/dist/spine'
+import { get } from 'lodash-es'
+import { ProjectData } from '../../data/GloablState'
 import {
   getNodePosition,
-  parseBoolFromValue,
   parseDirection,
   parseEval,
+  parseFloatFromValue,
   parseIntFromValue,
+  parseNumbersArray,
   parseOutline,
+  parseShadow,
   parseSize,
   parseStringFromValue,
-} from 'helper/node'
-import { get } from 'lodash-es'
-import { drawRect } from 'sdl3'
+} from '../../helper/node'
 import { getComponent } from './component'
 import { addQuotesToTernary } from './utils'
 
-type SdlColor = { r: number; g: number; b: number; a?: number }
-
-function projectAssetUrl(path: string) {
-  if (/^[a-z][a-z0-9+.-]*:/i.test(path)) return path
-  const normalized = path.replace(/\\/g, '/').replace(/^res\//, '')
-  const absolutePath = normalized.startsWith('/') ? normalized : `${getLastRootFolder()}/res/${normalized}`
-  return `file://${absolutePath.split('/').map(encodeURIComponent).join('/')}`
+function loadSpriteFrame(filePath: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    // console.log('loadSprite:', filePath)
+    loader.load(filePath, function (err) {
+      if (err) {
+        log('Failed to load file:', filePath, err)
+        reject(err)
+        return
+      }
+      resolve()
+    })
+  })
 }
 
-export class RectRender extends ComponentX<{ fillColor?: SdlColor; strokeColor?: SdlColor; lineWidth?: number }> {
-  fillColor: SdlColor | undefined
-  strokeColor: SdlColor | undefined
-  lineWidth = 1
-
-  onAwake() {
-    this.fillColor = this.props.fillColor
-    this.strokeColor = this.props.strokeColor
-    this.lineWidth = this.props.lineWidth ?? 1
-  }
-
-  onRender() {
-    const node = this.node
-    const x = node.worldX - node.anchorX * node.width * node.worldScaleX
-    const y = node.worldY - node.anchorY * node.height * node.worldScaleY
-    const width = node.width * node.worldScaleX
-    const height = node.height * node.worldScaleY
-    if (this.fillColor) {
-      drawRect(x, y, width, height, this.fillColor.r, this.fillColor.g, this.fillColor.b, this.fillColor.a ?? 255)
-    }
-    if (this.strokeColor && this.lineWidth > 0) {
-      const line = this.lineWidth
-      const color = this.strokeColor
-      drawRect(x, y, width, line, color.r, color.g, color.b, color.a ?? 255)
-      drawRect(x, y + height - line, width, line, color.r, color.g, color.b, color.a ?? 255)
-      drawRect(x, y, line, height, color.r, color.g, color.b, color.a ?? 255)
-      drawRect(x + width - line, y, line, height, color.r, color.g, color.b, color.a ?? 255)
-    }
-  }
+function loadFont(filePath: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    // console.log('loadFont:', filePath);
+    loader.load(filePath, function (err) {
+      if (err) {
+        log('Failed to load file:', filePath, err)
+        reject(err)
+        return
+      }
+      resolve()
+    })
+  })
 }
 
-function makeNode(name = 'Node') {
-  const node = new Node(name)
-  return node
+async function loadDragonBones(dataName: string, animation, playTimes, timeScale, dragonBonesAssets): Promise<NodeComp> {
+  return new Promise((resolve, reject) => {
+    const key = parseStringFromValue(dataName)
+    const data = dragonBonesAssets.find((item) => item.key === key)
+    const { atlas, skeleton, texture } = data.value
+    loader.load([atlas, skeleton, texture], function (err) {
+      if (err) {
+        log('Failed to load file:', skeleton, err)
+        reject(err)
+        return
+      }
+      const dragon = instantiate(DragonBonesComp, { data: data.value, animation, playTimes, timeScale })
+      resolve(dragon.node)
+    })
+  })
 }
 
-async function parseChildren(root, parentNode: Node, data: ProjectData, evalInit = '', baseProps = {}) {
+async function loadSpine(dataName: string, animation, loop = true, skin, timeScale, spineAssets): Promise<NodeComp> {
+  return new Promise((resolve, reject) => {
+    const key = parseStringFromValue(dataName)
+    // console.log('loadSpine:', key)
+    const data = spineAssets.find((item) => item.key === key)
+    if (!data) return
+    const { atlas, skeleton } = data.value
+    loader.load([atlas, skeleton], function (err) {
+      if (err) {
+        console.log('Failed to load file:', skeleton, err)
+        reject(err)
+        return
+      }
+      const spine = instantiate(SpineSkeleton, { data: data.value, animation, loop, skin, timeScale })
+      resolve(spine.node)
+    })
+  })
+}
+
+async function loadTiledMap(mapUrl: string, jsonAssets): Promise<NodeComp> {
+  const key = parseStringFromValue(mapUrl)
+  const data = jsonAssets.find((item) => item.key === key)
+  const tileset = data.json.tilesets[0]
+  const baseDir = data.value.split('/').slice(0, -1).join('/')
+  // console.log('loadTiledMap', key, baseDir, tileset)
+  const tilesetImageUrl = `${baseDir}/${tileset.image}`
+  await loader.load([data.value, tilesetImageUrl])
+  // const tiled = instantiate(TiledMapComp, { mapFile: data.value })
+  const tiled = instantiate(JSONTiledMap, { mapFile: data.value })
+  // console.log('tiled', tiled, tilesetImageUrl)
+  return tiled.node
+}
+
+async function parseChildren(root, parentNode: NodeComp, data: ProjectData, evalInit = '', baseProps = {}) {
   if (Array.isArray(root)) {
     for (let index = 0; index < root.length; index++) {
       await parseChildren(root[index], parentNode, data, evalInit, baseProps)
@@ -71,276 +122,317 @@ async function parseChildren(root, parentNode: Node, data: ProjectData, evalInit
   }
   const { tag, props: originProps = {}, components = [], children = [], loop } = root
   const {
-    assetsTextureList = [],
-    fontAssets = [],
-    spriteFramesAssets = [],
+    assetsTextureList,
+    fontAssets,
+    spriteFramesAssets,
     componentsCache = {},
+    dragonBonesAssets,
+    spineAssets,
+    jsonAssets,
     designedResolution,
-    jsonCaches = {},
-    staticPropsMap = {},
-    enumsList = {},
+    jsonCaches,
+    staticPropsMap,
+    enumsList,
   } = data
   const props = { ...originProps }
+  // console.log('baseProps:', tag, props, evalInit)
+  let renderNode: NodeComp = instantiate(NodeRender).node
+  if (loop) {
+    const { startIndex, startIndexSymbol, count, mapFrom, itemSymbol } = loop
+    parentNode.addChild(renderNode)
+    if (!mapFrom.includes('Array(')) {
+      if (mapFrom.includes('JsonCache')) {
+        const [, cacheKey, ...rest] = mapFrom.split('.')
+        const arrayData = get(jsonCaches[cacheKey].json, rest.join('.'), [])
+        for (let index = 0; index < arrayData.length; index++) {
+          const loopInit = `const ${startIndexSymbol}=${index};const ${itemSymbol}=${JSON.stringify(arrayData[index])};${evalInit}`
+          // console.log('loop:', loop, loopInit)
+          await parseChildren({ tag, props, children, components }, renderNode, data, loopInit, baseProps)
+        }
+      } else {
+        const arrayData = staticPropsMap[mapFrom]
+        if (arrayData) {
+          for (let index = 0; index < arrayData.length; index++) {
+            const loopInit = `const ${startIndexSymbol}=${index};const ${itemSymbol}=${JSON.stringify(arrayData[index])};${evalInit}`
+            // console.log('loop:', loop, loopInit)
+            await parseChildren({ tag, props, children, components }, renderNode, data, loopInit, baseProps)
+          }
+        }
+      }
+    } else {
+      for (let index = 0; index < count; index++) {
+        const loopInit = `const ${startIndexSymbol}=${index + startIndex};${evalInit}`
+        // console.log('loopInit:', index, loopInit)
+        await parseChildren({ tag, props, children, components }, renderNode, data, loopInit, baseProps)
+      }
+    }
+    setTimeout(() => {
+      const colliderComp = Object.keys(parentNode.entity.components).find((name) => ['GridLayoutComp', 'WidgetComp'].includes(name))
+      // console.log('colliderComp:', colliderComp, Object.keys(parentNode.entity.components))
+      if (colliderComp) {
+        renderNode.addComponent(parentNode.entity.components[colliderComp])
+      }
+    }, 100)
+    return
+  }
   const initWithProps = `const baseProps=${JSON.stringify(baseProps)};${evalInit}`
 
   Object.entries(props).forEach(([key, val]) => {
     if (typeof val === 'string') {
       if (val.includes('this.props')) {
+        // console.log('replace prop:', key, val, baseProps)
+        // if (val?.includes('?')) {
         const propName = val.replace('{this.props', 'baseProps').replace('}', '')
         const transform = key === 'spriteFrame' ? addQuotesToTernary : undefined
         const finalExpr = transform ? transform(propName) : propName
-        props[key] = eval(`const baseProps=${JSON.stringify(baseProps)};${evalInit}${finalExpr}`)
+        const spriteFrameVal = `const baseProps=${JSON.stringify(baseProps)};${evalInit}${finalExpr}`
+        // console.log('spriteFrame conditional:', spriteFrameVal)
+        props[key] = eval(spriteFrameVal)
+        // } else {
+        //   const propName = val.replace('{this.props.', '').replace('}', '')
+        //   props[key] = baseProps[propName]
+        // }
       } else {
         const varString = parseStringFromValue(val)
         const enumVal = get(enumsList, varString)
         if (enumVal !== undefined) props[key] = enumVal
+        // console.log('replace prop:', key, varString, '=>', props[key])
       }
     }
   })
-
-  let renderNode = makeNode(tag)
-  if (loop) {
-    const { startIndex, startIndexSymbol, count, mapFrom, itemSymbol } = loop
-    parentNode.addChild(renderNode)
-    if (!mapFrom?.includes('Array(')) {
-      const arrayData = mapFrom?.includes('JsonCache')
-        ? get(jsonCaches[mapFrom.split('.')[1]]?.json, mapFrom.split('.').slice(2).join('.'), [])
-        : staticPropsMap[mapFrom]
-      for (let index = 0; index < (arrayData?.length ?? 0); index++) {
-        const loopInit = `const ${startIndexSymbol}=${index};const ${itemSymbol}=${JSON.stringify(arrayData[index])};${evalInit}`
-        await parseChildren({ tag, props, children, components }, renderNode, data, loopInit, baseProps)
+  // console.log('parseChildren:', tag, props, baseProps)
+  function getLabelText(string = '') {
+    // console.log('getLabelText', string)
+    if (string.includes('[')) {
+      const staticKey = parseStringFromValue(string).split('[')[0]
+      const staticProps = staticPropsMap[staticKey]
+      // console.log('getLabelText staticKey', staticKey, staticProps)
+      if (staticProps) {
+        const arrayIndexStr = string.replace(staticKey, 'staticData')
+        const finalLabel = eval(`const staticData = ${JSON.stringify(staticProps)};${evalInit}${arrayIndexStr}`)
+        // console.log('getLabelText finalLabel', finalLabel, arrayIndexStr)
+        return finalLabel
       }
-    } else {
-      for (let index = 0; index < count; index++) {
-        const loopInit = `const ${startIndexSymbol}=${index + startIndex};${evalInit}`
-        await parseChildren({ tag, props, children, components }, renderNode, data, loopInit, baseProps)
-      }
+    } else if (string.includes('`')) {
+      const key = string.substring(1, string.length - 1)
+      // console.log('tryGetValue getLabelText', key)
+      return tryGetValue(key)
     }
-    return renderNode
-  }
-
-  function tryGetValue(key: string) {
-    try {
-      return parseEval(initWithProps)(key)
-    } catch (error) {
-      error.message = `Failed to parse value with eval: ${key}`
-      return key
-    }
-  }
-
-  function getColor(colorStr: string): SdlColor {
-    const found = data.colors?.find((v) => v.key === colorStr)
-    const [r = 255, g = 255, b = 255, a = 255] = found?.value ?? [255, 255, 255, 255]
-    return { r, g, b, a }
-  }
-
-  function getOutline(outline: string): [SdlColor, number] {
-    if (!outline) return
-    const [color, width] = parseOutline(outline)
-    return [getColor(color), width]
-  }
-
-  function getShadow(shadow): [SdlColor, number, { width: number; height: number }] {
-    if (!shadow) return
-    const values = Array.isArray(shadow)
-      ? shadow
-      : parseStringFromValue(shadow).replace(/^\[|\]$/g, '').split(',').map((value) => value.trim())
-    const [color = '', width = 0, ...offset] = values
-    return [getColor(color), Number(width), parseSize(Array.isArray(shadow) ? offset[0] : offset.join(','))]
+    if (string.includes('.')) return eval(`${evalInit}${string}`)
+    return string
   }
 
   async function getTexture(spriteFrame: string) {
-    if (!spriteFrame) return undefined
+    // console.log('getTexture(', spriteFrame, props, evalInit)
+    if (!spriteFrame) return
     const frameName = parseStringFromValue(spriteFrame)
-    if (frameName?.includes('[')) {
+    if (frameName.includes('[')) {
       const staticKey = frameName.split('[')[0]
       const staticProps = staticPropsMap[staticKey]
       if (staticProps) {
         const arrayIndexStr = frameName.replace(staticKey, 'staticData')
         const finalFrameName = eval(`const staticData = ${JSON.stringify(staticProps)};${evalInit}${arrayIndexStr}`)
+        // console.log('getTexture finalFrameName', finalFrameName, arrayIndexStr, staticProps)
         return getTexture(finalFrameName)
       }
     }
     const texture = assetsTextureList.find((item) => item.key === frameName)
-    if (texture) return texture.value
-    const spriteFrameAsset = spriteFramesAssets.find((item) => item.key === frameName)
-    return spriteFrameAsset?.value
-  }
-
-  function getLabelText(string = '') {
-    if (string.includes('[')) {
-      const staticKey = parseStringFromValue(string).split('[')[0]
-      const staticProps = staticPropsMap[staticKey]
-      if (staticProps) {
-        const arrayIndexStr = string.replace(staticKey, 'staticData')
-        return eval(`const staticData = ${JSON.stringify(staticProps)};${evalInit}${arrayIndexStr}`)
-      }
-    } else if (string.includes('`')) {
-      return tryGetValue(string.substring(1, string.length - 1))
+    if (texture) {
+      await loadSpriteFrame(texture.value)
+      return texture.value
+    } else {
+      const spriteFrame = spriteFramesAssets.find((item) => item.key === frameName)
+      return spriteFrame.value
     }
-    if (string.includes('.')) return eval(`${evalInit}${string}`)
-    return parseStringFromValue(string) ?? string
   }
-
-  if (tag === 'Sprite' || tag === 'Button' || tag === 'ProgressBar' || tag === 'CircleProgressBar') {
-    const texture = await getTexture(props.spriteFrame)
-    if (texture) renderNode.addComponent(new Sprite({ spriteFrame: texture, tiled: props.tiled ?? false }))
-  } else if (tag === 'ProgressBar') {
-    const texture = await getTexture(props.spriteFrame)
-    // SDL's ProgressBar preview does not match Sprite frame rendering closely enough for editor preview.
-    // Render the authored sprite frame directly so the visual matches layout assets exactly.
-    if (texture) renderNode.addComponent(new Sprite({ spriteFrame: texture }))
-  } else if (tag === 'Label' || tag === 'RichText') {
-    const { string, font = '', size, outline, shadow, align, verticalAlign } = props
-    const foundFont =
-      fontAssets.find((item) => item.key === parseStringFromValue(font)) ?? fontAssets.find((item) => item.key === 'defaultFont')
-    const label = new Label({
+  function tryGetValue(key: string) {
+    try {
+      return parseEval(initWithProps)(key)
+    } catch (error) {
+      error.message = `Failed to parse value with eval: ${key}`
+      // console.error('tryGetValue error:', error)
+      return key
+    }
+  }
+  function getColor(colorStr: string) {
+    const found = data.colors.find((v) => v.key === colorStr)
+    return Color4B(...found.value)
+  }
+  function getOutline(outline: string): [Color4B, number] {
+    if (!outline) return
+    const [color, width] = parseOutline(outline)
+    return [getColor(color), width]
+  }
+  function getShadow(shadow: string): [Color4B, number, Size] {
+    if (!shadow) return
+    const [color, blur, width, height] = parseShadow(shadow)
+    return [getColor(color), blur, Size(width, height)]
+  }
+  if (tag === 'SpriteRender' || tag === 'ProgressTimerComp' || tag === 'ButtonComp') {
+    const { spriteFrame, capInsets, tiledSize } = props
+    const frame = await getTexture(spriteFrame)
+    // console.log('tiledSize', spriteFrame, frame, spriteFrameCache.getSpriteFrame(frame))
+    const sprite = instantiate(SpriteRender, {
+      spriteFrame: frame,
+      capInsets: capInsets && parseNumbersArray(capInsets),
+      tiledSize: tiledSize && parseSize(tiledSize, evalInit),
+    })
+    renderNode = sprite.node
+    // } else if (tag === 'ProgressTimerComp') {
+    //   const { spriteFrame, fillCenter, fillRange, fillType, isReverse } = props
+    //   const progress = instantiate(ProgressTimerComp, {
+    //     spriteFrame: await getTexture(spriteFrame),
+    //     fillCenter: fillCenter && (parseVec2(fillCenter, '') as Vec2),
+    //     fillRange: fillRange ? parseFloatFromValue(fillRange) : 1,
+    //     fillType,
+    //     isReverse: parseBoolFromValue(isReverse),
+    //   })
+    //   renderNode = progress.node
+  } else if (tag === 'LabelComp') {
+    const { string, font = '', size, outline, shadow } = props
+    // console.log('LabelComp:', props)
+    const foundFont = fontAssets.find((item) => item.key === parseStringFromValue(font))
+    // if (!foundFont) {
+    //   foundFont = fontAssets.find((item) => item.key === 'defaultFont')
+    // }
+    // const filePath = path.join(rootFolder, 'res', `${foundFont.value}`)
+    // const fontName = path.basename(filePath, '.ttf')
+    if (foundFont) await loadFont(foundFont.value)
+    const fontSize = size ? parseIntFromValue(size) : 64
+    const label = instantiate(LabelComp, {
       string: getLabelText(string),
-      font: foundFont?.value,
-      size: size ? parseIntFromValue(size) : Label.defaultSize,
+      font: foundFont ? foundFont.path : undefined,
+      size: fontSize,
       outline: getOutline(outline),
       shadow: getShadow(shadow),
-      align,
-      verticalAlign
     })
-    renderNode.addComponent(label)
-  } else if (tag === 'ScrollView' || tag === 'ListView') {
-    const { viewSize, contentSize, direction } = props
-    const size = parseSize(viewSize ?? contentSize, evalInit)
-    renderNode.width = size.width
-    renderNode.height = size.height
+    // console.log('LabelComp:', fontSize, foundFont)
+    renderNode = label.node
+  } else if ('RichTextComp' === tag) {
+    const { string, font = '', size } = props
+    const foundFont = fontAssets.find((item) => item.key === parseStringFromValue(font))
+    // if (!foundFont) {
+    //   foundFont = fontAssets.find((item) => item.key === 'defaultFont')
+    // }
+    if (foundFont) await loadFont(foundFont.value)
+    const fontSize = parseIntFromValue(size) ?? 64
+    const rich = instantiate(RichTextComp, { string, font: foundFont ? foundFont.path : undefined, size: fontSize })
+    renderNode = rich.node
+  } else if ('SliderComp' === tag) {
+    const { barBackground, normalBall = '', pressedBall, disabledBall, percent } = props
+    const slider = instantiate(SliderComp, {
+      barBackground: await getTexture(barBackground),
+      normalBall: await getTexture(normalBall),
+      pressedBall: await getTexture(pressedBall),
+      disabledBall: await getTexture(disabledBall),
+      percent: parseFloatFromValue(percent),
+      onChange: () => {
+        // console.log('Slider onChange:', value)
+      },
+    })
+    renderNode = slider.node
+  } else if ('ScrollViewComp' === tag || 'ListViewComp' === tag) {
+    const { viewSize, contentSize, direction, isScrollToTop } = props
     if (data.previewScrollView) {
-      const scroll = new ScrollView({
-        contentSize: parseSize(contentSize, evalInit),
+      const scroll = instantiate(ScrollViewComp, {
         viewSize: parseSize(viewSize, evalInit),
-        horizontal: [1, 3].includes(parseDirection(direction)),
-        vertical: [2, 3].includes(parseDirection(direction))
+        contentSize: parseSize(contentSize, evalInit),
+        direction: parseDirection(direction),
+        isScrollToTop,
       })
-      renderNode.addComponent(scroll)
+      renderNode = scroll.node
     } else {
-      const content = parseSize(contentSize, evalInit)
-      renderNode.addComponent(
-        new RectRender({ fillColor: { r: 255, g: 185, b: 199, a: 55 }, strokeColor: { r: 227, g: 11, b: 93, a: 255 }, lineWidth: 4 }),
-      )
-      const contentNode = makeNode('ScrollViewContentPreview')
-      contentNode.width = content.width
-      contentNode.height = content.height
-      // contentNode.anchorX = 0
-      // contentNode.anchorY = 0
-      contentNode.addComponent(new RectRender({ fillColor: { r: 175, g: 85, b: 255, a: 155 } }))
-      renderNode.addChild(contentNode)
+      const drawNode = instantiate(GraphicsRender, {})
+      const { width, height } = parseSize(contentSize, evalInit)
+      drawNode.node.instance.drawRect(p(0, 0), p(width, height), Color4B(175, 85, 255, 155), 0, Color4B(227, 11, 93, 0))
+      {
+        const { width, height } = parseSize(viewSize, evalInit)
+        drawNode.node.instance.drawRect(p(0, 0), p(width, height), Color4B(255, 185, 199, 55), 4, Color4B(227, 11, 93, 255))
+      }
+      renderNode = drawNode.node
     }
   } else if (tag === 'SpineSkeleton') {
-    const { data: spineData, atlas: spineAtlas, skin, animation, loop = true, timeScale = 1 } = props
-    const key = parseStringFromValue(spineData)
-    const spineAsset = data.spineAssets?.find((item) => item.key === key)
-    const atlasKey = parseStringFromValue(spineAtlas)
-    const atlasAsset = data.spineAssets?.find((item) => item.key === atlasKey)
-    // console.log('Spine Props:', props, 'Spine Asset:', spineAsset, 'Atlas Asset:', atlasAsset)
-    const spineValue = spineAsset?.value
-    const spineConfig =
-      typeof spineValue === 'object' && spineValue
-        ? spineValue
-        : { skeleton: spineValue, atlas: atlasAsset?.value ?? atlasKey }
-    // console.log('Spine Config:', spineConfig, 'Props:', props, 'Spine Asset:', spineAsset, 'Atlas Asset:', atlasAsset)
-    if (typeof spineConfig.skeleton === 'string' && typeof spineConfig.atlas === 'string') {
-      const resolvedSpineData = {
-        ...spineConfig,
-        skeleton: projectAssetUrl(spineConfig.skeleton),
-        atlas: projectAssetUrl(spineConfig.atlas),
-        ...(typeof spineConfig.texture === 'string' ? { texture: projectAssetUrl(spineConfig.texture) } : {}),
-      }
-      // console.log('Resolved Spine Data:', resolvedSpineData, 'Props:', props, 'Spine Asset:', spineAsset, 'Atlas Asset:', atlasAsset)
-      const spineSkeleton = renderNode.addComponent(
-        new SpineSkeleton({ data: resolvedSpineData, skin, animation, loop: parseBoolFromValue(loop) ?? true, timeScale }),
-      )
-      await spineSkeleton.reload()
-    }
-  } else if (tag === 'DragonBones') {
-    const { data: dragonBonesData, skin, animation, playTimes = 0, timeScale = 1 } = props
-    const key = parseStringFromValue(dragonBonesData)
-    const dragonBonesAsset = data.dragonBonesAssets?.find((item) => item.key === key)
-    if (dragonBonesAsset?.value) {
-      const dragonBones = renderNode.addComponent(
-        new DragonBones({ data: dragonBonesAsset.value, skin, animation, playTimes, timeScale } as any),
-      )
-      await dragonBones.reload()
-    }
-  } else if (tag === 'TiledMap') {
+    const { data, skin, animation, loop = true, timeScale = 1 } = props
+    const node = await loadSpine(data, animation, loop, skin, timeScale, spineAssets)
+    renderNode = node
+  } else if (tag === 'DragonBonesComp') {
+    const { data, animation, playTimes = 0, timeScale = 1 } = props
+    const node = await loadDragonBones(data, animation, playTimes, timeScale, dragonBonesAssets)
+    // console.log('loadDragonBones', node, timeScale);
+    renderNode = node
+  } else if (tag === 'TiledMapComp') {
     const { mapFile } = props
-    const key = parseStringFromValue(mapFile)
-    // console.log('TiledMap key:', key, 'data.jsonAssets:', data.jsonAssets, 'props:', props)
-    const mapAsset = data.jsonAssets?.find((item) => item.key === key)
-    const mapFilePath = projectAssetUrl(mapAsset?.path ?? key)
-    if (mapFilePath) {
-      const tiledMap = renderNode.addComponent(new TiledMap({ mapFile: mapFilePath }))
-      await tiledMap.reload()
+    const node = await loadTiledMap(mapFile, jsonAssets)
+    renderNode = node
+  } else if (tag === 'SceneComponent') {
+    renderNode = parentNode
+  } else {
+    // console.log('componentsCache', componentsCache, tag)
+    if (componentsCache[tag]) {
+      // console.log('componentProps', componentsCache[tag], tag, props)
+      renderNode = await parseChildren(componentsCache[tag], parentNode, data, evalInit, { ...baseProps, ...props })
     }
-  } else if (tag === 'UILayout') {
-    const { direction, gap, paddingBottom, paddingTop, paddingLeft, paddingRight } = props
-    const layoutProps: Record<string, unknown> = {}
-    if (direction !== undefined) layoutProps.direction = direction
-    if (gap !== undefined) layoutProps.gap = parseIntFromValue(gap)
-    if (paddingTop !== undefined) layoutProps.paddingTop = parseIntFromValue(paddingTop)
-    if (paddingRight !== undefined) layoutProps.paddingRight = parseIntFromValue(paddingRight)
-    if (paddingBottom !== undefined) layoutProps.paddingBottom = parseIntFromValue(paddingBottom)
-    if (paddingLeft !== undefined) layoutProps.paddingLeft = parseIntFromValue(paddingLeft)
-    renderNode.addComponent(UILayout, layoutProps)
-  } else if (componentsCache[tag]) {
-    renderNode = await parseChildren(componentsCache[tag], parentNode, data, evalInit, { ...baseProps, ...props })
   }
-
-  if (renderNode !== parentNode && !renderNode.parent) parentNode.addChild(renderNode)
-
+  if (renderNode !== parentNode && !renderNode.parent) {
+    parentNode.addChild(renderNode)
+  }
   const { node = {} } = props
-  const { scaleX = 1, scaleY = 1, scale = 1, rotation = 0, width, height, color, active, anchorX, anchorY, zIndex, zOrder, name, tag: nodeTag } = node
-  if (node.position || node.xy || node.x !== undefined || node.y !== undefined) {
+  const { scaleX = 1, scaleY = 1, scale = 1, rotation = 0, w, h, color, active, anchorX, anchorY } = node
+  // console.log('node', node, tag)
+  if (node.position || node.xy) {
     const { x, y } = getNodePosition(node, initWithProps)
-    renderNode.x = x
-    renderNode.y = y
+    renderNode.posX = x
+    renderNode.posY = y
   }
-  if (scale !== 1) renderNode.scale = parseEval(initWithProps)(scale)
-  if (scaleX !== 1) renderNode.scaleX = parseEval(initWithProps)(scaleX)
-  if (scaleY !== 1) renderNode.scaleY = parseEval(initWithProps)(scaleY)
-  if (anchorX !== undefined) renderNode.anchorX = parseEval(initWithProps)(anchorX)
-  if (anchorY !== undefined) renderNode.anchorY = parseEval(initWithProps)(anchorY)
-  if (rotation !== 0) renderNode.rotation = parseEval(initWithProps)(rotation)
-  if (zIndex !== undefined) renderNode.zIndex = parseEval(initWithProps)(zIndex)
-  if (name !== undefined) renderNode.name = parseEval(initWithProps)(name)
-  if (nodeTag !== undefined) renderNode.tag = parseEval(initWithProps)(nodeTag)
-  if (width) renderNode.width = parseEval(initWithProps)(width)
-  if (height) renderNode.height = parseEval(initWithProps)(height)
-  if (active !== undefined) renderNode.active = parseEval(initWithProps)(active)
-  if (color) renderNode.color = getColor(tryGetValue(color))
-
-  const colliderComp = getComponent(components, renderNode, designedResolution)
-  if (colliderComp) renderNode.addComponent(colliderComp)
-
+  if (scale !== 1) {
+    renderNode.scale = parseEval(initWithProps)(scale)
+  }
+  if (scaleX !== 1) {
+    renderNode.scaleX = parseEval(initWithProps)(scaleX)
+  }
+  if (scaleY !== 1) {
+    renderNode.scaleY = parseEval(initWithProps)(scaleY)
+  }
+  if (anchorX !== undefined) {
+    renderNode.anchorX = parseEval(initWithProps)(anchorX)
+  }
+  if (anchorY !== undefined) {
+    renderNode.anchorY = parseEval(initWithProps)(anchorY)
+  }
+  if (rotation !== 0) {
+    renderNode.rotation = parseEval(initWithProps)(rotation)
+  }
+  if (w) {
+    renderNode.w = parseEval(initWithProps)(w)
+  }
+  if (h) {
+    renderNode.h = parseEval(initWithProps)(h)
+  }
+  if (active !== undefined) {
+    renderNode.active = parseEval(initWithProps)(active)
+  }
+  if (color) {
+    renderNode.color = getColor(tryGetValue(color))
+  }
   for (let index = 0; index < children.length; index++) {
-    await parseChildren(children[index], renderNode, data, evalInit, baseProps)
+    const element = children[index]
+    // console.log('parseChildren loop:', index, children.length, element)
+    await parseChildren(element, renderNode, data, evalInit, baseProps)
+  }
+  const colliderComp = getComponent(components, renderNode, designedResolution)
+  if (colliderComp) {
+    renderNode.addComponent(colliderComp)
+    // console.log('colliderComp:', colliderComp)
   }
   return renderNode
 }
 
-export async function loadSceneViewSdl(componentData, data: ProjectData, drawLayer: Node) {
-  const root = componentData.treeData ?? componentData
-  if (!root) return
-  const { designedResolution, defaultProps = {} } = data
+export async function loadSceneViewCocos(componentData, data: ProjectData, drawLayer: NodeComp) {
+  const root = componentData.treeData
+  if (!director || !director.getRunningScene() || !root) return
+  const { designedResolution, defaultProps } = data
+  // console.log('loadSceneView:', defaultProps[root.tag], componentData)
   const { width, height } = designedResolution
   const init = `const width = ${width};const height = ${height};`
   await parseChildren(root, drawLayer, data, init, defaultProps[componentData.name])
-}
-
-export function preloadSdlAssets(assets: any) {
-  const group = AssetManager.createGroup()
-  assets?.fontAssets?.forEach((font) => group.addFont(font.value, font.value, Label.defaultSize))
-  assets?.assetsTextureList?.forEach((texture) => group.addTexture(texture.value, texture.value))
-  // assets?.spriteSheetAssets?.forEach((spriteSheet) => {
-  //   if (!spriteSheet.texture || !spriteSheet.json) return
-  //   group.addTexture(spriteSheet.texture, spriteSheet.texture)
-  //   spriteFrameCache.addAtlas(spriteSheet.texture, spriteSheet.json)
-  // })
-  return group.preload().catch((error) => {
-    console.warn('Failed to preload SDL preview assets', error)
-  })
 }

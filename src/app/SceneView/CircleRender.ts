@@ -1,5 +1,4 @@
-import { ComponentX } from "@safe-engine/sdl"
-import { drawCircle } from "sdl3"
+import { ComponentX } from "@safe-engine/webgl"
 
 export class CircleRender extends ComponentX {
   onRender() {

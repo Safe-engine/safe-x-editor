@@ -73,7 +73,7 @@ const COMPONENT_OPTIONS = [
   { tag: 'PolygonCollider', label: 'Polygon Collider', icon: FiTriangle, props: { points: [] } },
   { tag: 'Widget', label: 'Widget', icon: FiGrid, props: {} },
   { tag: 'RigidBody', label: 'RigidBody', icon: FiLink, props: {} },
-  { tag: 'SpineBonesControl', label: 'Spine Bones Control', icon: FiShare2, props: { bones: [] }, requiresSpineSkeleton: true },
+  { tag: 'SpineBonesControlComponent', label: 'Spine Bones Control', icon: FiShare2, props: { bones: [] }, requiresSpineSkeleton: true },
 ];
 
 function Field({ label, value, onChange }) {
@@ -570,7 +570,7 @@ function NodeProps() {
   }
 
   function isSpriteComponent(component) {
-    return component.tag === 'Sprite';
+    return component.tag === 'SpriteRender';
   }
 
   if (!selectedNode) {
@@ -591,7 +591,7 @@ function NodeProps() {
     && (!option.requiresSpineSkeleton || selectedNode.tag === 'SpineSkeleton')
   ));
   const spineData = assets?.spineAnimations?.[parseStringFromValue(props.data)];
-  const defaultProps = selectedNode.tag === 'Label'
+  const defaultProps = selectedNode.tag === 'LabelComp'
     ? LABEL_DEFAULT_PROPS
     : selectedNode.tag === 'SpineSkeleton'
       ? SPINE_DEFAULT_PROPS
@@ -709,7 +709,7 @@ function NodeProps() {
           />
         ))}
     </InspectorSection>
-    {(propEntries.length > 0 || selectedNode.tag === 'Sprite') && (
+    {(propEntries.length > 0 || selectedNode.tag === 'SpriteRender') && (
       <InspectorSection title={selectedNode.tag}>
         {propEntries.filter(([key]) => key !== 'capInsets' && key !== 'tiled').map(([key, value]) => (
           isObject(value) ? (
@@ -772,7 +772,7 @@ function NodeProps() {
             )
           )
         ))}
-        {selectedNode.tag === 'Sprite' && (
+        {selectedNode.tag === 'SpriteRender' && (
           <Field
             label='Tiled'
             value={props.tiled ?? false}
@@ -847,7 +847,7 @@ function NodeProps() {
             && !['centerVertical', 'centerHorizon'].includes(key)
           ))
         )).map(([key, value]) => (
-          component.tag === 'SpineBonesControl' && key === 'bones' ? (
+          component.tag === 'SpineBonesControlComponent' && key === 'bones' ? (
             <SpineBonesList
               key={`${component.tag}-${index}-${key}`}
               value={value}

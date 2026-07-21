@@ -54,10 +54,8 @@ export default defineConfig({
         components: resolve('src/components'),
         data: resolve('src/data'),
         helper: resolve('src/helper'),
-        sdl3: resolve('node_modules/@safe-engine/sdl/lib/sdl3.js'),
         shared: resolve('src/shared'),
         states: resolve('src/states'),
-        box2d: resolve('node_modules/@safe-engine/sdl/lib/physics/box2d.js'),
       },
     },
     build: {
@@ -67,9 +65,6 @@ export default defineConfig({
       rollupOptions: {
         input: resolve('src/index.html'),
       },
-    },
-    optimizeDeps: {
-      exclude: ['@safe-engine/sdl'],
     },
     server: { port: 8585 },
     plugins: [viteSingleFile({ deleteInlinedFiles: true })],

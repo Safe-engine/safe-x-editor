@@ -1,4 +1,6 @@
-import { Engine, loadScene } from '@safe-engine/sdl'
+import { loadScene, setupCollider, setupRichText, startGame } from '@safe-engine/webgl'
+import { setupDragonBones } from '@safe-engine/webgl/dist/dragonbones'
+import { setupSpine } from '@safe-engine/webgl/dist/spine'
 import { useEffect, useRef } from 'react'
 import { useActions, useSelector } from 'states/app.context'
 import { selectSelectedFilePath, selectSelectedPaths } from 'states/app.selectors'
@@ -8,13 +10,32 @@ export default function SceneView() {
   const { selectEditMultiNodes, updateMultiNodes } = useActions()
   const selectedFilePath = useSelector(selectSelectedFilePath)
   const selectedPaths = useSelector(selectSelectedPaths)
+  const containerRef = useRef<HTMLDivElement>(null)
   const didStartEngine = useRef(false)
 
   useEffect(() => {
-    if (didStartEngine.current) return
-    didStartEngine.current = true
-    Engine.start('Safex SDL Preview', window.innerWidth, window.innerHeight, 'fixed-width')
-    loadScene(PreviewScene)
+    const container = containerRef.current
+    if (!container || didStartEngine.current) return
+
+    const startEngine = () => {
+      if (didStartEngine.current || !container.clientWidth || !container.clientHeight) return
+      didStartEngine.current = true
+      startGame('Arial', { width: window.innerWidth, height: window.innerHeight }).then(async () => {
+        setupSpine()
+        setupDragonBones()
+        setupRichText()
+        setupCollider([], true)
+        loadScene(PreviewScene)
+      })
+    }
+
+    const resizeObserver = new ResizeObserver(startEngine)
+    resizeObserver.observe(container)
+    const frame = requestAnimationFrame(startEngine)
+    return () => {
+      cancelAnimationFrame(frame)
+      resizeObserver.disconnect()
+    }
   }, [])
 
   useEffect(() => {
@@ -41,8 +62,8 @@ export default function SceneView() {
   }, [selectedPaths])
 
   return (
-    <div className='h-full w-full bg-[#1e1e1e]'>
-      <canvas id="sdl-canvas" className='block bg-[#1e1e1e]'></canvas>
+    <div ref={containerRef} className='h-full w-full overflow-hidden bg-[#1e1e1e]'>
+      <canvas id="gameCanvas" className='block h-full w-full bg-[#1e1e1e]'></canvas>
     </div>
   )
 }

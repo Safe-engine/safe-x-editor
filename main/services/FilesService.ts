@@ -21,7 +21,7 @@ const panel: WebviewView = {
 
 export const getFilesInFolder = async ({ src }) => {
   const packageJson = join(src, 'package.json').replace(/\\/g, '/');
-  // console.log('getFilesInFolder', src, packageJson)
+  // console.log('getFilesInFolder', packageJson)
   if (!existsSync(packageJson)) {
     throw Error('No package.json.');
   }
