@@ -25,7 +25,7 @@ import { first, parseInt, set } from 'lodash-es'
 import { GlobalState } from '../../data/GloablState'
 import { sendRequest } from '../app.ipc'
 
-import { getLastRootFolder, getLastSceneScale, getLastSceneX, getLastSceneY, setLastSceneScale, setLastSceneX, setLastSceneY } from '../../data/AppData'
+import { getLastRootFolder, getLastSceneScale, setLastSceneScale, setLastSceneX, setLastSceneY } from '../../data/AppData'
 import { arrow } from './assets'
 import { loadSceneViewCocos } from './loader'
 import { getCurrentNode, KEY } from './utils'
@@ -61,6 +61,8 @@ export class PreviewScene extends SceneComponent {
   editingComponent: any[]
 
   async start() {
+    // Register early — don't miss initial messages from SceneView
+    this.messageHandler()
     await this.loadProjectData()
     // console.log(`Running on platform: ${sys.platform}`, sys.DESKTOP_BROWSER, sys.MOBILE_BROWSER)
     this.createBorder()
@@ -68,12 +70,29 @@ export class PreviewScene extends SceneComponent {
     this.node.addChild(this.drawNode)
     this.createArrows()
     this.createSaveDialog()
-    this.drawNode.position = this.borderNode.position = Vec2(getLastSceneX(), getLastSceneY())
-    this.drawNode.scale = this.borderNode.scale = getLastSceneScale()
+    this.showFullHeight()
     this.keyboardHandler()
     this.mouseHandler()
-    this.messageHandler()
+    // Load path queued while data was loading
+    if (GlobalState.tempFilePath && GlobalState.tempFilePath !== GlobalState.filePath) {
+      this.loadComponent(GlobalState.tempFilePath)
+    }
     // this.loadComponent('/Users/antn/Documents/axmol/hero-dash/src/components/common/BottomMenu.tsx')
+  }
+
+  showFullHeight() {
+    const { designedResolution } = GlobalState.data
+    const { height: designHeight, width: designWidth } = designedResolution
+    const winSize = getWinSize()
+    if (!designHeight || !winSize.height) return
+    const scale = winSize.height / designHeight
+    const x = (winSize.width - designWidth * scale) / 2
+    setLastSceneScale(scale)
+    setLastSceneX(x)
+    setLastSceneY(0)
+    this.drawNode.position = this.borderNode.position = Vec2(x, 0)
+    this.drawNode.scale = this.borderNode.scale = scale
+    this.updateArrowPosition()
   }
 
   keyboardHandler() {
@@ -109,9 +128,7 @@ export class PreviewScene extends SceneComponent {
             if (keyCode === KEY.s) {
               this.saveComponent()
             } else if (keyCode === KEY.r) {
-              setLastSceneScale(0.5)
-              setLastSceneX(0)
-              setLastSceneY(0)
+              this.showFullHeight()
               this.loadComponent(GlobalState.filePath)
             } else if (keyCode === KEY.a) {
               await this.loadProjectData()
@@ -151,31 +168,53 @@ export class PreviewScene extends SceneComponent {
   }
 
   mouseHandler() {
-    eventManager.addListener(
-      {
-        event: EventListener.MOUSE,
-        onMouseScroll: (event) => {
-          const scrollY = event.getScrollY()
-          this.setRootScale(scrollY < 0 ? -0.05 : 0.05)
-        },
-        onMouseDown: (event) => {
-          if (event.getButton() === EventMouse.BUTTON_MIDDLE) {
-            this.isMiddleMouse = true
-          }
-        },
-        onMouseUp: (event) => {
-          if (event.getButton() === EventMouse.BUTTON_MIDDLE) {
-            this.isMiddleMouse = false
-          }
-        },
+    const canvas = document.querySelector<HTMLCanvasElement>('#gameCanvas')
+    if (!canvas) return
+    canvas.addEventListener(
+      'wheel',
+      (event) => {
+        this.setRootScale(event.deltaY > 0 ? -0.05 : 0.05)
+        event.preventDefault()
       },
-      this.node.instance,
+      { passive: false },
     )
+    canvas.addEventListener('pointerdown', (event) => {
+      if (event.button === 1) {
+        this.isMiddleMouse = true
+      }
+    })
+    canvas.addEventListener('pointermove', (event) => {
+      if (this.isMiddleMouse) {
+        if (this.questionContainerNode.active) return
+        const x = event.movementX
+        const y = -event.movementY
+        this.drawNode.posX += x
+        this.drawNode.posY += y
+        this.borderNode.position = this.drawNode.position
+        setLastSceneX(this.drawNode.posX)
+        setLastSceneY(this.drawNode.posY)
+        this.updateArrowPosition()
+      }
+    })
+    canvas.addEventListener('pointerup', () => {
+      this.isMiddleMouse = false
+    })
+    canvas.addEventListener('pointercancel', () => {
+      this.isMiddleMouse = false
+    })
   }
 
   messageHandler() {
     const listener = (event) => {
       const message = event.data
+      // Guard: scene nodes not ready yet — messageHandler called before start() completes
+      if (!this.drawNode || !this.questionContainerNode) {
+        // Store pending path; start() will pick it up
+        if (message.type === 'changeFilePath') {
+          GlobalState.tempFilePath = message.filePath
+        }
+        return
+      }
       // console.log('message', message)
       this.questionContainerNode.scale = this.drawNode.scale
       if (message.type === 'reLoad') {
@@ -257,6 +296,7 @@ export class PreviewScene extends SceneComponent {
   }
 
   async saveComponent() {
+    if (!this.editingComponent || !this.editingComponent[0]) return
     const data: any = await sendRequest({
       key: 'GEN_COMPONENT_REQUEST',
       nodesData: this.editingComponent[0],
@@ -315,7 +355,7 @@ export class PreviewScene extends SceneComponent {
     GlobalState.filePath = path
     this.editingComponent = Array.isArray(data.treeData) ? data.treeData : [data.treeData]
     this.drawNode.removeAllChildren()
-    loadSceneViewCocos(data, GlobalState.data, this.drawNode)
+    await loadSceneViewCocos(data, GlobalState.data, this.drawNode)
     this.questionContainerNode.active = false
     this.isEditing = false
     this.updateArrowPosition()

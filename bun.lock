@@ -19,7 +19,7 @@
       },
       "devDependencies": {
         "@headlessui/react": "^1.7.19",
-        "@safe-engine/webgl": "*",
+        "@safe-engine/webgl": "^1.2.7",
         "@types/estraverse": "^5.1.7",
         "@types/fs-extra": "^11.0.4",
         "@types/lodash-es": "^4.17.12",
@@ -47,7 +47,7 @@
         "postcss-url": "^10.1.4",
         "process": "^0.11.10",
         "react": "19.1.0",
-        "react-arborist": "^3.13.2",
+        "react-arborist": "^3.15.0",
         "react-dom": "19.1.0",
         "react-hot-toast": "^2.6.0",
         "react-icons": "^5.7.0",
@@ -284,7 +284,7 @@
 
     "@rolldown/pluginutils": ["@rolldown/pluginutils@1.0.1", "", {}, "sha512-2j9bGt5Jh8hj+vPtgzPtl72j0yRxHAyumoo6TNfAjsLB04UtpSvPbPcDcBMxz7n+9CYB0c1GxQFxYRg2jimqGw=="],
 
-    "@safe-engine/webgl": ["@safe-engine/webgl@1.2.2", "", { "dependencies": { "@esotericsoftware/spine-core": "4.2.111", "box2d-wasm": "^7.0.0", "dragonbones-es": "^1.0.0", "entityx-ts": "^2.3.1", "planck": "^1.5.0", "safex-webgl": "^1.2.7" } }, "sha512-keXz8SUUAUOZcCKCw7wBG2rp85OiBGf/fn7gBSThy8z8Rt8P0dEIE2ntaD6ptDRMCSW0iwPEyaCQ2nV/d0v0Qw=="],
+    "@safe-engine/webgl": ["@safe-engine/webgl@1.2.8", "", { "dependencies": { "@esotericsoftware/spine-core": "4.2.111", "box2d-wasm": "^7.0.0", "dragonbones-es": "^1.0.0", "entityx-ts": "^2.3.1", "planck": "^1.5.0", "safex-webgl": "^1.2.12" } }, "sha512-+EfW4PVNQnPT5ohBIksYjVnsG1HXDdxQdf7Utv2QZMDFvebtJ6yhah0TIpUHC8KVHRopiv8HJt9L2fJAJwKXvg=="],
 
     "@sindresorhus/is": ["@sindresorhus/is@4.6.0", "", {}, "sha512-t09vSN3MdfsyCHoFcTRCH/iUtG7OJ0CsjzB8cjAmKc/va/kIgeDI/TxsigdncE/4be734m0cvIYwNaV4i2XqAw=="],
 
@@ -1044,7 +1044,7 @@
 
     "safer-buffer": ["safer-buffer@2.1.2", "", {}, "sha512-YZo3K82SD7Riyi0E1EQPojLz7kpepnSQI9IyPbHHg1XXXevb5dJI7tpyN2ADxGcQbHG7vcyRHk0cbwqcQriUtg=="],
 
-    "safex-webgl": ["safex-webgl@1.2.7", "", { "dependencies": { "base64-js": "^1.5.1", "fflate": "^0.8.2" } }, "sha512-C5oMfX/45EX9TAW0e9Aqrmcx8T45jR5HW4uf5LmNP76G+q7/28QD4zG4V5u4eh/iJOEUxZOao9AG/vE/Agh1Ug=="],
+    "safex-webgl": ["safex-webgl@1.2.12", "", { "dependencies": { "base64-js": "^1.5.1", "fflate": "^0.8.2" } }, "sha512-rXrr40Ev/jvk9LfXyWpekXzqJfb/L/c2i9heog0NQYEvV+6EN1IsfscJso7iOs5Mp3A57Rt8VnStZvuOyUQ4pQ=="],
 
     "sanitize-filename": ["sanitize-filename@1.6.3", "", { "dependencies": { "truncate-utf8-bytes": "^1.0.0" } }, "sha512-y/52Mcy7aw3gRm7IrcGDFx/bCk4AhRh2eI9luHOQM86nZsqwiRkkq2GekHXBBD+SmPidc8i2PqtYZl+pWJ8Oeg=="],
 

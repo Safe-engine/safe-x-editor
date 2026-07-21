@@ -62,7 +62,7 @@ export default function SceneView() {
   }, [selectedPaths])
 
   return (
-    <div ref={containerRef} className='h-full w-full overflow-hidden bg-[#1e1e1e]'>
+    <div ref={containerRef} className='h-screen w-full overflow-hidden bg-[#1e1e1e]'>
       <canvas id="gameCanvas" className='block h-full w-full bg-[#1e1e1e]'></canvas>
     </div>
   )

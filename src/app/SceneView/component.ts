@@ -34,16 +34,16 @@ export function getComponent(components = [], nodeComp: NodeComp, designedResolu
         const left = parseIntFromValue(props.left)
         const { width: designWidth, height: designHeight } = designedResolution
         if (top !== undefined) {
-          nodeComp.instance.y = designHeight - top - nodeComp.instance.height * (1 - nodeComp.instance.anchorY)
+          nodeComp.instance.setPositionY(designHeight - top - nodeComp.instance._getHeight() * (1 - nodeComp.instance._getAnchorY()))
         }
         if (right !== undefined) {
-          nodeComp.instance.x = designWidth - right - nodeComp.instance.width * (1 - nodeComp.instance.anchorX)
+          nodeComp.instance.setPositionX(designWidth - right - nodeComp.instance._getWidth() * (1 - nodeComp.instance._getAnchorX()))
         }
         if (bottom !== undefined) {
-          nodeComp.instance.y = bottom + nodeComp.instance.height * nodeComp.instance.anchorY
+          nodeComp.instance.setPositionY(bottom + nodeComp.instance._getHeight() * nodeComp.instance._getAnchorY())
         }
         if (left !== undefined) {
-          nodeComp.instance.x = left + nodeComp.instance.width * nodeComp.instance.anchorX
+          nodeComp.instance.setPositionX(left + nodeComp.instance._getWidth() * nodeComp.instance._getAnchorX())
         }
         break
       }

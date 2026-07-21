@@ -79,7 +79,7 @@ export const getFilesInFolder = async ({ src }) => {
   };
   GlobalData.componentsCache = componentsCache;
   const config = workspace.getConfiguration('safexEditor');
-  const defaultProps = config.get<object>('defaultProps');
+  const defaultProps = config.get<object>('defaultProps') || {};
   return {
     componentsTree: getTreeData(filterTree([DirectoryTree(join(src, 'src'), jsxOption)])),
     colors,
