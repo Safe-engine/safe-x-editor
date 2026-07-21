@@ -37,6 +37,12 @@ export const KEY = {
   down: 'ArrowDown',
   left: 'ArrowLeft',
   right: 'ArrowRight',
+  command: 'MetaLeft',
+  commandR: 'MetaRight',
+  ctrl: 'ControlLeft',
+  ctrlR: 'ControlRight',
+  alt: 'AltLeft',
+  altR: 'AltRight',
 }
 
 export function createNode(name: string) {
