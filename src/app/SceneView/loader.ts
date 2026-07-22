@@ -178,7 +178,7 @@ async function parseChildren(root, parentNode: Node, data: ProjectData, evalInit
     } else if (string.includes('`')) {
       return tryGetValue(string.substring(1, string.length - 1))
     }
-    if (string.includes('.')) return eval(`${evalInit}${string}`)
+    if (string.includes('.')) return tryGetValue(string)
     return parseStringFromValue(string) ?? string
   }
 
@@ -310,7 +310,14 @@ async function parseChildren(root, parentNode: Node, data: ProjectData, evalInit
   if (nodeTag !== undefined) renderNode.tag = parseEval(initWithProps)(nodeTag)
   if (width) renderNode.width = parseEval(initWithProps)(width)
   if (height) renderNode.height = parseEval(initWithProps)(height)
-  if (active !== undefined) renderNode.active = parseEval(initWithProps)(active)
+  if (active !== undefined) {
+    try {
+      renderNode.active = parseEval(initWithProps)(active)
+    } catch {
+      // Preview data does not always include the runtime state used by active bindings.
+      // Keep the node visible rather than aborting the entire scene load.
+    }
+  }
   if (color) renderNode.color = getColor(tryGetValue(color))
 
   const colliderComp = getComponent(components, renderNode, designedResolution)

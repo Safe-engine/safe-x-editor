@@ -1272,14 +1272,29 @@ export class PreviewScene extends Scene {
 
   getNodeBounds(node: Node): SelectionBounds | undefined {
     if (!node.active) return undefined
-    const width = node.width * (node.worldScaleX ?? 1)
-    const height = node.height * (node.worldScaleY ?? 1)
-    if (width && height) {
-      const x1 = node.worldX - node.anchorX * width
-      const y1 = node.worldY - node.anchorY * height
-      const x2 = x1 + width
-      const y2 = y1 + height
-      return this.getSelectionBounds(x1, y1, x2, y2)
+    if (node.width && node.height) {
+      const scaleX = node.worldScaleX ?? 1
+      const scaleY = node.worldScaleY ?? 1
+      const radians = (node.worldRotation * Math.PI) / 180
+      const cosine = Math.cos(radians)
+      const sine = Math.sin(radians)
+      const left = -node.anchorX * node.width
+      const top = -node.anchorY * node.height
+      const corners = [
+        [left, top],
+        [left + node.width, top],
+        [left, top + node.height],
+        [left + node.width, top + node.height],
+      ].map(([x, y]) => ({
+        x: node.worldX + x * scaleX * cosine - y * scaleY * sine,
+        y: node.worldY + x * scaleX * sine + y * scaleY * cosine,
+      }))
+      return this.getSelectionBounds(
+        Math.min(...corners.map((corner) => corner.x)),
+        Math.min(...corners.map((corner) => corner.y)),
+        Math.max(...corners.map((corner) => corner.x)),
+        Math.max(...corners.map((corner) => corner.y)),
+      )
     }
     return this.getSpineSkeletonBounds(node)
   }
@@ -1337,6 +1352,18 @@ export class PreviewScene extends Scene {
   }
 
   isPointInsideNode(node: Node, x: number, y: number) {
+    if (node.width && node.height && node.worldScaleX && node.worldScaleY) {
+      const radians = (-node.worldRotation * Math.PI) / 180
+      const cosine = Math.cos(radians)
+      const sine = Math.sin(radians)
+      const dx = x - node.worldX
+      const dy = y - node.worldY
+      const localX = (dx * cosine - dy * sine) / node.worldScaleX
+      const localY = (dx * sine + dy * cosine) / node.worldScaleY
+      const left = -node.anchorX * node.width
+      const top = -node.anchorY * node.height
+      return localX >= left && localX <= left + node.width && localY >= top && localY <= top + node.height
+    }
     const bounds = this.getNodeBounds(node)
     if (!bounds) return false
     return x >= bounds.left && x <= bounds.right && y >= bounds.top && y <= bounds.bottom

@@ -3,6 +3,16 @@ import { pathListToTree } from 'helper/tree'
 import { Dispatch } from 'react'
 import { AppState } from './app.reducer'
 
+function getNearestTreeNode(tree: Tree, path: string) {
+  let treePath = path
+  while (treePath) {
+    const node = tree.getNode(treePath)
+    if (node) return node
+    treePath = treePath.slice(0, treePath.lastIndexOf('-'))
+  }
+  return undefined
+}
+
 export function getAction(draft: AppState) {
   const actions = {
     getFiles(src: string) {
@@ -61,7 +71,7 @@ export function getAction(draft: AppState) {
     selectEditMultiNodes(paths: string[]) {
       draft.selectedPaths = paths
       const tree = new Tree(draft.componentTree, 'id', 'children')
-      draft.selectedNodes = paths.map((p) => tree.getNode(p))
+      draft.selectedNodes = paths.map((path) => getNearestTreeNode(tree, path))
     },
     updateMultiNodes(params: Array<{ component?: string; updated?: any }>) {
       const tree = new Tree(draft.componentTree, 'id', 'children')
@@ -69,7 +79,7 @@ export function getAction(draft: AppState) {
         const { component, updated } = param
         if (!component) return
         const path = draft.selectedPaths[index]
-        const node = tree.getNode(path)
+        const node = getNearestTreeNode(tree, path)
         if (node) {
           node[component] = Array.isArray(updated) ? updated : { ...node[component], ...updated }
           draft.selectedNodes[index] = node

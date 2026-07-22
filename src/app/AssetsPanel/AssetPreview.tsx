@@ -708,6 +708,8 @@ function AssetPreview() {
       }
     }
 
+    if (type !== 'dragonBones') return
+
     if (!sceneRef.current) {
       sceneRef.current = ensurePreviewScene()
       if (!sdlReady) setSdlReady(true)
@@ -721,7 +723,7 @@ function AssetPreview() {
     setSelectedAnimation('')
     setSelectedSkin('')
 
-    if (!isAnimationPreviewType(type) || !value) {
+    if (!value) {
       sceneRef.current.clearPreview()
       setCanvasZoomPercent(100)
       return
