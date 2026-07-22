@@ -76,6 +76,8 @@ const COMPONENT_OPTIONS = [
   { tag: 'SpineBonesControl', label: 'Spine Bones Control', icon: FiShare2, props: { bones: [] }, requiresSpineSkeleton: true },
 ];
 
+const SPINE_PROP_ORDER = ['data', 'atlas', 'skin', 'animation', 'timeScale', 'loop'];
+
 function Field({ label, value, onChange }) {
   const isJsonValue = isObject(value) || Array.isArray(value);
   const inputClassName = 'h-6 w-full min-w-0 rounded-sm border border-[#111] bg-[#151515] px-2 text-[12px] text-[#e2e2e2] outline-none focus:border-[#4a90e2]';
@@ -93,15 +95,27 @@ function Field({ label, value, onChange }) {
     }
   }
 
-  if (typeof value === 'boolean') {
+  const isBoolProp = typeof value === 'boolean' || label === 'inSafeArea' || label === 'isSafeArea';
+  if (isBoolProp) {
+    const checked = typeof value === 'boolean'
+      ? value
+      : (value === true || parseStringFromValue(value) === 'true' || value === 1 || value === '1');
+
     return (
       <label className='grid min-h-7 grid-cols-[70px_minmax(0,1fr)] items-center gap-2 px-2 py-0.5'>
         <div className='truncate text-[11px] text-[#c8c8c8]' title={label}>{label}</div>
         <input
           className='h-3.5 w-3.5 accent-[#6aa7ff]'
           type='checkbox'
-          checked={value}
-          onChange={(event) => onChange(event.target.checked)}
+          checked={checked}
+          onChange={(event) => {
+            const nextChecked = event.target.checked;
+            if (typeof value === 'string') {
+              onChange(nextChecked ? 'true' : 'false');
+            } else {
+              onChange(nextChecked);
+            }
+          }}
         />
       </label>
     );
@@ -600,7 +614,16 @@ function NodeProps() {
     ...props,
     ...Object.fromEntries(Object.entries(defaultProps).map(([key, value]) => [key, props[key] ?? value])),
   };
-  const propEntries = Object.entries(displayedProps).filter(([key]) => key !== 'node');
+  const propEntries = Object.entries(displayedProps)
+    .filter(([key]) => key !== 'node')
+    .sort(([leftKey], [rightKey]) => {
+      if (selectedNode.tag !== 'SpineSkeleton') return 0;
+      const leftIndex = SPINE_PROP_ORDER.indexOf(leftKey);
+      const rightIndex = SPINE_PROP_ORDER.indexOf(rightKey);
+      if (leftIndex < 0) return rightIndex < 0 ? 0 : 1;
+      if (rightIndex < 0) return -1;
+      return leftIndex - rightIndex;
+    });
 
   function getWidgetInset(direction, widgetProps) {
     const getInset = (key) => {
@@ -799,20 +822,39 @@ function NodeProps() {
       <InspectorSection
         key={`${component.tag}-${index}`}
         title={component.tag || `Component ${index + 1}`}
-        headerContent={(component.tag === 'BoxCollider' || component.tag === 'PhysicsBoxCollider') && (
-          <button
-            className={`ml-2 flex h-5 w-5 items-center justify-center rounded-sm ${editingBoxColliderIndex === index ? 'bg-[#3569a8] text-white' : 'text-[#bdbdbd] hover:text-[#f0f0f0]'}`}
-            type='button'
-            onClick={(event) => {
-              event.preventDefault();
-              event.stopPropagation();
-              toggleBoxColliderEditor(index);
-            }}
-            title={editingBoxColliderIndex === index ? 'Hide collider editor' : 'Edit collider in preview'}
-          >
-            <FiEdit2 size={13} />
-          </button>
-        )}
+        headerContent={
+          component.tag === 'Widget' ? (
+            <label
+              className='ml-2 flex items-center gap-1 text-[10px] font-normal normal-case text-[#c8c8c8]'
+              onClick={(event) => event.stopPropagation()}
+            >
+              <input
+                className='h-3.5 w-3.5 accent-[#6aa7ff]'
+                type='checkbox'
+                checked={component.props?.inSafeArea === true || parseStringFromValue(component.props?.inSafeArea) === 'true'}
+                onChange={(event) => {
+                  const checked = event.target.checked;
+                  const nextVal = typeof component.props?.inSafeArea === 'string' ? (checked ? 'true' : 'false') : checked;
+                  updateComponentProps(index, { inSafeArea: nextVal });
+                }}
+              />
+              In Safe Area
+            </label>
+          ) : (component.tag === 'BoxCollider' || component.tag === 'PhysicsBoxCollider') ? (
+            <button
+              className={`ml-2 flex h-5 w-5 items-center justify-center rounded-sm ${editingBoxColliderIndex === index ? 'bg-[#3569a8] text-white' : 'text-[#bdbdbd] hover:text-[#f0f0f0]'}`}
+              type='button'
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                toggleBoxColliderEditor(index);
+              }}
+              title={editingBoxColliderIndex === index ? 'Hide collider editor' : 'Edit collider in preview'}
+            >
+              <FiEdit2 size={13} />
+            </button>
+          ) : null
+        }
       >
         {(component.tag === 'BoxCollider' || component.tag === 'PhysicsBoxCollider') && (
           <>
@@ -844,7 +886,7 @@ function NodeProps() {
           && (!['BoxCollider', 'PhysicsBoxCollider'].includes(component.tag) || !['tag', 'width', 'height', 'offset'].includes(key))
           && (component.tag !== 'Widget' || (
             !WIDGET_DIRECTIONS.some((direction) => direction.key === key)
-            && !['centerVertical', 'centerHorizon'].includes(key)
+            && !['centerVertical', 'centerHorizon', 'inSafeArea'].includes(key)
           ))
         )).map(([key, value]) => (
           component.tag === 'SpineBonesControl' && key === 'bones' ? (
