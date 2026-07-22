@@ -98,16 +98,29 @@ const parseTreeData = (root, fileOrigin = '', childrenIndex = [], index = 0) => 
   const tag = get(openingElement, 'name.name');
   const props: any = getAttributeProps(openingElement, fileOrigin);
   const components = [];
-  const filteredChildren = children.filter(child => {
+  const comments: { index: number, source: string }[] = [];
+  const parsedChildren = [];
+  children.forEach(child => {
+    if (child.type === 'JSXExpressionContainer' && child.expression?.type === 'JSXEmptyExpression') {
+      const [commentStart, commentEnd] = child.range;
+      comments.push({ index: parsedChildren.length, source: fileOrigin.substring(commentStart, commentEnd) });
+      return;
+    }
     const childTag = get(child.openingElement, 'name.name');
     if (childTag && !hasTreeRender(childTag)) {
       components.push({
         tag: childTag,
         props: getAttributeProps(child.openingElement, fileOrigin)
       });
-      return false;
+      return;
     }
-    return (typeof child.value !== 'string') || !!child.value.trim();
+    if (typeof child.value === 'string' && !child.value.trim()) {
+      return;
+    }
+    const childData = parseTreeData(child, fileOrigin, thisIndexes, parsedChildren.length);
+    if (childData) {
+      parsedChildren.push(childData);
+    }
   });
   return {
     id,
@@ -115,9 +128,8 @@ const parseTreeData = (root, fileOrigin = '', childrenIndex = [], index = 0) => 
     tag,
     props,
     components,
-    children: filteredChildren.map((child, index) => {
-      return parseTreeData(child, fileOrigin, thisIndexes, index);
-    }).filter(Boolean),
+    children: parsedChildren,
+    ...(comments.length ? { comments } : {}),
   };
 };
 
@@ -248,7 +260,7 @@ const INDENT = '  ';
 const createTag = (root, imports, baseIndent = '') => {
   // if (!root.tag) return `${root.name}`;
   const {
-    tag, name, props = {}, children = [], title, components = [], imported, isSubModule, loop
+    tag, name, props = {}, children = [], title, components = [], comments = [], imported, isSubModule, loop
   } = root;
   if (!tag) {
     return `${title || name}`;
@@ -271,18 +283,23 @@ const createTag = (root, imports, baseIndent = '') => {
     const listSource = mapFrom || `Array(${count})`;
     const childIndent = baseIndent + INDENT;
     return `{${listSource}.map((${itemSymbol}, ${startIndexSymbol}${startIndex ? ' = ' + startIndex : ''}) => (
-${childIndent}${createTag({ tag, name, props, children, title, components, imported, isSubModule }, imports, childIndent)}
+${childIndent}${createTag({ tag, name, props, children, title, components, comments, imported, isSubModule }, imports, childIndent)}
 ${baseIndent}))}`;
   }
   const propsLine = genPropsLine(props);
   // console.log('propsLine', propsLine, ';');
-  if (!children.length && isEmpty(components)) {
+  if (!children.length && isEmpty(components) && !comments.length) {
     return `<${tag}${!isEmpty(propsLine) ? ' ' : ''}${propsLine} />`;
   }
   const childIndent = baseIndent + INDENT;
   const tagWithProps = `<${tag}${!isEmpty(propsLine) ? ' ' : ''}${propsLine}>`;
   const close = `</${tag}>`;
-  const renderChildren = children.length ? '\n' + children.map(child => childIndent + createTag(child, imports, childIndent)).join('\n') : '';
+  const renderChildren = children.length || comments.length
+    ? '\n' + Array.from({ length: children.length + 1 }, (_, index) => [
+      ...comments.filter(comment => comment.index === index).map(comment => childIndent + comment.source),
+      ...(children[index] ? [childIndent + createTag(children[index], imports, childIndent)] : []),
+    ]).flat().join('\n')
+    : '';
   const renderComponents = components.length ? '\n' + components.map(child => childIndent + createTag(child, imports, childIndent)).join('\n') : '';
   return `${tagWithProps}${renderChildren}${renderComponents}
 ${baseIndent}${close}`;
