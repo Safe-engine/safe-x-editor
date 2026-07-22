@@ -37,12 +37,16 @@ export function parseAssets(parsed, panel?: WebviewView, isColor = false) {
           // console.log(node.init.properties)
           const relativePath = node.init.value as string;
           const fileUri = Uri.joinPath(base, 'res', relativePath);
-          let size;
+          let size= { width: 0, height: 0 };
           if (relativePath.endsWith('.png') || relativePath.endsWith('.jpg')) {
+            // console.log(fileUri, 'width, height');
             if (existsSync(fileUri.fsPath)) {
+              try {
               const { width, height } = sizeOf(readFileSync(fileUri.fsPath));
-              // console.log(fileUri, width, height);
               size = { width, height };
+              } catch (err) {
+                console.error(`Error occurred while reading file: ${fileUri.fsPath}`, err);
+              }
             }
           }
           if (!panel) {
