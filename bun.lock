@@ -19,7 +19,7 @@
       },
       "devDependencies": {
         "@headlessui/react": "^1.7.19",
-        "@safe-engine/webgl": "^1.2.7",
+        "@safe-engine/webgl": "^1.2.8",
         "@types/estraverse": "^5.1.7",
         "@types/fs-extra": "^11.0.4",
         "@types/lodash-es": "^4.17.12",

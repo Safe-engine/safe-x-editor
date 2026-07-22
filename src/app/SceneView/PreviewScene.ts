@@ -46,7 +46,7 @@ function getEditingRoot(editingComponent: any, indexes: number[]) {
 
 export class PreviewScene extends SceneComponent {
   static readonly ARROW_HIT_RADIUS = 32
-  static readonly SELECTION_ANCHOR_SIZE = 16
+  static readonly SELECTION_ANCHOR_SIZE = 18
   static readonly RESIZE_EDGE_HIT_SIZE = 8
   static readonly RESIZE_CORNER_SIZE = 12
   static readonly ROTATION_HANDLE_SIZE = 14
@@ -306,9 +306,13 @@ export class PreviewScene extends SceneComponent {
     const arrowSpriteHorizon = instantiate(SpriteRender, { spriteFrame: arrow })
     const arrowSpriteVertical = instantiate(SpriteRender, { spriteFrame: arrow })
     const selectionBorder = instantiate(GraphicsRender, { strokeColor: color(34, 197, 94, 255), lineWidth: 2 })
-    const selectionAnchor = instantiate(NodeRender)
+    const selectionAnchor = instantiate(GraphicsRender, {
+      fillColor: color(255, 255, 255, 255),
+      strokeColor: color(34, 197, 94, 255),
+      lineWidth: 2,
+    })
     const selectionCorners = []
-    const rotationHandle = instantiate(NodeRender)
+    const rotationHandle = instantiate(GraphicsRender, { fillColor: color(34, 197, 94, 255) })
 
     this.arrowContainerNode = arrowContainer.node
     this.arrowSpriteHorizonNode = arrowSpriteHorizon.node
@@ -321,10 +325,7 @@ export class PreviewScene extends SceneComponent {
     const ANCHOR_SIZE = PreviewScene.SELECTION_ANCHOR_SIZE
     selectionAnchor.node.w = ANCHOR_SIZE
     selectionAnchor.node.h = ANCHOR_SIZE
-    const anchorBg = selectionAnchor.addComponent(
-      instantiate(GraphicsRender, { fillColor: color(255, 255, 255, 255), strokeColor: color(34, 197, 94, 255), lineWidth: 2 }),
-    )
-    anchorBg.drawRect(Vec2(-ANCHOR_SIZE / 2, -ANCHOR_SIZE / 2), Vec2(ANCHOR_SIZE / 2, ANCHOR_SIZE / 2))
+    selectionAnchor.drawRect(Vec2(-ANCHOR_SIZE / 2, -ANCHOR_SIZE / 2), Vec2(ANCHOR_SIZE / 2, ANCHOR_SIZE / 2))
 
     const CORNER_SIZE = PreviewScene.RESIZE_CORNER_SIZE
     const cornerPositions = [
@@ -352,21 +353,20 @@ export class PreviewScene extends SceneComponent {
     const ROTATION_SIZE = PreviewScene.ROTATION_HANDLE_SIZE
     rotationHandle.node.w = ROTATION_SIZE
     rotationHandle.node.h = ROTATION_SIZE
-    const rotGraphics = rotationHandle.addComponent(instantiate(GraphicsRender, { fillColor: color(34, 197, 94, 255) }))
-    rotGraphics.drawSolidCircle(Vec2(0, 0), ROTATION_SIZE / 2, 0, 34, color(34, 197, 94, 255))
-    rotGraphics.drawSolidCircle(Vec2(0, 0), Math.max(0, ROTATION_SIZE / 2 - 2), 0, 34, color(255, 255, 255, 255))
-    rotGraphics.drawRect(Vec2(-ROTATION_SIZE / 2, -ROTATION_SIZE / 2), Vec2(ROTATION_SIZE / 2, ROTATION_SIZE / 2))
+    rotationHandle.drawSolidCircle(Vec2(0, 0), ROTATION_SIZE / 2, 0, 34, color(34, 197, 94, 255))
+    rotationHandle.drawSolidCircle(Vec2(0, 0), Math.max(0, ROTATION_SIZE / 2 - 2), 0, 34, color(255, 255, 255, 255))
+    // rotationHandle.drawRect(Vec2(-ROTATION_SIZE / 2, -ROTATION_SIZE / 2), Vec2(ROTATION_SIZE / 2, ROTATION_SIZE / 2))
     rotationHandle.node.zIndex = -1
 
     arrowSpriteVertical.node.instance.setAnchorPoint(0.5, 0)
     arrowSpriteHorizon.node.instance.setAnchorPoint(0.5, 0)
     arrowSpriteVertical.node.color = color(255, 0, 0, 255)
-    arrowSpriteVertical.node.posY = -40
+    arrowSpriteVertical.node.posY = 40
     arrowSpriteHorizon.node.posX = 40
     arrowSpriteHorizon.node.rotation = 90
 
     selectionBorder.node.zIndex = -2
-    selectionAnchor.node.zIndex = -1
+    selectionAnchor.node.zIndex = 1
     arrowContainer.node.zIndex = Infinity - 1
     arrowContainer.node.active = false
 
@@ -562,6 +562,40 @@ export class PreviewScene extends SceneComponent {
     ]
   }
 
+  isPointInsideNode(node: NodeComp, x: number, y: number) {
+    const corners = this.getNodeWorldCorners(node)
+    if (!corners) return false
+    let isInside = false
+    for (let index = 0, previous = corners.length - 1; index < corners.length; previous = index++) {
+      const current = corners[index]
+      const prior = corners[previous]
+      const intersects = (current.y > y) !== (prior.y > y)
+        && x < ((prior.x - current.x) * (y - current.y)) / (prior.y - current.y) + current.x
+      if (intersects) isInside = !isInside
+    }
+    return isInside
+  }
+
+  selectNodeAtPoint(x: number, y: number) {
+    const findPath = (nodes: any[]): string | undefined => {
+      for (let index = nodes.length - 1; index >= 0; index--) {
+        const node = nodes[index]
+        const childPath = findPath(node.children ?? [])
+        if (childPath) return childPath
+
+        const path = node.id
+        if (!path) continue
+        const currentNode = getCurrentNode(this.drawNode, this.getChildrenIndex(path))
+        if (this.isPointInsideNode(currentNode, x, y)) return path
+      }
+    }
+
+    const path = findPath(this.editingComponent ?? [])
+    if (!path) return
+    this.changeSelectPath([path])
+    window.postMessage({ type: 'previewSelectPaths', selectPaths: [path] }, '*')
+  }
+
   getCombinedBoundsFromPaths(paths: string[]) {
     let combinedBounds: { left: number; top: number; right: number; bottom: number } | undefined
     paths.forEach((path) => {
@@ -591,6 +625,7 @@ export class PreviewScene extends SceneComponent {
 
     // Multi-selection: show combined bounding box only
     if (this.editingPaths.length > 1) {
+      this.selectionAnchorNode.active = false
       this.selectionCornerNodes.forEach((corner) => (corner.active = false))
       this.rotationHandleNode.active = false
       const combinedBounds = this.getCombinedBoundsFromPaths(this.editingPaths)
@@ -629,6 +664,7 @@ export class PreviewScene extends SceneComponent {
     }
 
     this.arrowContainerNode.active = true
+    this.selectionAnchorNode.active = true
     this.arrowContainerNode.position = Vec2(worldPos.x, worldPos.y)
 
     graphics?.clear()
@@ -755,17 +791,18 @@ export class PreviewScene extends SceneComponent {
     const currentNode = getCurrentNode(this.drawNode, childrenIndex)
     const nodeScaleX = currentNode.scaleX || 1
     const nodeScaleY = currentNode.scaleY || 1
+    const sceneScale = this.drawNode.scale || 1
 
     const horizontalEdge = handle.endsWith('left') ? 'left' : handle.endsWith('right') ? 'right' : undefined
     const verticalEdge = handle.startsWith('top') ? 'top' : handle.startsWith('bottom') ? 'bottom' : undefined
 
     const newWidth =
       horizontalEdge && !this.lockX
-        ? Math.max(1, Math.round(currentNode.w + (horizontalEdge === 'right' ? dx : -dx) / nodeScaleX))
+        ? Math.max(1, Math.round(currentNode.w + (horizontalEdge === 'right' ? dx : -dx) / (sceneScale * nodeScaleX)))
         : currentNode.w
     const newHeight =
       verticalEdge && !this.lockY
-        ? Math.max(1, Math.round(currentNode.h + (verticalEdge === 'bottom' ? dy : -dy) / nodeScaleY))
+        ? Math.max(1, Math.round(currentNode.h + (verticalEdge === 'bottom' ? dy : -dy) / (sceneScale * nodeScaleY)))
         : currentNode.h
 
     const didResizeWidth = newWidth !== currentNode.w
@@ -793,8 +830,6 @@ export class PreviewScene extends SceneComponent {
     return true
   }
 
-  // --- Anchor drag ---
-
   moveSelectionAnchor(dx: number, dy: number): boolean {
     if (this.editingPaths.length !== 1) return false
     const childrenIndex = this.getChildrenIndex(this.editingPaths[0])
@@ -803,9 +838,9 @@ export class PreviewScene extends SceneComponent {
     const height = currentNode.h
     const scaleX = currentNode.scaleX || 1
     const scaleY = currentNode.scaleY || 1
-
-    const anchorX = width ? Number((currentNode.anchorX + dx / (width * scaleX)).toFixed(3)) : currentNode.anchorX
-    const anchorY = height ? Number((currentNode.anchorY + dy / (height * scaleY)).toFixed(3)) : currentNode.anchorY
+    const sceneScale = this.drawNode.scale || 1
+    const anchorX = width ? Number((currentNode.anchorX + dx / (sceneScale * width * scaleX)).toFixed(3)) : currentNode.anchorX
+    const anchorY = height ? Number((currentNode.anchorY + dy / (sceneScale * height * scaleY)).toFixed(3)) : currentNode.anchorY
     if (anchorX === currentNode.anchorX && anchorY === currentNode.anchorY) return false
 
     currentNode.posX += (anchorX - currentNode.anchorX) * width * scaleX
@@ -816,8 +851,7 @@ export class PreviewScene extends SceneComponent {
     const indexes = [...childrenIndex]
     let editNode = getEditingRoot(this.editingComponent, indexes)
     indexes.forEach((index) => {
-      const { tag } = editNode
-      const componentChildrenNum = getComponentChildrenNum(tag)
+      const componentChildrenNum = getComponentChildrenNum(editNode.tag)
       if (editNode.children[index - componentChildrenNum]) editNode = editNode.children[index - componentChildrenNum]
     })
     if (editNode) {
@@ -866,6 +900,9 @@ export class PreviewScene extends SceneComponent {
     // Check arrow axis / anchor
     const activeArrowAxis = this.editingPaths[0] ? this.getActiveArrowAxis(x, y) : undefined
     this.activeArrowAxis = activeArrowAxis === 'anchor' ? activeArrowAxis : undefined
+    if (this.activeArrowAxis === 'anchor') {
+      window.postMessage({ type: 'previewFocusNodeAnchor' }, '*')
+    }
 
     // Check resize edges
     this.activeResizeEdge = this.activeArrowAxis ? undefined : this.getActiveResizeEdge(x, y)
@@ -873,6 +910,10 @@ export class PreviewScene extends SceneComponent {
     // If no resize edge, apply arrow axis for move constraint
     if (!this.activeArrowAxis && !this.activeResizeEdge) {
       this.activeArrowAxis = activeArrowAxis
+    }
+
+    if (!this.activeArrowAxis && !this.activeResizeEdge) {
+      this.selectNodeAtPoint(x, y)
     }
 
     this.updateArrowOpacity()

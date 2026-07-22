@@ -470,6 +470,17 @@ function NodeProps() {
     if (rootFolder) void loadColliderSettings();
   }, [rootFolder]);
 
+  useEffect(() => {
+    const focusAnchor = (event) => {
+      if (event.data?.type !== 'previewFocusNodeAnchor') return;
+      const anchorProperty = document.getElementById('node-anchor-property');
+      anchorProperty?.scrollIntoView({ block: 'center' });
+      requestAnimationFrame(() => anchorProperty?.querySelector('input')?.focus());
+    };
+    window.addEventListener('message', focusAnchor);
+    return () => window.removeEventListener('message', focusAnchor);
+  }, []);
+
   async function saveColors(nextColors) {
     const response: any = await sendRequest({ key: UPDATE_PROJECT_COLORS_REQUEST, rootFolder, colors: nextColors });
     if (!response?.success) {
@@ -674,12 +685,14 @@ function NodeProps() {
           updateNodeProps({ [propName]: nextValue, scale: undefined });
         }}
       />
-      <AxisRow
-        label='Anchor'
-        step={0.01}
-        values={{ x: node.anchorX ?? 0.5, y: node.anchorY ?? 0.5 }}
-        onChange={(axis, value) => updateNodeProps({ [axis === 'x' ? 'anchorX' : 'anchorY']: value })}
-      />
+      <div id='node-anchor-property'>
+        <AxisRow
+          label='Anchor'
+          step={0.01}
+          values={{ x: node.anchorX ?? 0.5, y: node.anchorY ?? 0.5 }}
+          onChange={(axis, value) => updateNodeProps({ [axis === 'x' ? 'anchorX' : 'anchorY']: value })}
+        />
+      </div>
       <AxisRow
         label='Size'
         isSize
