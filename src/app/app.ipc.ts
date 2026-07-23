@@ -44,7 +44,7 @@ const getBrowserFallback = (key: string) => {
     return { apps: [] }
   }
   if (key === GET_AI_IMAGE_SETTINGS_REQUEST) {
-    return { numberOfImages: 4, systemPrompt: '' }
+    return { numberOfImages: 4, systemPrompt: '', provider: 'agy', model: 'gemini-3.6-flash-high', baseUrl: '', apiKey: '' }
   }
   if (key === SAVE_AI_IMAGE_SETTINGS_REQUEST) {
     return { success: true }

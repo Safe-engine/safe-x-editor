@@ -15,6 +15,32 @@ import {
 } from 'shared/constant.message'
 
 type Tab = 'editor' | 'image-ai'
+type ImageAiProvider = 'agy' | 'codex' | 'claude' | 'openai-compatible'
+
+const providerLabels: Record<ImageAiProvider, string> = {
+  agy: 'agy',
+  codex: 'codex',
+  claude: 'claude',
+  'openai-compatible': 'Open AI Compatible',
+}
+
+const cliModels: Record<Exclude<ImageAiProvider, 'openai-compatible'>, string[]> = {
+  agy: [
+    'gemini-3.6-flash-high',
+    'gemini-3.6-flash-medium',
+    'gemini-3.6-flash-low',
+    'gemini-3.5-flash-high',
+    'gemini-3.5-flash-medium',
+    'gemini-3.5-flash-low',
+    'gemini-3.1-pro-high',
+    'gemini-3.1-pro-low',
+    'claude-sonnet-4-6',
+    'claude-opus-4-6-thinking',
+    'gpt-oss-120b-medium',
+  ],
+  codex: ['gpt-5.3-codex'],
+  claude: ['sonnet', 'opus'],
+}
 
 export default function SettingsDialog() {
   const [isOpen, setOpen] = useState(false)
@@ -22,6 +48,10 @@ export default function SettingsDialog() {
   const [apps, setApps] = useState<string[]>([])
   const [numberOfImages, setNumberOfImages] = useState(4)
   const [systemPrompt, setSystemPrompt] = useState('')
+  const [provider, setProvider] = useState<ImageAiProvider>('agy')
+  const [model, setModel] = useState(cliModels.agy[0])
+  const [baseUrl, setBaseUrl] = useState('')
+  const [apiKey, setApiKey] = useState('')
 
   useEffect(() => {
     async function openDialog() {
@@ -32,6 +62,10 @@ export default function SettingsDialog() {
       setApps(appsResponse?.apps || [])
       setNumberOfImages(imageResponse?.numberOfImages || 4)
       setSystemPrompt(imageResponse?.systemPrompt || '')
+      setProvider(imageResponse?.provider || 'agy')
+      setModel(imageResponse?.model || (imageResponse?.provider === 'openai-compatible' ? '' : cliModels.agy[0]))
+      setBaseUrl(imageResponse?.baseUrl || '')
+      setApiKey(imageResponse?.apiKey || '')
       setTab('editor')
       setOpen(true)
     }
@@ -51,7 +85,7 @@ export default function SettingsDialog() {
   }
 
   async function saveImageSettings() {
-    await sendRequest({ key: SAVE_AI_IMAGE_SETTINGS_REQUEST, numberOfImages, systemPrompt })
+    await sendRequest({ key: SAVE_AI_IMAGE_SETTINGS_REQUEST, numberOfImages, systemPrompt, provider, model, baseUrl, apiKey })
   }
 
   function closeDialog() {
@@ -91,6 +125,58 @@ export default function SettingsDialog() {
             </div>
           ) : (
             <div className='flex flex-col gap-4'>
+              <label className='flex flex-col gap-1'>
+                <span className='text-[#bdbdbd]'>Provider</span>
+                <div className='w-56'>
+                  <SelectBox
+                    selected={providerLabels[provider]}
+                    items={Object.values(providerLabels)}
+                    setSelected={(label: string) => {
+                      const nextProvider = (Object.keys(providerLabels) as ImageAiProvider[]).find((key) => providerLabels[key] === label) || 'agy'
+                      setProvider(nextProvider)
+                      setModel(nextProvider === 'openai-compatible' ? '' : cliModels[nextProvider][0])
+                    }}
+                  />
+                </div>
+              </label>
+              {provider === 'openai-compatible' ? (
+                <div className='flex flex-col gap-4'>
+                  <label className='flex flex-col gap-1'>
+                    <span className='text-[#bdbdbd]'>Base URL</span>
+                    <input
+                      className='h-7 rounded-sm border border-[#111] bg-[#151515] px-2 text-[12px] text-[#e2e2e2] placeholder-[#777] shadow-inner outline-none focus:border-[#4a90e2]'
+                      value={baseUrl}
+                      onChange={(event) => setBaseUrl(event.target.value)}
+                      placeholder='https://api.example.com/v1'
+                    />
+                  </label>
+                  <label className='flex flex-col gap-1'>
+                    <span className='text-[#bdbdbd]'>API key</span>
+                    <input
+                      className='h-7 rounded-sm border border-[#111] bg-[#151515] px-2 text-[12px] text-[#e2e2e2] placeholder-[#777] shadow-inner outline-none focus:border-[#4a90e2]'
+                      type='password'
+                      value={apiKey}
+                      onChange={(event) => setApiKey(event.target.value)}
+                    />
+                  </label>
+                  <label className='flex flex-col gap-1'>
+                    <span className='text-[#bdbdbd]'>Model</span>
+                    <input
+                      className='h-7 rounded-sm border border-[#111] bg-[#151515] px-2 text-[12px] text-[#e2e2e2] placeholder-[#777] shadow-inner outline-none focus:border-[#4a90e2]'
+                      value={model}
+                      onChange={(event) => setModel(event.target.value)}
+                      placeholder='Model name'
+                    />
+                  </label>
+                </div>
+              ) : (
+                <label className='flex flex-col gap-1'>
+                  <span className='text-[#bdbdbd]'>Model</span>
+                  <div className='w-56'>
+                    <SelectBox selected={model} items={cliModels[provider]} setSelected={setModel} />
+                  </div>
+                </label>
+              )}
               <label className='flex flex-col gap-1'>
                 <span className='text-[#bdbdbd]'>Number of images</span>
                 <div className='w-28'>

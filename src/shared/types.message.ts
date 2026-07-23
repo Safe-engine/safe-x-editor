@@ -27,7 +27,7 @@ export type IpcRequest =
   | { key: typeof ADD_OPEN_WITH_APP_REQUEST }
   | { key: typeof REMOVE_OPEN_WITH_APP_REQUEST, appPath: string }
   | { key: typeof GET_AI_IMAGE_SETTINGS_REQUEST }
-  | { key: typeof SAVE_AI_IMAGE_SETTINGS_REQUEST, numberOfImages: number, systemPrompt: string }
+  | { key: typeof SAVE_AI_IMAGE_SETTINGS_REQUEST, numberOfImages: number, systemPrompt: string, provider: 'agy' | 'codex' | 'claude' | 'openai-compatible', model: string, baseUrl: string, apiKey: string }
   | { key: typeof GET_FOLDER_FILES, src: string, patternList?: [string] }
   | { key: typeof CHECK_FILE_EXIST, folderPath: string }
   | { key: typeof LOAD_COMPONENT_REQUEST, path: string }

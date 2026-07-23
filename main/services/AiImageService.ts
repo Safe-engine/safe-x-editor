@@ -17,18 +17,33 @@ const AI_IMAGE_SETTINGS_FILE = 'ai-image-settings.json';
 export type AiImageSettings = {
   numberOfImages: number;
   systemPrompt: string;
+  provider: 'agy' | 'codex' | 'claude' | 'openai-compatible';
+  model: string;
+  baseUrl: string;
+  apiKey: string;
 };
 
 const defaultAiImageSettings: AiImageSettings = {
   numberOfImages: 4,
   systemPrompt: 'You are a board-game SVG asset generator. Your only job is generating assets.\nFixed visual style: square 512×512 board-game token/icon, flat vector shapes, thick rounded dark-navy outlines (#24324A), warm cream background (#FFF3D6), saturated teal/coral/gold accents, simple readable silhouette, subtle shadow, no text, no gradients, no external resources, scripts, or raster images.',
+  provider: 'agy',
+  model: 'gemini-3.6-flash-high',
+  baseUrl: '',
+  apiKey: '',
 };
 
 function normalizeAiImageSettings(settings: Partial<AiImageSettings>): AiImageSettings {
   const numberOfImages = Number(settings.numberOfImages);
+  const provider = ['agy', 'codex', 'claude', 'openai-compatible'].includes(settings.provider || '')
+    ? settings.provider as AiImageSettings['provider']
+    : defaultAiImageSettings.provider;
   return {
     numberOfImages: [1, 2, 3, 4].includes(numberOfImages) ? numberOfImages : defaultAiImageSettings.numberOfImages,
     systemPrompt: typeof settings.systemPrompt === 'string' ? settings.systemPrompt : defaultAiImageSettings.systemPrompt,
+    provider,
+    model: typeof settings.model === 'string' && settings.model !== 'Default' ? settings.model : defaultAiImageSettings.model,
+    baseUrl: typeof settings.baseUrl === 'string' ? settings.baseUrl : defaultAiImageSettings.baseUrl,
+    apiKey: typeof settings.apiKey === 'string' ? settings.apiKey : defaultAiImageSettings.apiKey,
   };
 }
 
