@@ -38,7 +38,7 @@ export function parseAssets(parsed, panel?: WebviewView, isColor = false) {
           const relativePath = node.init.value as string;
           const fileUri = Uri.joinPath(base, 'res', relativePath);
           let size= { width: 0, height: 0 };
-          if (relativePath.endsWith('.png') || relativePath.endsWith('.jpg')) {
+          if (['.png', '.jpg', '.svg'].some(extension => relativePath.toLowerCase().endsWith(extension))) {
             // console.log(fileUri, 'width, height');
             if (existsSync(fileUri.fsPath)) {
               try {
