@@ -3,7 +3,7 @@ import { execFile } from 'child_process';
 import { copyFile, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { basename, dirname, extname, isAbsolute, join, relative, resolve } from 'path';
-import { fileURLToPath } from 'url';
+import { fileURLToPath, pathToFileURL } from 'url';
 
 type ImageJob = {
   directory: string;
@@ -64,7 +64,7 @@ export function saveAiImageSettings(settings: Partial<AiImageSettings>) {
 }
 
 function fileUrl(path: string) {
-  return `file://${path.replace(/\\/g, '/').split('/').map(encodeURIComponent).join('/')}`;
+  return pathToFileURL(path).href;
 }
 
 function runAgy(prompt: string, cwd: string) {

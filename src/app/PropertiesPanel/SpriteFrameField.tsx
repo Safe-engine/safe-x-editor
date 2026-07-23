@@ -1,5 +1,6 @@
 import { Combobox } from '@headlessui/react';
 import { parseStringFromValue } from 'helper/node';
+import { toFileUrl } from 'helper/fileUrl';
 import { useState } from 'react';
 import { FiCheck, FiChevronDown, FiEdit3 } from 'react-icons/fi';
 import SpriteFrameAiDialog from './SpriteFrameAiDialog';
@@ -10,7 +11,7 @@ function texturePreviewUrl(texture, rootFolder) {
   if (/^[a-z][a-z0-9+.-]*:/i.test(path)) return path;
   const normalized = String(path).replace(/\\/g, '/').replace(/^res\//, '');
   const fullPath = normalized.startsWith('/') ? normalized : `${rootFolder}/res/${normalized}`;
-  return `file://${fullPath.split('/').map(encodeURIComponent).join('/')}`;
+  return toFileUrl(fullPath);
 }
 
 function textureLabel(texture) {

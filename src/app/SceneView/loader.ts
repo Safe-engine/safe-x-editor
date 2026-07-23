@@ -1,6 +1,7 @@
 import { AssetManager, ComponentX, Label, Node, ScrollView, SpineSkeleton, Sprite, TiledMap, UILayout } from '@safe-engine/sdl'
 import { DragonBones } from '@safe-engine/sdl/lib/dragonbones'
 import { getLastRootFolder } from 'data/AppData'
+import { toFileUrl } from 'helper/fileUrl'
 import { ProjectData } from 'data/GloablState'
 import {
   getNodePosition,
@@ -23,7 +24,7 @@ function projectAssetUrl(path: string) {
   if (/^[a-z][a-z0-9+.-]*:/i.test(path)) return path
   const normalized = path.replace(/\\/g, '/').replace(/^res\//, '')
   const absolutePath = normalized.startsWith('/') ? normalized : `${getLastRootFolder()}/res/${normalized}`
-  return `file://${absolutePath.split('/').map(encodeURIComponent).join('/')}`
+  return toFileUrl(absolutePath)
 }
 
 export class RectRender extends ComponentX<{ fillColor?: SdlColor; strokeColor?: SdlColor; lineWidth?: number }> {

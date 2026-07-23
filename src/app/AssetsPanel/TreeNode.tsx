@@ -1,6 +1,7 @@
 import { Box, Center, HStack } from "base/Stack";
 import clsx from "clsx";
 import { getLastRootFolder } from "data/AppData";
+import { toFileUrl } from 'helper/fileUrl';
 import pathUtils from 'path-browserify';
 import { useState } from "react";
 import { NodeRendererProps } from "react-arborist";
@@ -14,18 +15,13 @@ import { SiSpine } from 'react-icons/si';
 
 const textureExtensions = new Set(['.png', '.jpg', '.jpeg', '.webp', '.gif', '.bmp', '.svg']);
 
-function fileUrl(path: string) {
-  const normalized = path.replace(/\\/g, '/');
-  return `file://${normalized.split('/').map(encodeURIComponent).join('/')}`;
-}
-
 function imageUrl(path?: string) {
   if (!path) return '';
   if (/^[a-z][a-z0-9+.-]*:/i.test(path)) return path;
-  if (path.startsWith('/')) return fileUrl(path);
+  if (path.startsWith('/')) return toFileUrl(path);
   const rootFolder = getLastRootFolder();
   const normalized = path.replace(/\\/g, '/').replace(/^res\//, '');
-  return fileUrl(rootFolder ? `${rootFolder}/res/${normalized}` : normalized);
+  return toFileUrl(rootFolder ? `${rootFolder}/res/${normalized}` : normalized);
 }
 
 function spriteSheetTexturePath(data: any) {

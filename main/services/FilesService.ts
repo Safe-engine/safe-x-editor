@@ -2,6 +2,7 @@ import { filterTree, getTreeData } from '@@/utils/Helper';
 import DirectoryTree from 'directory-tree';
 import { existsSync, readdirSync, readFileSync, rmSync } from 'fs';
 import { join } from 'path/posix';
+import { pathToFileURL } from 'url';
 import { Uri, WebviewView, workspace } from 'vscode';
 import { getResolutionSettings } from '../helper/settings';
 import { loadSpineFile } from '../helper/spine';
@@ -14,7 +15,7 @@ const panel: WebviewView = {
   webview: {
     asWebviewUri: (uri: Uri) => {
       // console.log('asWebviewUri', uri);
-      return 'file://' + uri.fsPath
+      return pathToFileURL(uri.fsPath).href
     }, // Giả lập phương thức để trả về đường dẫn file
   }
 };

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { FiEdit2 } from 'react-icons/fi';
 import Modal from 'base/Modal';
 import { parseStringFromValue } from 'helper/node';
+import { toFileUrl } from 'helper/fileUrl';
 
 type Insets = { left: number; top: number; right: number; bottom: number };
 type CapInsets = [number, number, number, number];
@@ -38,7 +39,7 @@ function texturePreviewUrl(texture, rootFolder) {
   if (/^[a-z][a-z0-9+.-]*:/i.test(path)) return path;
   const normalized = String(path).replace(/\\/g, '/').replace(/^res\//, '');
   const fullPath = normalized.startsWith('/') ? normalized : `${rootFolder}/res/${normalized}`;
-  return `file://${fullPath.split('/').map(encodeURIComponent).join('/')}`;
+  return toFileUrl(fullPath);
 }
 
 function CapInsetsDialog({ isOpen, onClose, value, texture, rootFolder, onSave }) {

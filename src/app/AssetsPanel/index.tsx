@@ -4,6 +4,7 @@ import Input from 'base/Input'
 import clsx from 'clsx'
 import { getLastLoadedFile, getLastRootFolder, setLastLoadedFile } from 'data/AppData'
 import { ipcMain } from 'helper/electronRemote'
+import { toFileUrl } from 'helper/fileUrl'
 import pathUtils from 'path-browserify'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Tree, TreeApi } from 'react-arborist'
@@ -24,17 +25,12 @@ const FILTER_HEIGHT = 40;
 const ASSET_PREVIEW_HEIGHT = 320;
 type CreateAssetDialogType = 'image' | 'audio' | 'animation' | null;
 
-function fileUrl(path: string) {
-  const normalized = path.replace(/\\/g, '/');
-  return `file://${normalized.split('/').map(encodeURIComponent).join('/')}`;
-}
-
 function resourceFileUrl(path = '', rootFolder = getLastRootFolder()) {
   if (!path) return '';
   if (/^[a-z][a-z0-9+.-]*:/i.test(path)) return path;
-  if (path.startsWith('/')) return fileUrl(path);
+  if (path.startsWith('/')) return toFileUrl(path);
   const normalized = path.replace(/\\/g, '/').replace(/^res\//, '');
-  return fileUrl(rootFolder ? `${rootFolder}/res/${normalized}` : normalized);
+  return toFileUrl(rootFolder ? `${rootFolder}/res/${normalized}` : normalized);
 }
 
 function spriteSheetTexturePath(data: any) {
