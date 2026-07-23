@@ -9,17 +9,17 @@ type ImageJob = {
 };
 
 const imageJobs = new Map<string, ImageJob>();
-const imageExtensions = new Set(['.png', '.jpg', '.jpeg', '.webp']);
+const imageExtensions = new Set(['.png', '.jpg', '.jpeg', '.webp', '.svg']);
 
 function fileUrl(path: string) {
   return `file://${path.replace(/\\/g, '/').split('/').map(encodeURIComponent).join('/')}`;
 }
 
 function runAgy(prompt: string, cwd: string) {
-  return new Promise<void>((resolve, reject) => {
-    execFile('agy', ['-p', prompt], { cwd, timeout: 10 * 60 * 1000, maxBuffer: 1024 * 1024 }, (error) => {
+  return new Promise<string>((resolve, reject) => {
+    execFile('agy', ['-p', prompt], { cwd, timeout: 10 * 60 * 1000, maxBuffer: 1024 * 1024 }, (error, stdout) => {
       if (error) reject(error);
-      else resolve();
+      else resolve(stdout);
     });
   });
 }
@@ -41,6 +41,22 @@ function targetImagePath(rootFolder: string, targetPath: string) {
   return candidate;
 }
 
+function targetImageDestinationPath(currentImage: string) {
+  return join(dirname(currentImage), `${basename(currentImage, extname(currentImage))}_new.svg`);
+}
+
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function updateTextureAssetPath(rootFolder: string, key: string, path: string) {
+  const assetFile = join(rootFolder, 'src', 'assets', 'TextureAssets.ts');
+  const existing = existsSync(assetFile) ? readFileSync(assetFile, 'utf-8') : '';
+  const declaration = new RegExp(`^export\\s+const\\s+${escapeRegExp(key)}\\s*=.*;$`, 'm');
+  if (!declaration.test(existing)) throw Error(`Could not update texture asset "${key}".`);
+  writeFileSync(assetFile, existing.replace(declaration, `export const ${key} = ${JSON.stringify(path)};`), 'utf-8');
+}
+
 export async function generateSpriteImages({ rootFolder, prompt }: { rootFolder: string; prompt: string }) {
   if (!rootFolder) throw Error('No project is loaded.');
   if (!prompt?.trim()) throw Error('Enter an image prompt.');
@@ -48,16 +64,19 @@ export async function generateSpriteImages({ rootFolder, prompt }: { rootFolder:
   const id = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   const directory = join(tmpdir(), 'safe-x-editor', 'ai-images', id);
   mkdirSync(directory, { recursive: true });
-  const outputFiles = [1, 2, 3, 4].map((index) => join(directory, `variant-${index}.png`));
   const instruction = [
-    'Generate exactly four distinct image variants for this request using the image-generation tool.',
+    'SYSTEM: You are a board-game SVG asset generator. Your only job is generating assets.',
+    'Return exactly four complete, self-contained <svg>...</svg> strings and nothing else: no Markdown, labels, explanations, tool calls, or file operations.',
+    'Fixed visual style: square 512×512 board-game token/icon, flat vector shapes, thick rounded dark-navy outlines (#24324A), warm cream background (#FFF3D6), saturated teal/coral/gold accents, simple readable silhouette, subtle shadow, no text, no gradients, no external resources, scripts, or raster images.',
+    'Each SVG must use viewBox="0 0 512 512" and be a distinct variation while following the same style.',
     `User prompt: ${prompt.trim()}`,
-    `Save the four final PNG files exactly at: ${outputFiles.join(', ')}.`,
-    'Do not edit any project files and do not return until all four files have been written.',
   ].join('\n');
 
   try {
-    await runAgy(instruction, rootFolder);
+    const response = await runAgy(instruction, rootFolder);
+    const svgs = response.match(/<svg\b[\s\S]*?<\/svg>/gi) || [];
+    if (svgs.length !== 4) throw Error(`agy did not return four SVG images (received ${svgs.length}).`);
+    svgs.forEach((svg, index) => writeFileSync(join(directory, `variant-${index + 1}.svg`), svg, 'utf-8'));
   } catch (error: any) {
     rmSync(directory, { recursive: true, force: true });
     if (error?.code === 'ENOENT') throw Error('The agy CLI was not found. Install and sign in to agy before generating images.');
@@ -73,12 +92,18 @@ export async function generateSpriteImages({ rootFolder, prompt }: { rootFolder:
   return { success: true, jobId: id, images: files.map((file) => ({ name: basename(file), url: fileUrl(file) })) };
 }
 
-export async function replaceSpriteImage({ rootFolder, targetPath, jobId, imageIndex }: { rootFolder: string; targetPath: string; jobId: string; imageIndex: number }) {
+export async function replaceSpriteImage({ rootFolder, targetPath, targetKey, jobId, imageIndex }: { rootFolder: string; targetPath: string; targetKey: string; jobId: string; imageIndex: number }) {
   const job = imageJobs.get(jobId);
   const source = job?.files[imageIndex];
   if (!source || !existsSync(source)) throw Error('This generated image is no longer available. Generate again.');
 
-  const destination = targetImagePath(rootFolder, targetPath);
+  const currentImage = targetImagePath(rootFolder, targetPath);
+  const destination = extname(currentImage).toLowerCase() === '.svg'
+    ? currentImage
+    : join(dirname(currentImage), `${basename(currentImage, extname(currentImage))}_ai.svg`);
+  if (destination !== currentImage) {
+    updateTextureAssetPath(rootFolder, targetKey, relative(resolve(rootFolder, 'res'), destination).replace(/\\/g, '/'));
+  }
   await new Promise<void>((resolve, reject) => copyFile(source, destination, (error) => error ? reject(error) : resolve()));
   imageJobs.delete(jobId);
   rmSync(job.directory, { recursive: true, force: true });
@@ -91,17 +116,18 @@ export async function createSpriteImageAsset({ rootFolder, targetPath, targetKey
   if (!source || !existsSync(source)) throw Error('This generated image is no longer available. Generate again.');
 
   const currentImage = targetImagePath(rootFolder, targetPath);
-  const suffix = `ai_${Date.now()}`;
-  const name = `${basename(currentImage, extname(currentImage))}_${suffix}.png`;
-  const destination = join(dirname(currentImage), name);
+  const destination = targetImageDestinationPath(currentImage);
   const relativePath = relative(resolve(rootFolder, 'res'), destination).replace(/\\/g, '/');
-  const key = `${String(targetKey || 'sprite').replace(/[^a-zA-Z0-9_$]/g, '_')}_${suffix}`;
+  const key = `${String(targetKey || 'sprite').replace(/[^a-zA-Z0-9_$]/g, '_')}_new`;
   const assetFile = join(rootFolder, 'src', 'assets', 'TextureAssets.ts');
   const existing = existsSync(assetFile) ? readFileSync(assetFile, 'utf-8') : '';
 
-  if (new RegExp(`(?:export\\s+)?const\\s+${key}\\b`).test(existing)) throw Error(`Asset "${key}" already exists.`);
   await new Promise<void>((resolve, reject) => copyFile(source, destination, (error) => error ? reject(error) : resolve()));
-  writeFileSync(assetFile, `${existing}${existing && !existing.endsWith('\n') ? '\n' : ''}export const ${key} = ${JSON.stringify(relativePath)};\n`, 'utf-8');
+  if (new RegExp(`(?:export\\s+)?const\\s+${key}\\b`).test(existing)) {
+    updateTextureAssetPath(rootFolder, key, relativePath);
+  } else {
+    writeFileSync(assetFile, `${existing}${existing && !existing.endsWith('\n') ? '\n' : ''}export const ${key} = ${JSON.stringify(relativePath)};\n`, 'utf-8');
+  }
   imageJobs.delete(jobId);
   rmSync(job.directory, { recursive: true, force: true });
   return { success: true, key };

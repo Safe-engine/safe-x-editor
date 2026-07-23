@@ -40,7 +40,7 @@ export default function SpriteFrameAiDialog({ isOpen, onClose, rootFolder, targe
     if (!jobId || isReplacing) return;
     setIsReplacing(true);
     const response: any = await sendRequest(mode === 'replace'
-      ? { key: REPLACE_SPRITE_IMAGE_REQUEST, rootFolder, targetPath, jobId, imageIndex: index }
+      ? { key: REPLACE_SPRITE_IMAGE_REQUEST, rootFolder, targetPath, targetKey, jobId, imageIndex: index }
       : { key: CREATE_SPRITE_IMAGE_ASSET_REQUEST, rootFolder, targetPath, targetKey, jobId, imageIndex: index });
     setIsReplacing(false);
     if (!response?.success) {
