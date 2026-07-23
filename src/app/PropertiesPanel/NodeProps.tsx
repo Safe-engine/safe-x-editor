@@ -4,10 +4,10 @@ import { ContextMenu } from 'components/ContextMenu';
 import { parseFloatFromValue, parseOutline, parseStringFromValue } from 'helper/node';
 import { memo, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { FiBox, FiCircle, FiEdit2, FiGrid, FiLink, FiPlus, FiRotateCcw, FiShare2, FiTrash2, FiTriangle } from 'react-icons/fi';
+import { FiBox, FiCircle, FiEdit2, FiGrid, FiLink, FiLogIn, FiPlus, FiRotateCcw, FiShare2, FiTrash2, FiTriangle } from 'react-icons/fi';
 import { GET_COLLIDER_SETTINGS_REQUEST, SAVE_COLLIDER_SETTINGS_REQUEST, UPDATE_PROJECT_COLORS_REQUEST } from 'shared/constant.message';
 import { useActions, useSelector } from 'states/app.context';
-import { selectAssets, selectColors, selectDesignResolution, selectRootFolder, selectSelectedNode } from 'states/app.selectors';
+import { selectAssets, selectColors, selectDesignResolution, selectFilesData, selectRootFolder, selectSelectedNode } from 'states/app.selectors';
 import CapInsetsField from './CapInsetsField';
 import { ColliderSettingsDialog } from './ColliderSettingsDialog';
 import ColorEditorDialog from './ColorEditorDialog';
@@ -65,6 +65,36 @@ function getTextureSize(spriteFrame, assets) {
     width: texture?.size?.width ?? 0,
     height: texture?.size?.height ?? 0,
   };
+}
+
+function findComponentPath(files, tag) {
+  for (const file of files || []) {
+    if (file.isDirectory) {
+      const path = findComponentPath(file.children, tag);
+      if (path) return path;
+    } else if (file.name.replace(/\.tsx$/, '') === tag) {
+      return file.path;
+    }
+  }
+}
+
+function LoadComponentButton({ tag, path, onLoad }) {
+  if (!path) return null;
+
+  return (
+    <button
+      className='ml-1 flex h-5 w-5 items-center justify-center rounded-sm text-[#bdbdbd] hover:bg-[#3569a8] hover:text-white'
+      type='button'
+      onClick={(event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        onLoad(path);
+      }}
+      title={`Open ${tag}`}
+    >
+      <FiLogIn size={13} />
+    </button>
+  );
 }
 
 const COMPONENT_OPTIONS = [
@@ -429,13 +459,16 @@ function ShadowField({ value, colors, onChange }) {
   );
 }
 
-function InspectorSection({ title, headerContent, children }) {
+function InspectorSection({ title, headerContent, headerAction, children }) {
   return (
     <details className='border-b border-[#141414]' open>
       <summary className='flex h-8 cursor-default select-none items-center bg-[#202020] px-2 text-[11px] font-bold text-[#dcdcdc] marker:text-[#a8c7ff]'>
         <span className='ml-1'>{title.replace(/([a-z])([A-Z])/g, '$1 $2')}</span>
         {headerContent}
-        <span className='ml-auto text-lg leading-none text-[#bdbdbd]'>⋮</span>
+        <span className='ml-auto flex items-center'>
+          <span className='text-lg leading-none text-[#bdbdbd]'>⋮</span>
+          {headerAction}
+        </span>
       </summary>
       <div className='bg-[#252525] py-1'>{children}</div>
     </details>
@@ -458,10 +491,11 @@ function PropGroup({ title, children }) {
 }
 
 function NodeProps() {
-  const { getFiles, updateMultiNodes } = useActions();
+  const { getFiles, loadComponent, updateMultiNodes } = useActions();
   const assets = useSelector(selectAssets);
   const colors = useSelector(selectColors);
   const designResolution = useSelector(selectDesignResolution);
+  const filesData = useSelector(selectFilesData);
   const rootFolder = useSelector(selectRootFolder);
   const selectedNode = useSelector(selectSelectedNode);
   const [isColorEditorOpen, setIsColorEditorOpen] = useState(false);
@@ -600,6 +634,7 @@ function NodeProps() {
   const position = getNodePosition(node);
   const textureSize = getTextureSize(props.spriteFrame, assets);
   const components = selectedNode.components || [];
+  const selectedComponentPath = findComponentPath(filesData, selectedNode.tag);
   const availableComponentOptions = COMPONENT_OPTIONS.filter((option) => (
     !components.some((component) => component.tag === option.tag)
     && (!option.requiresSpineSkeleton || selectedNode.tag === 'SpineSkeleton')
@@ -662,6 +697,9 @@ function NodeProps() {
   return (<div className='h-screen overflow-y-auto bg-[#252525] pb-4'>
     <InspectorSection
       title='Node'
+      headerAction={propEntries.length === 0 && selectedNode.tag !== 'Sprite' && (
+        <LoadComponentButton tag={selectedNode.tag} path={selectedComponentPath} onLoad={loadComponent} />
+      )}
       headerContent={<input
         className='ml-2 h-3.5 w-3.5 accent-[#6aa7ff]'
         type='checkbox'
@@ -733,7 +771,10 @@ function NodeProps() {
         ))}
     </InspectorSection>
     {(propEntries.length > 0 || selectedNode.tag === 'Sprite') && (
-      <InspectorSection title={selectedNode.tag}>
+      <InspectorSection
+        title={selectedNode.tag}
+        headerAction={<LoadComponentButton tag={selectedNode.tag} path={selectedComponentPath} onLoad={loadComponent} />}
+      >
         {propEntries.filter(([key]) => key !== 'capInsets' && key !== 'tiled').map(([key, value]) => (
           isObject(value) ? (
             <PropGroup key={key} title={key}>
@@ -822,6 +863,7 @@ function NodeProps() {
       <InspectorSection
         key={`${component.tag}-${index}`}
         title={component.tag || `Component ${index + 1}`}
+        headerAction={<LoadComponentButton tag={component.tag} path={findComponentPath(filesData, component.tag)} onLoad={loadComponent} />}
         headerContent={
           component.tag === 'Widget' ? (
             <label
