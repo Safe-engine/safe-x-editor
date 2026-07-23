@@ -1,7 +1,7 @@
 import {
   ADD_NEW_STATE, CHANGE_FUNCTION,
   CHANGE_LANGUAGE, CHECK_FILE_EXIST,
-  CREATE_ACTION, CREATE_ASSET_REQUEST, CREATE_I18N, CREATE_NEW_ACTION, CREATE_PROJECT_REQUEST,
+  CREATE_ACTION, CREATE_ASSET_REQUEST, CREATE_I18N, CREATE_NEW_ACTION, CREATE_PROJECT_REQUEST, CREATE_SPRITE_IMAGE_ASSET_REQUEST, GENERATE_SPRITE_IMAGES_REQUEST, REPLACE_SPRITE_IMAGE_REQUEST,
   DELETE_COMPONENT, DUPLICATE_COMPONENT,
   SYNC_RES_REQUEST, GEN_COMPONENT_REQUEST, GEN_PROP_TYPES_REQUEST, GET_FOLDER_FILES,
   GET_COLLIDER_SETTINGS_REQUEST, LOAD_COMPONENT_REQUEST, NEW_COMPONENT,
@@ -16,6 +16,9 @@ export type IpcRequest =
   | { key: typeof CREATE_I18N }
   | { key: typeof CREATE_PROJECT_REQUEST, rootFolder: string, projectName: string }
   | { key: typeof CREATE_ASSET_REQUEST, rootFolder: string, assetType: string, data: any }
+  | { key: typeof GENERATE_SPRITE_IMAGES_REQUEST, rootFolder: string, prompt: string }
+  | { key: typeof REPLACE_SPRITE_IMAGE_REQUEST, rootFolder: string, targetPath: string, jobId: string, imageIndex: number }
+  | { key: typeof CREATE_SPRITE_IMAGE_ASSET_REQUEST, rootFolder: string, targetPath: string, targetKey: string, jobId: string, imageIndex: number }
   | { key: typeof UPDATE_PROJECT_COLORS_REQUEST, rootFolder: string, colors: any[] }
   | { key: typeof GET_COLLIDER_SETTINGS_REQUEST }
   | { key: typeof SAVE_COLLIDER_SETTINGS_REQUEST, groupsList: string[], colliderMatrix: any[] }
@@ -45,6 +48,9 @@ export type IpcResponse =
   | { key: typeof CREATE_I18N }
   | { key: typeof CREATE_PROJECT_REQUEST }
   | { key: typeof CREATE_ASSET_REQUEST }
+  | { key: typeof GENERATE_SPRITE_IMAGES_REQUEST }
+  | { key: typeof REPLACE_SPRITE_IMAGE_REQUEST }
+  | { key: typeof CREATE_SPRITE_IMAGE_ASSET_REQUEST }
   | { key: typeof UPDATE_PROJECT_COLORS_REQUEST }
   | { key: typeof GET_COLLIDER_SETTINGS_REQUEST }
   | { key: typeof SAVE_COLLIDER_SETTINGS_REQUEST }

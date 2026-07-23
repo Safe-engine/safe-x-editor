@@ -1,7 +1,8 @@
 import { Listbox } from '@headlessui/react';
-import { FiCheck, FiChevronDown } from 'react-icons/fi';
+import { FiCheck, FiChevronDown, FiEdit3 } from 'react-icons/fi';
 import { useState } from 'react';
 import { parseStringFromValue } from 'helper/node';
+import SpriteFrameAiDialog from './SpriteFrameAiDialog';
 
 function texturePreviewUrl(texture, rootFolder) {
   const path = texture.value || texture.path;
@@ -16,17 +17,19 @@ function textureLabel(texture) {
   return texture.key.replace(/^sf_/, '');
 }
 
-export default function SpriteFrameField({ value, textures, rootFolder, onChange }) {
+export default function SpriteFrameField({ value, textures, rootFolder, onChange, onImageReplaced }) {
   const selectedKey = parseStringFromValue(value) ?? '';
   const selectedTexture = textures.find((texture) => texture.key === selectedKey);
   const [filter, setFilter] = useState('');
+  const [isAiDialogOpen, setIsAiDialogOpen] = useState(false);
   const filteredTextures = textures.filter((texture) => textureLabel(texture).toLowerCase().includes(filter.toLowerCase()));
 
   return (
     <label className='grid min-h-7 grid-cols-[70px_minmax(0,1fr)] items-center gap-2 px-2 py-0.5'>
       <div className='truncate text-[11px] text-[#c8c8c8]'>spriteFrame</div>
-      <Listbox value={selectedKey} onChange={(key) => onChange(key || undefined)}>
-        <div className='relative min-w-0'>
+      <div className='flex min-w-0 gap-1'>
+        <Listbox value={selectedKey} onChange={(key) => onChange(key || undefined)}>
+          <div className='relative min-w-0 flex-1'>
           <Listbox.Button className='flex h-7 w-full items-center gap-2 rounded-sm border border-[#111] bg-[#151515] px-2 text-left text-[12px] text-[#e2e2e2] outline-none focus:border-[#4a90e2]'>
             {selectedTexture && <img className='h-4 w-4 rounded-sm object-cover' src={texturePreviewUrl(selectedTexture, rootFolder)} alt='' />}
             <span className='min-w-0 flex-1 truncate'>{selectedTexture ? textureLabel(selectedTexture) : 'None'}</span>
@@ -64,8 +67,29 @@ export default function SpriteFrameField({ value, textures, rootFolder, onChange
               </Listbox.Option>
             ))}
           </Listbox.Options>
-        </div>
-      </Listbox>
+          </div>
+        </Listbox>
+        <button
+          className='flex h-7 w-7 shrink-0 items-center justify-center rounded-sm border border-[#111] bg-[#2a2a2a] text-[#bdbdbd] hover:bg-[#343434] hover:text-white disabled:cursor-not-allowed disabled:opacity-40'
+          type='button'
+          disabled={!selectedTexture}
+          onClick={() => setIsAiDialogOpen(true)}
+          title={selectedTexture ? 'Edit image with AI' : 'Choose a sprite frame first'}
+        >
+          <FiEdit3 size={14} />
+        </button>
+      </div>
+      {selectedTexture && (
+        <SpriteFrameAiDialog
+          isOpen={isAiDialogOpen}
+          onClose={() => setIsAiDialogOpen(false)}
+          rootFolder={rootFolder}
+          targetPath={selectedTexture.value || selectedTexture.path}
+          targetKey={selectedTexture.key}
+          targetLabel={textureLabel(selectedTexture)}
+          onReplaced={onImageReplaced}
+        />
+      )}
     </label>
   );
 }

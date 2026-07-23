@@ -1,5 +1,5 @@
 import { IpcRequest } from 'shared/types.message';
-import { ADD_OPEN_WITH_APP_REQUEST, CREATE_ASSET_REQUEST, CREATE_PROJECT_REQUEST, GET_COLLIDER_SETTINGS_REQUEST, GET_FOLDER_FILES, LOAD_COMPONENT_REQUEST, SAVE_COLLIDER_SETTINGS_REQUEST, UPDATE_PROJECT_COLORS_REQUEST } from 'shared/constant.message';
+import { ADD_OPEN_WITH_APP_REQUEST, CREATE_ASSET_REQUEST, CREATE_PROJECT_REQUEST, CREATE_SPRITE_IMAGE_ASSET_REQUEST, GENERATE_SPRITE_IMAGES_REQUEST, GET_COLLIDER_SETTINGS_REQUEST, GET_FOLDER_FILES, LOAD_COMPONENT_REQUEST, REPLACE_SPRITE_IMAGE_REQUEST, SAVE_COLLIDER_SETTINGS_REQUEST, UPDATE_PROJECT_COLORS_REQUEST } from 'shared/constant.message';
 
 const getIpcRenderer = () => {
   const electronRequire = (globalThis as any).require
@@ -24,6 +24,9 @@ const getBrowserFallback = (key: string) => {
   }
   if (key === CREATE_ASSET_REQUEST) {
     return { success: true }
+  }
+  if (key === GENERATE_SPRITE_IMAGES_REQUEST || key === REPLACE_SPRITE_IMAGE_REQUEST || key === CREATE_SPRITE_IMAGE_ASSET_REQUEST) {
+    return { success: false, message: 'AI image generation is only available in the desktop app.' }
   }
   if (key === CREATE_PROJECT_REQUEST) {
     return { success: true }

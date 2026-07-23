@@ -795,6 +795,10 @@ function NodeProps() {
                 textures={assets?.assetsTextureList || []}
                 rootFolder={rootFolder}
                 onChange={(nextValue) => updateProps({ [key]: nextValue })}
+                onImageReplaced={(nextSpriteFrame) => {
+                  if (nextSpriteFrame) updateProps({ [key]: nextSpriteFrame });
+                  getFiles(rootFolder);
+                }}
               />
             ) : key === 'outline' ? (
               <OutlineField
@@ -944,6 +948,10 @@ function NodeProps() {
               textures={assets?.assetsTextureList || []}
               rootFolder={rootFolder}
               onChange={(nextValue) => updateComponentProps(index, { [key]: nextValue })}
+              onImageReplaced={(nextSpriteFrame) => {
+                if (nextSpriteFrame) updateComponentProps(index, { [key]: nextSpriteFrame });
+                getFiles(rootFolder);
+              }}
             />
           ) : (
             <Field
