@@ -33,6 +33,8 @@ export const KEY = {
   r: 'KeyR',
   a: 'KeyA',
   z: 'KeyZ',
+  backspace: 'Backspace',
+  delete: 'Delete',
   up: 'ArrowUp',
   down: 'ArrowDown',
   left: 'ArrowLeft',

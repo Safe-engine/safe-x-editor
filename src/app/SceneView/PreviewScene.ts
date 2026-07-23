@@ -109,6 +109,8 @@ export class PreviewScene extends Scene {
     window.addEventListener('keydown', async (event) => {
       const keyCode = event.code
       this.updateInputModifiers(event)
+      const target = event.target as HTMLElement | null
+      if (target?.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target?.tagName)) return
       // if (
       //   [KEY.dash, KEY.equal, KEY.x, KEY.y, KEY.h, KEY.c, KEY.s, KEY.r, KEY.a, KEY.z, KEY.up, KEY.down, KEY.left, KEY.right].includes(
       //     keyCode,
@@ -137,6 +139,11 @@ export class PreviewScene extends Scene {
         } else if (keyCode === KEY.y) {
           await this.redoEdit()
         }
+        return
+      }
+      if (keyCode === KEY.backspace || keyCode === KEY.delete) {
+        event.preventDefault()
+        await this.deleteSelectedNodes()
         return
       }
       if (event.shiftKey) {
@@ -707,6 +714,7 @@ export class PreviewScene extends Scene {
     this.syncEditingFlag()
     this.updateBoxColliderEditor()
     this.updateArrowPosition()
+    window.postMessage({ type: 'previewRestoreComponentTree', treeData: this.editingComponent, selectPaths: this.editingPaths }, '*')
   }
 
   getEditingNodeByPath(editingPath = '') {
@@ -887,6 +895,25 @@ export class PreviewScene extends Scene {
     if (!historyEntry) return
     this.undoStack.push(this.createHistoryEntry())
     await this.restoreHistoryEntry(historyEntry)
+  }
+
+  async deleteSelectedNodes() {
+    const selectedNodes = new Set(this.editingPaths
+      .map((editingPath) => this.getEditingNodeByPath(editingPath))
+      .filter((node) => node && node.tag !== 'SceneComponent'))
+    if (!selectedNodes.size) return
+
+    this.pushUndoHistory()
+    const removeSelectedNodes = (nodes: any[]): any[] => nodes
+      .filter((node) => !selectedNodes.has(node))
+      .map((node) => {
+        if (node.children?.length) node.children = removeSelectedNodes(node.children)
+        return node
+      })
+    this.editingComponent = removeSelectedNodes(this.editingComponent)
+    window.postMessage({ type: 'previewRestoreComponentTree', treeData: this.editingComponent, selectPaths: [] }, '*')
+    this.changeSelectPath([])
+    await this.reloadEditingComponent()
   }
 
   getChildrenIndex(editingPath = '') {

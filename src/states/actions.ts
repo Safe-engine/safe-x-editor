@@ -73,6 +73,12 @@ export function getAction(draft: AppState) {
       const tree = new Tree(draft.componentTree, 'id', 'children')
       draft.selectedNodes = paths.map((path) => getNearestTreeNode(tree, path))
     },
+    replaceComponentTree(treeData: any[], paths: string[]) {
+      draft.componentTree = treeData
+      draft.selectedPaths = paths
+      const tree = new Tree(draft.componentTree, 'id', 'children')
+      draft.selectedNodes = paths.map((path) => getNearestTreeNode(tree, path))
+    },
     updateMultiNodes(params: Array<{ component?: string; updated?: any }>) {
       const tree = new Tree(draft.componentTree, 'id', 'children')
       params.forEach((param, index) => {

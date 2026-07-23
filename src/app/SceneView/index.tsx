@@ -5,7 +5,7 @@ import { selectSelectedFilePath, selectSelectedPaths } from 'states/app.selector
 import { PreviewScene } from './PreviewScene'
 
 export default function SceneView() {
-  const { selectEditMultiNodes, updateMultiNodes } = useActions()
+  const { replaceComponentTree, selectEditMultiNodes, updateMultiNodes } = useActions()
   const selectedFilePath = useSelector(selectSelectedFilePath)
   const selectedPaths = useSelector(selectSelectedPaths)
   const didStartEngine = useRef(false)
@@ -22,6 +22,8 @@ export default function SceneView() {
       const message = event.data
       if (message.type === 'previewSelectPaths') {
         selectEditMultiNodes(message.selectPaths)
+      } else if (message.type === 'previewRestoreComponentTree') {
+        replaceComponentTree(message.treeData, message.selectPaths)
       } else if (message.type === 'previewUpdateSelectedNodes') {
         selectEditMultiNodes(message.selectPaths)
         updateMultiNodes(message.nodes)
@@ -29,7 +31,7 @@ export default function SceneView() {
     }
     window.addEventListener('message', listener)
     return () => window.removeEventListener('message', listener)
-  }, [selectEditMultiNodes, updateMultiNodes])
+  }, [replaceComponentTree, selectEditMultiNodes, updateMultiNodes])
 
   useEffect(() => {
     if (!selectedFilePath) return
