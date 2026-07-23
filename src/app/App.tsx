@@ -3,7 +3,7 @@ import { useEffect, useMemo } from 'react'
 import { Toaster } from 'react-hot-toast'
 
 import { useSelector } from 'states/app.context'
-import { selectDesignResolution } from 'states/app.selectors'
+import { selectDesignResolution, selectRootFolder, selectSelectedEditingPath } from 'states/app.selectors'
 import AssetsPanel from './AssetsPanel'
 import NodeTree from './NodeTree'
 import NewProjectDialog from './NewProjectDialog'
@@ -14,9 +14,12 @@ import './globals.css'
 
 export function App() {
   const designResolution = useSelector(selectDesignResolution);
+  const rootFolder = useSelector(selectRootFolder);
+  const componentName = useSelector(selectSelectedEditingPath);
   useEffect(() => {
-    // currentMonitor().then(setMonitor)
-  }, [])
+    const projectName = rootFolder.split(/[\\/]/).filter(Boolean).pop()
+    document.title = [projectName, componentName].filter(Boolean).join(' - ') || 'Safe Engine X Editor'
+  }, [rootFolder, componentName])
 
   // if (!designResolution) return
   // const { width, height } = designResolution

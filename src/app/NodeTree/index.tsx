@@ -3,16 +3,16 @@ import { ipcMain } from 'helper/electronRemote';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Tree, TreeApi } from 'react-arborist';
 import toast from 'react-hot-toast';
+import { FiRefreshCw } from 'react-icons/fi';
 import { GEN_COMPONENT_REQUEST } from 'shared/constant.message';
 import { useActions, useSelector } from 'states/app.context';
-import { selectComponentTree, selectRootFolder, selectSelectedFilePath, selectSelectedPaths } from 'states/app.selectors';
+import { selectComponentTree, selectSelectedFilePath, selectSelectedPaths } from 'states/app.selectors';
 import { TreeItem } from './TreeItem';
 
 export default function NodeTree() {
-  const { selectEditingTagNode, selectEditMultiNodes } = useActions();
+  const { loadComponent, selectEditingTagNode, selectEditMultiNodes } = useActions();
   const treeData = useSelector(selectComponentTree);
   const filePath = useSelector(selectSelectedFilePath);
-  const rootPath = useSelector(selectRootFolder);
   const selectedPaths = useSelector(selectSelectedPaths);
   const treeRef = useRef<TreeApi<any> | undefined>(undefined);
   const treeContainerRef = useRef<HTMLDivElement>(null);
@@ -132,9 +132,16 @@ export default function NodeTree() {
         <div className='min-w-0 text-[11px] font-bold uppercase tracking-wide text-[#dcdcdc]'>
           Hierarchy
         </div>
-        <div className='ml-2 min-w-0 flex-1 truncate text-right text-[10px] text-[#8f8f8f]' title={filePath}>
-          {filePath.replace(rootPath, '')}&nbsp;
-        </div>
+        <button
+          type='button'
+          className='ml-auto flex h-6 w-6 items-center justify-center rounded-sm text-[#aeb8c5] hover:bg-[#303846] hover:text-white disabled:cursor-not-allowed disabled:opacity-40'
+          onClick={() => loadComponent(filePath)}
+          disabled={!filePath}
+          aria-label='Reload component'
+          title='Reload component'
+        >
+          <FiRefreshCw size={14} />
+        </button>
       </div>
       <div ref={treeContainerRef} className='min-h-0 flex-1'>
         <Tree
