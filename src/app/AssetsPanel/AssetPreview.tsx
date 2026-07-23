@@ -668,6 +668,7 @@ function AssetPreview() {
   const [imageScale, setImageScale] = useState(1)
   const [imageOffset, setImageOffset] = useState({ x: 0, y: 0 })
   const [imageZoomPercent, setImageZoomPercent] = useState(100)
+  const [imageNaturalSize, setImageNaturalSize] = useState({ width: 0, height: 0 })
   const imageDraggingRef = useRef(false)
   const imageDragMovedRef = useRef(false)
   const imageDragStartRef = useRef({ x: 0, y: 0 })
@@ -675,6 +676,9 @@ function AssetPreview() {
   const imageOffsetRef = useRef({ x: 0, y: 0 })
 
   imageOffsetRef.current = imageOffset
+
+  const imageWidth = type === 'frame' ? frameWidth : width || imageNaturalSize.width
+  const imageHeight = type === 'frame' ? frameHeight : height || imageNaturalSize.height
 
   useEffect(() => {
     if (!canvasRef.current) return
@@ -745,8 +749,8 @@ function AssetPreview() {
 
   useEffect(() => {
     if (!isImagePreviewType) return
-    const contentWidth = type === 'frame' ? frameWidth : width
-    const contentHeight = type === 'frame' ? frameHeight : height
+    const contentWidth = imageWidth
+    const contentHeight = imageHeight
     if (!contentWidth || !contentHeight) {
       setImageScale(1)
       setImageOffset({ x: 0, y: 0 })
@@ -762,7 +766,11 @@ function AssetPreview() {
       y: (PREVIEW_SIZE - contentHeight * fitScale) * 0.5,
     })
     setImageZoomPercent(round(fitScale * 100, 1))
-  }, [frameHeight, frameWidth, height, isImagePreviewType, key, type, width])
+  }, [imageHeight, imageWidth, isImagePreviewType, key])
+
+  useEffect(() => {
+    setImageNaturalSize({ width: 0, height: 0 })
+  }, [key, value])
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -961,7 +969,7 @@ function AssetPreview() {
             style={{ width: `${PREVIEW_SIZE}px`, height: `${PREVIEW_SIZE}px` }}
           >
             <div className="pointer-events-none absolute z-10 rounded bg-slate-950/70 px-2 py-1 text-xs text-sky-100">
-              {type === 'frame' ? `${frameWidth}x${frameHeight}` : `${width}x${height}`}
+              {type === 'frame' ? `${frameWidth}x${frameHeight}` : `${imageWidth}x${imageHeight}`}
             </div>
             <div className="pointer-events-none absolute right-0 z-10 rounded bg-slate-950/70 px-2 py-1 text-xs text-sky-100">
               {imageZoomPercent}%
@@ -976,7 +984,17 @@ function AssetPreview() {
               {type === 'frame' ? (
                 <Sprite src={texture} rect={frameInfo} naturalSize={parseSizeString(data.json?.meta?.size || data.json?.metadata?.size)} rotated={frameRotated} />
               ) : (
-                <img src={value} alt="preview" className="block max-h-[300px] max-w-[300px]" draggable={false} style={{ width, height }} />
+                <img
+                  src={value}
+                  alt="preview"
+                  className="block max-h-[300px] max-w-[300px]"
+                  draggable={false}
+                  style={{ width: imageWidth || undefined, height: imageHeight || undefined }}
+                  onLoad={(event) => {
+                    const { naturalWidth, naturalHeight } = event.currentTarget
+                    setImageNaturalSize({ width: naturalWidth, height: naturalHeight })
+                  }}
+                />
               )}
             </div>
           </div>

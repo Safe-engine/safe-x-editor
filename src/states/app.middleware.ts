@@ -1,5 +1,5 @@
 import { sendRequest } from 'app/app.ipc'
-import { setLastRootFolder } from 'data/AppData'
+import { setLastLoadedFile, setLastRootFolder } from 'data/AppData'
 import { Dispatch } from 'react'
 import toast from 'react-hot-toast'
 import { GET_FOLDER_FILES, LOAD_COMPONENT_REQUEST } from 'shared/constant.message'
@@ -26,10 +26,11 @@ export function createMiddleware(dispatch: Dispatch<any>, appDispatch?: (action:
         return
       }
       setLastRootFolder(src)
+      const firstFile = findFirstComponentFile(data.componentsTree)
+      if (firstFile) setLastLoadedFile(firstFile)
       getFilesSuccess(data)
       window.postMessage({ type: 'reloadProjectData' }, '*')
 
-      const firstFile = findFirstComponentFile(data.componentsTree)
       if (firstFile && appDispatch) {
         appDispatch({ type: 'loadComponent', data: [firstFile] })
       }

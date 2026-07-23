@@ -49,6 +49,7 @@ export class PreviewScene extends Scene {
   loadedComponentSnapshot = ''
   pendingLoadPath = ''
   loadingPath = ''
+  projectDataLoading?: Promise<void>
   didCaptureDragHistory = false
   logicalCanvasWidth = window.innerWidth
   lastTouch?: { x: number; y: number }
@@ -312,10 +313,16 @@ export class PreviewScene extends Scene {
   }
 
   async reloadProjectData() {
-    await this.loadProjectData()
-    this.borderNode.width = GlobalState.data.designedResolution.width
-    this.borderNode.height = GlobalState.data.designedResolution.height
-    await this.reloadEditingComponent()
+    const projectDataLoading = this.loadProjectData()
+    this.projectDataLoading = projectDataLoading
+    try {
+      await projectDataLoading
+      this.borderNode.width = GlobalState.data.designedResolution.width
+      this.borderNode.height = GlobalState.data.designedResolution.height
+      if (!this.loadingPath) await this.reloadEditingComponent()
+    } finally {
+      if (this.projectDataLoading === projectDataLoading) this.projectDataLoading = undefined
+    }
   }
 
   setRootScale(offset: number) {
@@ -647,6 +654,7 @@ export class PreviewScene extends Scene {
     if (this.loadingPath === path) return
     this.loadingPath = path
     try {
+      await this.projectDataLoading
       const data: any = await sendRequest({
         key: 'LOAD_COMPONENT_REQUEST',
         path,
