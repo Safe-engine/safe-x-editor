@@ -27,7 +27,12 @@ export default function SpriteFrameAiDialog({ isOpen, onClose, rootFolder, targe
     if (!prompt.trim() || isGenerating) return;
     setIsGenerating(true);
     try {
-      const response: any = await sendRequest({ key: GENERATE_SPRITE_IMAGES_REQUEST, rootFolder, prompt: prompt.trim() });
+      const response: any = await sendRequest({
+        key: GENERATE_SPRITE_IMAGES_REQUEST,
+        rootFolder,
+        prompt: prompt.trim(),
+        targetPath: mode === 'replace' ? targetPath : undefined,
+      });
       if (!response?.success) {
         toast.error(response?.message || 'Unable to generate images');
         return;

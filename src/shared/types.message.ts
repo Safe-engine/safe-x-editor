@@ -17,7 +17,7 @@ export type IpcRequest =
   | { key: typeof CREATE_I18N }
   | { key: typeof CREATE_PROJECT_REQUEST, rootFolder: string, projectName: string }
   | { key: typeof CREATE_ASSET_REQUEST, rootFolder: string, assetType: string, data: any }
-  | { key: typeof GENERATE_SPRITE_IMAGES_REQUEST, rootFolder: string, prompt: string }
+  | { key: typeof GENERATE_SPRITE_IMAGES_REQUEST, rootFolder: string, prompt: string, targetPath?: string }
   | { key: typeof REPLACE_SPRITE_IMAGE_REQUEST, rootFolder: string, targetPath: string, targetKey: string, jobId: string, imageIndex: number }
   | { key: typeof CREATE_SPRITE_IMAGE_ASSET_REQUEST, rootFolder: string, targetPath: string, targetKey: string, jobId: string, imageIndex: number }
   | { key: typeof UPDATE_PROJECT_COLORS_REQUEST, rootFolder: string, colors: any[] }

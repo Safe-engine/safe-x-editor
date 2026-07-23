@@ -3,6 +3,7 @@ import { execFile } from 'child_process';
 import { copyFile, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { basename, dirname, extname, isAbsolute, join, relative, resolve } from 'path';
+import { fileURLToPath } from 'url';
 
 type ImageJob = {
   directory: string;
@@ -70,7 +71,8 @@ function generatedImages(directory: string, numberOfImages: number) {
 
 function targetImagePath(rootFolder: string, targetPath: string) {
   const resourcesFolder = resolve(rootFolder, 'res');
-  const candidate = resolve(resourcesFolder, isAbsolute(targetPath) ? targetPath : targetPath.replace(/^res[\\/]/, ''));
+  const normalizedTargetPath = targetPath.startsWith('file:') ? fileURLToPath(targetPath) : targetPath;
+  const candidate = resolve(resourcesFolder, isAbsolute(normalizedTargetPath) ? normalizedTargetPath : normalizedTargetPath.replace(/^res[\\/]/, ''));
   if (relative(resourcesFolder, candidate).startsWith('..') || !existsSync(candidate)) {
     throw Error('The selected sprite image no longer exists in the project resources.');
   }
@@ -93,7 +95,7 @@ function updateTextureAssetPath(rootFolder: string, key: string, path: string) {
   writeFileSync(assetFile, existing.replace(declaration, `export const ${key} = ${JSON.stringify(path)};`), 'utf-8');
 }
 
-export async function generateSpriteImages({ rootFolder, prompt }: { rootFolder: string; prompt: string }) {
+export async function generateSpriteImages({ rootFolder, prompt, targetPath }: { rootFolder: string; prompt: string; targetPath?: string }) {
   if (!rootFolder) throw Error('No project is loaded.');
   if (!prompt?.trim()) throw Error('Enter an image prompt.');
 
@@ -101,10 +103,14 @@ export async function generateSpriteImages({ rootFolder, prompt }: { rootFolder:
   const id = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   const directory = join(tmpdir(), 'safe-x-editor', 'ai-images', id);
   mkdirSync(directory, { recursive: true });
+  const currentSvg = targetPath && extname(targetPath).toLowerCase() === '.svg'
+    ? readFileSync(targetImagePath(rootFolder, targetPath), 'utf-8')
+    : '';
   const instruction = [
     settings.systemPrompt.trim() && `SYSTEM: ${settings.systemPrompt.trim()}`,
     `Return exactly ${settings.numberOfImages} complete, self-contained <svg>...</svg> string${settings.numberOfImages === 1 ? '' : 's'} and nothing else: no Markdown, labels, explanations, tool calls, or file operations.`,
     'Each SVG must use viewBox="0 0 512 512" and be a distinct variation while following the system prompt.',
+    currentSvg && `Edit the following current SVG according to the user prompt. Preserve its recognizable subject and style unless the prompt asks to change them:\n${currentSvg}`,
     `User prompt: ${prompt.trim()}`,
   ].join('\n');
 
