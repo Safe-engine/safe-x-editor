@@ -407,10 +407,11 @@ export class PreviewScene extends Scene {
     this.selectionAnchorNode = selectionAnchor
     this.selectionCornerNodes = selectionCorners
     this.rotationHandleNode = rotationHandle
-    arrowSpriteVertical.y = -40
+    arrowSpriteVertical.y = 40
     arrowSpriteVertical.color = { r: 255, g: 0, b: 0, a: 255 }
     arrowSpriteHorizon.x = 40
     arrowSpriteHorizon.rotation = 90
+    arrowSpriteVertical.rotation = 180
     selectionBorder.zIndex = -2
     selectionAnchor.zIndex = -1
     this.arrowContainerNode.zIndex = Infinity - 1

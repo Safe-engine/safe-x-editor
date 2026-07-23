@@ -89,7 +89,11 @@ async function parseChildren(root, parentNode: Node, data: ProjectData, evalInit
         const propName = val.replace('{this.props', 'baseProps').replace('}', '')
         const transform = key === 'spriteFrame' ? addQuotesToTernary : undefined
         const finalExpr = transform ? transform(propName) : propName
-        props[key] = eval(`const baseProps=${JSON.stringify(baseProps)};${evalInit}${finalExpr}`)
+        try {
+          props[key] = eval(`const baseProps=${JSON.stringify(baseProps)};${evalInit}${finalExpr}`)
+        } catch (error) {
+          console.warn(`Unable to evaluate ${tag}.${key} binding: ${val}`, error)
+        }
       } else {
         const varString = parseStringFromValue(val)
         const enumVal = get(enumsList, varString)
@@ -184,7 +188,12 @@ async function parseChildren(root, parentNode: Node, data: ProjectData, evalInit
 
   if (tag === 'Sprite' || tag === 'Button' || tag === 'ProgressBar' || tag === 'CircleProgressBar') {
     const texture = await getTexture(props.spriteFrame)
-    if (texture) renderNode.addComponent(new Sprite({ spriteFrame: texture, tiled: props.tiled ?? false }))
+    const [left, top, right, bottom] = props.capInsets ?? []
+    if (texture) renderNode.addComponent(new Sprite({
+      spriteFrame: texture,
+      tiled: props.tiled ?? false,
+      capInsets: props.capInsets ? [top, right, bottom, left] : undefined,
+    }))
   } else if (tag === 'ProgressBar') {
     const texture = await getTexture(props.spriteFrame)
     // SDL's ProgressBar preview does not match Sprite frame rendering closely enough for editor preview.
