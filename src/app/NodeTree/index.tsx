@@ -126,6 +126,21 @@ export default function NodeTree() {
     window.postMessage({ type: 'focusPreviewNode', path }, '*');
   }
 
+  function getDroppedItem(event: React.DragEvent) {
+    try {
+      return JSON.parse(event.dataTransfer.getData('application/x-safex-node'));
+    } catch {
+      return undefined;
+    }
+  }
+
+  function onDrop(event: React.DragEvent) {
+    event.preventDefault();
+    const item = getDroppedItem(event);
+    if (!item) return;
+    window.postMessage({ type: 'addDroppedNode', item }, '*');
+  }
+
   return (
     <div className='flex h-full flex-col bg-[#252525] text-[#dcdcdc]' >
       <div className='flex h-8 shrink-0 items-center border-b border-[#151515] bg-[#202020] px-2'>
@@ -143,7 +158,17 @@ export default function NodeTree() {
           <FiRefreshCw size={14} />
         </button>
       </div>
-      <div ref={treeContainerRef} className='min-h-0 flex-1'>
+      <div
+        ref={treeContainerRef}
+        className='min-h-0 flex-1'
+        onDragOver={(event) => {
+          if (event.dataTransfer.types.includes('application/x-safex-node')) {
+            event.preventDefault();
+            event.dataTransfer.dropEffect = 'copy';
+          }
+        }}
+        onDrop={onDrop}
+      >
         <Tree
           ref={treeRef}
           className='px-1 py-1'

@@ -221,6 +221,14 @@ export default function AssetsPanel() {
     return name;
   }
 
+  function getDragItem(data: any) {
+    if (data.isDirectory) return undefined;
+    if (selectedTab === 'components') {
+      return { kind: 'component', name: getComponentName(data.path) };
+    }
+    return { kind: 'asset', asset: data, name: data.name };
+  }
+
   function changeSelected(tab) {
     return function () {
       setSelectedTab(tab)
@@ -344,7 +352,7 @@ export default function AssetsPanel() {
           }}
           openByDefault
         >
-          {TreeNode}
+          {(props) => <TreeNode {...props} dragItem={getDragItem(props.node.data)} />}
         </Tree>
         {selectedTab === 'res' && <AssetPreview />}
       </div>

@@ -285,6 +285,8 @@ export class PreviewScene extends Scene {
         void this.updateSelectedNode(message.component, message.updated)
       } else if (message.type === 'toggleBoxColliderEditor') {
         this.toggleBoxColliderEditor(message.componentIndex)
+      } else if (message.type === 'addDroppedNode') {
+        void this.addDroppedNode(message.item)
       }
     }
     window.addEventListener('message', listener)
@@ -914,6 +916,27 @@ export class PreviewScene extends Scene {
     window.postMessage({ type: 'previewRestoreComponentTree', treeData: this.editingComponent, selectPaths: [] }, '*')
     this.changeSelectPath([])
     await this.reloadEditingComponent()
+  }
+
+  async addDroppedNode(item: any) {
+    if (!item || !this.editingComponent?.length) return
+
+    const sceneRoot = first<any>(this.editingComponent)
+    const children = sceneRoot?.tag === 'SceneComponent' ? sceneRoot.children : this.editingComponent
+    const id = sceneRoot?.tag === 'SceneComponent' ? `0-${children.length}` : `${children.length}`
+    const asset = item.asset || {}
+    const assetKey = asset.key || asset.name
+    const node = item.kind === 'component'
+      ? { id, expanded: true, tag: item.name, props: {}, components: [], children: [] }
+      : asset.type === 'spriteFrame' || asset.type === 'frame'
+        ? { id, expanded: true, tag: 'Sprite', props: { spriteFrame: assetKey }, components: [], children: [] }
+        : { id, expanded: true, tag: 'Node', props: {}, components: [], children: [] }
+
+    this.pushUndoHistory()
+    children.push(node)
+    this.editingPaths = [id]
+    await this.reloadEditingComponent()
+    window.postMessage({ type: 'previewRestoreComponentTree', treeData: this.editingComponent, selectPaths: this.editingPaths }, '*')
   }
 
   getChildrenIndex(editingPath = '') {

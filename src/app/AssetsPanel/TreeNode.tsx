@@ -141,7 +141,11 @@ function renderIcon(data: any) {
   return <CiImageOn color="#9fb7ff" />;
 }
 
-export function TreeNode({ node, style, dragHandle }: NodeRendererProps<any>) {
+type AssetTreeNodeProps = NodeRendererProps<any> & {
+  dragItem?: any;
+};
+
+export function TreeNode({ node, style, dragItem }: AssetTreeNodeProps) {
   const [tempName, setTempName] = useState('');
   // console.log('style', style);
   // const { openMenu } = useContextMenuStore();
@@ -154,8 +158,9 @@ export function TreeNode({ node, style, dragHandle }: NodeRendererProps<any>) {
     // openMenu(node, { x: e.clientX, y: e.clientY });
   };
 
-  return <HStack ref={dragHandle}
+  return <HStack
     style={style}
+    draggable={Boolean(dragItem)}
     className={clsx(
       'h-full items-center rounded-sm px-1 text-[12px] text-[#d6d6d6] hover:cursor-pointer hover:bg-[#303846]',
       node.isSelected && 'bg-[#304766] text-[#f0f0f0]'
@@ -166,6 +171,12 @@ export function TreeNode({ node, style, dragHandle }: NodeRendererProps<any>) {
       // node.edit()
     }}
     onContextMenu={(e) => handleContextMenu(e, node.data)}
+    onDragStart={(event) => {
+      if (!dragItem) return;
+      event.dataTransfer.effectAllowed = 'copy';
+      event.dataTransfer.setData('application/x-safex-node', JSON.stringify(dragItem));
+      event.dataTransfer.setData('text/plain', dragItem.name || 'Node');
+    }}
   >
     <Center>
       <Box className="m-auto w-4 shrink-0">{renderIcon(node.data)}</Box>
