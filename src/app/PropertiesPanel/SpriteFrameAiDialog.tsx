@@ -56,16 +56,16 @@ export default function SpriteFrameAiDialog({ isOpen, onClose, rootFolder, targe
     <Modal isOpen={isOpen} onClose={onClose} title={`Edit ${targetLabel} with AI`}>
       <div className='mt-4 w-[620px] text-[12px]'>
         <div className='grid grid-cols-4 gap-3'>
-          {[0, 1, 2, 3].map((index) => (
+          {images.map((image, index) => (
             <button
               key={index}
               className='flex aspect-square items-center justify-center overflow-hidden rounded-sm border border-[#111] bg-[#151515] text-[#777] hover:border-[#4a90e2] disabled:cursor-wait'
               type='button'
-              disabled={!images[index] || isReplacing}
+              disabled={isReplacing}
               onClick={() => selectImage(index)}
-              title={images[index] ? 'Use this image' : undefined}
+              title='Use this image'
             >
-              {images[index] ? <img className='h-full w-full object-contain' src={images[index].url} alt={`Generated variant ${index + 1}`} /> : <span>{isGenerating ? 'Generating…' : `Result ${index + 1}`}</span>}
+              <img className='h-full w-full object-contain' src={image.url} alt={`Generated variant ${index + 1}`} />
             </button>
           ))}
         </div>

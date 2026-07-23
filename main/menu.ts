@@ -1,6 +1,6 @@
 import {
   ADD_OPEN_WITH_APP_REQUEST,
-  CONFIGURE_OPEN_WITH_APPS,
+  CONFIGURE_SETTINGS,
   GEN_COMPONENT_REQUEST,
   GET_FOLDER_FILES,
   GET_OPEN_WITH_APPS_REQUEST,
@@ -107,8 +107,8 @@ export default class MenuBuilder {
     if (GlobalData.rootProject) shell.showItemInFolder(GlobalData.rootProject)
   }
 
-  configureOpenWithApp() {
-    ipcMain.emit(CONFIGURE_OPEN_WITH_APPS)
+  configureSettings() {
+    ipcMain.emit(CONFIGURE_SETTINGS)
   }
 
   buildOpenWithSubmenu() {
@@ -133,14 +133,6 @@ export default class MenuBuilder {
         click: () => this.openProjectInApp(appPath),
       })
     }
-
-    submenu.push(
-      { type: 'separator' },
-      {
-        label: 'Configure Other App…',
-        click: () => this.configureOpenWithApp(),
-      },
-    )
 
     return submenu
   }
@@ -195,6 +187,10 @@ export default class MenuBuilder {
         {
           label: 'Open With',
           submenu: this.buildOpenWithSubmenu(),
+        },
+        {
+          label: 'Settings…',
+          click: () => this.configureSettings(),
         },
         { type: 'separator' },
         {
@@ -348,6 +344,10 @@ export default class MenuBuilder {
           {
             label: 'Open With',
             submenu: this.buildOpenWithSubmenu(),
+          },
+          {
+            label: 'Settings…',
+            click: () => this.configureSettings(),
           },
           {
             label: '&Close',

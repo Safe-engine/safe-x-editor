@@ -14,7 +14,9 @@ export const SAVE_COLLIDER_SETTINGS_REQUEST = 'Save Collider Settings';
 export const GET_OPEN_WITH_APPS_REQUEST = 'Get Open With Apps';
 export const ADD_OPEN_WITH_APP_REQUEST = 'Add Open With App';
 export const REMOVE_OPEN_WITH_APP_REQUEST = 'Remove Open With App';
-export const CONFIGURE_OPEN_WITH_APPS = 'Configure Open With Apps';
+export const CONFIGURE_SETTINGS = 'Configure Settings';
+export const GET_AI_IMAGE_SETTINGS_REQUEST = 'Get AI Image Settings';
+export const SAVE_AI_IMAGE_SETTINGS_REQUEST = 'Save AI Image Settings';
 
 export const SYNC_RES_REQUEST = 'SYNC_RES_REQUEST';
 export const GET_FOLDER_FILES = 'GET_FOLDER_FILES';

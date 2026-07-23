@@ -1,5 +1,5 @@
 import { createAsset } from '@@/services/AssetCreateService';
-import { createSpriteImageAsset, generateSpriteImages, replaceSpriteImage } from '@@/services/AiImageService';
+import { createSpriteImageAsset, generateSpriteImages, getAiImageSettings, replaceSpriteImage, saveAiImageSettings } from '@@/services/AiImageService';
 import { updateProjectColors } from '@@/services/ColorService';
 import {
   duplicateComponent,
@@ -19,6 +19,7 @@ import {
   CREATE_ASSET_REQUEST,
   CREATE_SPRITE_IMAGE_ASSET_REQUEST,
   GENERATE_SPRITE_IMAGES_REQUEST,
+  GET_AI_IMAGE_SETTINGS_REQUEST,
   CREATE_I18N,
   CREATE_PROJECT_REQUEST,
   DELETE_COMPONENT,
@@ -30,6 +31,7 @@ import {
   RE_NAME_COMPONENT,
   REPLACE_SPRITE_IMAGE_REQUEST,
   SAVE_COLLIDER_SETTINGS_REQUEST,
+  SAVE_AI_IMAGE_SETTINGS_REQUEST,
   SYNC_RES_REQUEST,
   UPDATE_PROJECT_COLORS_REQUEST
 } from '@shared/constant.message';
@@ -79,6 +81,8 @@ export default function Router() {
   addListener(GENERATE_SPRITE_IMAGES_REQUEST, generateSpriteImages);
   addListener(REPLACE_SPRITE_IMAGE_REQUEST, replaceSpriteImage);
   addListener(CREATE_SPRITE_IMAGE_ASSET_REQUEST, createSpriteImageAsset);
+  addListener(GET_AI_IMAGE_SETTINGS_REQUEST, getAiImageSettings);
+  addListener(SAVE_AI_IMAGE_SETTINGS_REQUEST, saveAiImageSettings);
   addListener(UPDATE_PROJECT_COLORS_REQUEST, updateProjectColors);
   addListener(GET_COLLIDER_SETTINGS_REQUEST, getSettings);
   addListener(SAVE_COLLIDER_SETTINGS_REQUEST, ({ groupsList, colliderMatrix }) => saveSettings(groupsList, colliderMatrix));

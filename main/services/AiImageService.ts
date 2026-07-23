@@ -1,3 +1,4 @@
+import { app } from 'electron';
 import { execFile } from 'child_process';
 import { copyFile, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
@@ -10,6 +11,41 @@ type ImageJob = {
 
 const imageJobs = new Map<string, ImageJob>();
 const imageExtensions = new Set(['.png', '.jpg', '.jpeg', '.webp', '.svg']);
+const AI_IMAGE_SETTINGS_FILE = 'ai-image-settings.json';
+
+export type AiImageSettings = {
+  numberOfImages: number;
+  systemPrompt: string;
+};
+
+const defaultAiImageSettings: AiImageSettings = {
+  numberOfImages: 4,
+  systemPrompt: 'You are a board-game SVG asset generator. Your only job is generating assets.\nFixed visual style: square 512×512 board-game token/icon, flat vector shapes, thick rounded dark-navy outlines (#24324A), warm cream background (#FFF3D6), saturated teal/coral/gold accents, simple readable silhouette, subtle shadow, no text, no gradients, no external resources, scripts, or raster images.',
+};
+
+function normalizeAiImageSettings(settings: Partial<AiImageSettings>): AiImageSettings {
+  const numberOfImages = Number(settings.numberOfImages);
+  return {
+    numberOfImages: [1, 2, 3, 4].includes(numberOfImages) ? numberOfImages : defaultAiImageSettings.numberOfImages,
+    systemPrompt: typeof settings.systemPrompt === 'string' ? settings.systemPrompt : defaultAiImageSettings.systemPrompt,
+  };
+}
+
+export function getAiImageSettings() {
+  const settingsPath = join(app.getPath('userData'), AI_IMAGE_SETTINGS_FILE);
+  if (!existsSync(settingsPath)) return defaultAiImageSettings;
+  try {
+    return normalizeAiImageSettings(JSON.parse(readFileSync(settingsPath, 'utf-8')));
+  } catch {
+    return defaultAiImageSettings;
+  }
+}
+
+export function saveAiImageSettings(settings: Partial<AiImageSettings>) {
+  const normalized = normalizeAiImageSettings(settings);
+  writeFileSync(join(app.getPath('userData'), AI_IMAGE_SETTINGS_FILE), JSON.stringify(normalized), 'utf-8');
+  return { success: true, ...normalized };
+}
 
 function fileUrl(path: string) {
   return `file://${path.replace(/\\/g, '/').split('/').map(encodeURIComponent).join('/')}`;
@@ -24,12 +60,12 @@ function runAgy(prompt: string, cwd: string) {
   });
 }
 
-function generatedImages(directory: string) {
+function generatedImages(directory: string, numberOfImages: number) {
   return readdirSync(directory)
     .map((name) => join(directory, name))
     .filter((path) => imageExtensions.has(extname(path).toLowerCase()))
     .sort()
-    .slice(0, 4);
+    .slice(0, numberOfImages);
 }
 
 function targetImagePath(rootFolder: string, targetPath: string) {
@@ -61,21 +97,21 @@ export async function generateSpriteImages({ rootFolder, prompt }: { rootFolder:
   if (!rootFolder) throw Error('No project is loaded.');
   if (!prompt?.trim()) throw Error('Enter an image prompt.');
 
+  const settings = getAiImageSettings();
   const id = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   const directory = join(tmpdir(), 'safe-x-editor', 'ai-images', id);
   mkdirSync(directory, { recursive: true });
   const instruction = [
-    'SYSTEM: You are a board-game SVG asset generator. Your only job is generating assets.',
-    'Return exactly four complete, self-contained <svg>...</svg> strings and nothing else: no Markdown, labels, explanations, tool calls, or file operations.',
-    'Fixed visual style: square 512×512 board-game token/icon, flat vector shapes, thick rounded dark-navy outlines (#24324A), warm cream background (#FFF3D6), saturated teal/coral/gold accents, simple readable silhouette, subtle shadow, no text, no gradients, no external resources, scripts, or raster images.',
-    'Each SVG must use viewBox="0 0 512 512" and be a distinct variation while following the same style.',
+    settings.systemPrompt.trim() && `SYSTEM: ${settings.systemPrompt.trim()}`,
+    `Return exactly ${settings.numberOfImages} complete, self-contained <svg>...</svg> string${settings.numberOfImages === 1 ? '' : 's'} and nothing else: no Markdown, labels, explanations, tool calls, or file operations.`,
+    'Each SVG must use viewBox="0 0 512 512" and be a distinct variation while following the system prompt.',
     `User prompt: ${prompt.trim()}`,
   ].join('\n');
 
   try {
     const response = await runAgy(instruction, rootFolder);
     const svgs = response.match(/<svg\b[\s\S]*?<\/svg>/gi) || [];
-    if (svgs.length !== 4) throw Error(`agy did not return four SVG images (received ${svgs.length}).`);
+    if (svgs.length !== settings.numberOfImages) throw Error(`agy did not return ${settings.numberOfImages} SVG image${settings.numberOfImages === 1 ? '' : 's'} (received ${svgs.length}).`);
     svgs.forEach((svg, index) => writeFileSync(join(directory, `variant-${index + 1}.svg`), svg, 'utf-8'));
   } catch (error: any) {
     rmSync(directory, { recursive: true, force: true });
@@ -83,10 +119,10 @@ export async function generateSpriteImages({ rootFolder, prompt }: { rootFolder:
     throw Error(error?.message || 'Image generation failed.');
   }
 
-  const files = generatedImages(directory);
-  if (files.length !== 4) {
+  const files = generatedImages(directory, settings.numberOfImages);
+  if (files.length !== settings.numberOfImages) {
     rmSync(directory, { recursive: true, force: true });
-    throw Error(`agy did not produce four images (received ${files.length}).`);
+    throw Error(`agy did not produce ${settings.numberOfImages} images (received ${files.length}).`);
   }
   imageJobs.set(id, { directory, files });
   return { success: true, jobId: id, images: files.map((file) => ({ name: basename(file), url: fileUrl(file) })) };
