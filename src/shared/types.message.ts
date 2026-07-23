@@ -5,7 +5,8 @@ import {
   DELETE_COMPONENT, DUPLICATE_COMPONENT,
   SYNC_RES_REQUEST, GEN_COMPONENT_REQUEST, GEN_PROP_TYPES_REQUEST, GET_FOLDER_FILES,
   GET_COLLIDER_SETTINGS_REQUEST, LOAD_COMPONENT_REQUEST, NEW_COMPONENT,
-  NEW_PAGE, RE_NAME_COMPONENT, SAVE_COLLIDER_SETTINGS_REQUEST, UPDATE_PROJECT_COLORS_REQUEST
+  NEW_PAGE, RE_NAME_COMPONENT, SAVE_COLLIDER_SETTINGS_REQUEST, UPDATE_PROJECT_COLORS_REQUEST,
+  ADD_OPEN_WITH_APP_REQUEST, GET_OPEN_WITH_APPS_REQUEST, REMOVE_OPEN_WITH_APP_REQUEST
 } from "./constant.message";
 
 export type IpcRequest =
@@ -18,6 +19,9 @@ export type IpcRequest =
   | { key: typeof UPDATE_PROJECT_COLORS_REQUEST, rootFolder: string, colors: any[] }
   | { key: typeof GET_COLLIDER_SETTINGS_REQUEST }
   | { key: typeof SAVE_COLLIDER_SETTINGS_REQUEST, groupsList: string[], colliderMatrix: any[] }
+  | { key: typeof GET_OPEN_WITH_APPS_REQUEST }
+  | { key: typeof ADD_OPEN_WITH_APP_REQUEST }
+  | { key: typeof REMOVE_OPEN_WITH_APP_REQUEST, appPath: string }
   | { key: typeof GET_FOLDER_FILES, src: string, patternList?: [string] }
   | { key: typeof CHECK_FILE_EXIST, folderPath: string }
   | { key: typeof LOAD_COMPONENT_REQUEST, path: string }
@@ -44,6 +48,9 @@ export type IpcResponse =
   | { key: typeof UPDATE_PROJECT_COLORS_REQUEST }
   | { key: typeof GET_COLLIDER_SETTINGS_REQUEST }
   | { key: typeof SAVE_COLLIDER_SETTINGS_REQUEST }
+  | { key: typeof GET_OPEN_WITH_APPS_REQUEST }
+  | { key: typeof ADD_OPEN_WITH_APP_REQUEST }
+  | { key: typeof REMOVE_OPEN_WITH_APP_REQUEST }
   | { key: typeof GET_FOLDER_FILES }
   | { key: typeof CHECK_FILE_EXIST }
   | { key: typeof LOAD_COMPONENT_REQUEST }

@@ -7,6 +7,7 @@ import { selectDesignResolution } from 'states/app.selectors'
 import AssetsPanel from './AssetsPanel'
 import NodeTree from './NodeTree'
 import NewProjectDialog from './NewProjectDialog'
+import OpenWithAppsDialog from './OpenWithAppsDialog'
 import PropertiesPanel from './PropertiesPanel'
 import SceneView from './SceneView'
 import './globals.css'
@@ -26,6 +27,7 @@ export function App() {
     <main className="h-screen bg-[#1e1e1e] text-[#dcdcdc]">
       <Toaster position="top-center" />
       <NewProjectDialog />
+      <OpenWithAppsDialog />
       <Allotment>
         <Allotment.Pane snap minSize={200} maxSize={250}>
           <AssetsPanel />

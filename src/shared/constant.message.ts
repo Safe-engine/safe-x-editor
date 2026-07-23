@@ -8,6 +8,10 @@ export const CREATE_ASSET_REQUEST = 'CREATE_ASSET_REQUEST';
 export const UPDATE_PROJECT_COLORS_REQUEST = 'Update Project Colors';
 export const GET_COLLIDER_SETTINGS_REQUEST = 'Get Collider Settings';
 export const SAVE_COLLIDER_SETTINGS_REQUEST = 'Save Collider Settings';
+export const GET_OPEN_WITH_APPS_REQUEST = 'Get Open With Apps';
+export const ADD_OPEN_WITH_APP_REQUEST = 'Add Open With App';
+export const REMOVE_OPEN_WITH_APP_REQUEST = 'Remove Open With App';
+export const CONFIGURE_OPEN_WITH_APPS = 'Configure Open With Apps';
 
 export const SYNC_RES_REQUEST = 'SYNC_RES_REQUEST';
 export const GET_FOLDER_FILES = 'GET_FOLDER_FILES';

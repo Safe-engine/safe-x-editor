@@ -1,4 +1,12 @@
-import { GEN_COMPONENT_REQUEST, GET_FOLDER_FILES, NEW_PROJECT } from '@shared/constant.message'
+import {
+  ADD_OPEN_WITH_APP_REQUEST,
+  CONFIGURE_OPEN_WITH_APPS,
+  GEN_COMPONENT_REQUEST,
+  GET_FOLDER_FILES,
+  GET_OPEN_WITH_APPS_REQUEST,
+  NEW_PROJECT,
+  REMOVE_OPEN_WITH_APP_REQUEST,
+} from '@shared/constant.message'
 import { execFile } from 'child_process'
 import { app, dialog, ipcMain, Menu, shell } from 'electron'
 import { existsSync, readFileSync, writeFileSync } from 'fs'
@@ -9,6 +17,7 @@ const OPEN_WITH_SETTINGS_FILE = 'open-with.json'
 
 type OpenWithSettings = {
   customAppPath?: string
+  customAppPaths?: string[]
 }
 
 export default class MenuBuilder {
@@ -16,6 +25,7 @@ export default class MenuBuilder {
 
   constructor(mainWindow) {
     this.mainWindow = mainWindow
+    this.setupOpenWithIpc()
   }
 
   buildMenu() {
@@ -50,6 +60,33 @@ export default class MenuBuilder {
     writeFileSync(join(app.getPath('userData'), OPEN_WITH_SETTINGS_FILE), JSON.stringify(settings), 'utf-8')
   }
 
+  getCustomAppPaths() {
+    const { customAppPath, customAppPaths } = this.getOpenWithSettings()
+    return [...new Set([...(customAppPaths || []), customAppPath].filter(Boolean))]
+  }
+
+  setupOpenWithIpc() {
+    ipcMain.handle(GET_OPEN_WITH_APPS_REQUEST, () => ({ apps: this.getCustomAppPaths() }))
+    ipcMain.handle(ADD_OPEN_WITH_APP_REQUEST, () => {
+      const [appPath] = dialog.showOpenDialogSync(this.mainWindow, {
+        title: 'Select an application to open projects',
+        properties: ['openFile', 'openDirectory'],
+      }) || []
+      if (!appPath) return { apps: this.getCustomAppPaths() }
+
+      const apps = [...new Set([...this.getCustomAppPaths(), appPath])]
+      this.saveOpenWithSettings({ customAppPaths: apps })
+      this.refreshMenu()
+      return { apps }
+    })
+    ipcMain.handle(REMOVE_OPEN_WITH_APP_REQUEST, (_event, { appPath }) => {
+      const apps = this.getCustomAppPaths().filter(path => path !== appPath)
+      this.saveOpenWithSettings({ customAppPaths: apps })
+      this.refreshMenu()
+      return { apps }
+    })
+  }
+
   openProjectInApp(application: string) {
     const projectPath = GlobalData.rootProject
     if (!projectPath) return
@@ -71,19 +108,10 @@ export default class MenuBuilder {
   }
 
   configureOpenWithApp() {
-    const [customAppPath] = dialog.showOpenDialogSync(this.mainWindow, {
-      title: 'Select an application to open projects',
-      properties: ['openFile', 'openDirectory'],
-    }) || []
-    if (!customAppPath) return
-
-    this.saveOpenWithSettings({ customAppPath })
-    this.openProjectInApp(customAppPath)
-    this.refreshMenu()
+    ipcMain.emit(CONFIGURE_OPEN_WITH_APPS)
   }
 
   buildOpenWithSubmenu() {
-    const { customAppPath } = this.getOpenWithSettings()
     const submenu: any[] = [
       {
         label: 'Finder',
@@ -99,10 +127,10 @@ export default class MenuBuilder {
       },
     ]
 
-    if (customAppPath) {
+    for (const appPath of this.getCustomAppPaths()) {
       submenu.push({
-        label: basename(customAppPath, '.app'),
-        click: () => this.openProjectInApp(customAppPath),
+        label: basename(appPath, '.app'),
+        click: () => this.openProjectInApp(appPath),
       })
     }
 
