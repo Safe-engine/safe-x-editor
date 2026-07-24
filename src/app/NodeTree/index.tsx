@@ -126,6 +126,14 @@ export default function NodeTree() {
     window.postMessage({ type: 'focusPreviewNode', path }, '*');
   }
 
+  const onMove = ({ dragIds, parentId, index }) => {
+    window.postMessage({ type: 'moveHierarchyNodes', dragIds, parentId, index }, '*');
+  }
+
+  const onDropNode = (item, parentId) => {
+    window.postMessage({ type: 'addDroppedNode', item, parentId }, '*');
+  }
+
   function getDroppedItem(event: React.DragEvent) {
     try {
       return JSON.parse(event.dataTransfer.getData('application/x-safex-node'));
@@ -181,9 +189,10 @@ export default function NodeTree() {
           onRename={(node) => {
             console.log('onRename', node);
           }}
+          onMove={onMove}
           openByDefault
         >
-          {(props) => <TreeItem {...props} onFocusNode={onFocusNode} />}
+          {(props) => <TreeItem {...props} onFocusNode={onFocusNode} onDropNode={onDropNode} />}
         </Tree>
       </div>
       {/* <ContextMenu

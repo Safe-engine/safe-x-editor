@@ -286,7 +286,9 @@ export class PreviewScene extends Scene {
       } else if (message.type === 'toggleBoxColliderEditor') {
         this.toggleBoxColliderEditor(message.componentIndex)
       } else if (message.type === 'addDroppedNode') {
-        void this.addDroppedNode(message.item)
+        void this.addDroppedNode(message.item, message.parentId)
+      } else if (message.type === 'moveHierarchyNodes') {
+        void this.moveHierarchyNodes(message.dragIds, message.parentId, message.index)
       }
     }
     window.addEventListener('message', listener)
@@ -918,12 +920,20 @@ export class PreviewScene extends Scene {
     await this.reloadEditingComponent()
   }
 
-  async addDroppedNode(item: any) {
+  async addDroppedNode(item: any, parentId?: string) {
     if (!item || !this.editingComponent?.length) return
 
     const sceneRoot = first<any>(this.editingComponent)
-    const children = sceneRoot?.tag === 'SceneComponent' ? sceneRoot.children : this.editingComponent
-    const id = sceneRoot?.tag === 'SceneComponent' ? `0-${children.length}` : `${children.length}`
+    const findNode = (nodes: any[], id: string): any => {
+      for (const node of nodes) {
+        if (node.id === id) return node
+        const match = findNode(node.children || [], id)
+        if (match) return match
+      }
+    }
+    const parentNode = parentId ? findNode(this.editingComponent, parentId) : undefined
+    const children = parentNode?.children || (sceneRoot?.tag === 'SceneComponent' ? sceneRoot.children : this.editingComponent)
+    const id = parentNode ? `${parentNode.id}-${children.length}` : sceneRoot?.tag === 'SceneComponent' ? `0-${children.length}` : `${children.length}`
     const asset = item.asset || {}
     const assetKey = asset.key || asset.name
     const node = item.kind === 'component'
@@ -935,6 +945,52 @@ export class PreviewScene extends Scene {
     this.pushUndoHistory()
     children.push(node)
     this.editingPaths = [id]
+    await this.reloadEditingComponent()
+    window.postMessage({ type: 'previewRestoreComponentTree', treeData: this.editingComponent, selectPaths: this.editingPaths }, '*')
+  }
+
+  async moveHierarchyNodes(dragIds: string[], parentId: string | null, index: number) {
+    if (!dragIds?.length || !this.editingComponent?.length) return
+
+    const sceneRoot = first<any>(this.editingComponent)
+    const rootChildren = sceneRoot?.tag === 'SceneComponent' ? sceneRoot.children : this.editingComponent
+    const findNode = (nodes: any[], id: string): any => {
+      for (const node of nodes) {
+        if (node.id === id) return node
+        const match = findNode(node.children || [], id)
+        if (match) return match
+      }
+    }
+    const draggedNodes = dragIds.map((id) => findNode(this.editingComponent, id)).filter(Boolean)
+    const parentNode = parentId ? findNode(this.editingComponent, parentId) : undefined
+    const targetChildren = parentNode ? parentNode.children : rootChildren
+    const containsNode = (node: any, target: any): boolean => node === target || (node.children || []).some((child) => containsNode(child, target))
+
+    if (!draggedNodes.length || !targetChildren || draggedNodes.some((node) => node.tag === 'SceneComponent' || containsNode(node, parentNode))) return
+
+    this.pushUndoHistory()
+    const movedIds = new Set(draggedNodes.map((node) => node.id))
+    const movedBeforeIndex = targetChildren.slice(0, index).filter((node) => movedIds.has(node.id)).length
+    const removeNodes = (nodes: any[]): any[] => nodes
+      .filter((node) => !movedIds.has(node.id))
+      .map((node) => ({ ...node, children: removeNodes(node.children || []) }))
+    const remainingTree = removeNodes(this.editingComponent)
+    const remainingSceneRoot = first<any>(remainingTree)
+    const remainingParent = parentId ? findNode(remainingTree, parentId) : undefined
+    const remainingTargetChildren = remainingParent
+      ? (remainingParent.children ??= [])
+      : remainingSceneRoot?.tag === 'SceneComponent'
+        ? remainingSceneRoot.children
+        : remainingTree
+
+    remainingTargetChildren.splice(Math.max(0, index - movedBeforeIndex), 0, ...draggedNodes)
+    this.editingComponent = remainingTree
+    const assignIds = (nodes: any[], prefix = '') => nodes.forEach((node, nodeIndex) => {
+      node.id = prefix ? `${prefix}-${nodeIndex}` : `${nodeIndex}`
+      assignIds(node.children || [], node.id)
+    })
+    assignIds(this.editingComponent)
+    this.editingPaths = draggedNodes.map((node) => node.id)
     await this.reloadEditingComponent()
     window.postMessage({ type: 'previewRestoreComponentTree', treeData: this.editingComponent, selectPaths: this.editingPaths }, '*')
   }

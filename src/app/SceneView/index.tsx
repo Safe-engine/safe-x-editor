@@ -38,12 +38,32 @@ export default function SceneView() {
     window.postMessage({ type: 'changeFilePath', filePath: selectedFilePath }, '*')
   }, [selectedFilePath])
 
+  const getDroppedItem = (event: React.DragEvent) => {
+    try {
+      return JSON.parse(event.dataTransfer.getData('application/x-safex-node'))
+    } catch {
+      return undefined
+    }
+  }
+
   useEffect(() => {
     window.postMessage({ type: 'changeSelectPath', selectPaths: selectedPaths }, '*')
   }, [selectedPaths])
 
   return (
-    <div className='h-full w-full bg-[#1e1e1e]'>
+    <div
+      className='h-full w-full bg-[#1e1e1e]'
+      onDragOver={(event) => {
+        if (!event.dataTransfer.types.includes('application/x-safex-node')) return
+        event.preventDefault()
+        event.dataTransfer.dropEffect = 'copy'
+      }}
+      onDrop={(event) => {
+        event.preventDefault()
+        const item = getDroppedItem(event)
+        if (item) window.postMessage({ type: 'addDroppedNode', item }, '*')
+      }}
+    >
       <canvas id="sdl-canvas" className='block bg-[#1e1e1e]'></canvas>
     </div>
   )
