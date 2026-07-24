@@ -36,3 +36,21 @@ describe('JSX comments', () => {
     ]);
   });
 });
+
+describe('SpineBonesControl', () => {
+  it('round-trips static bones arrays as a TSX expression', async () => {
+    const source = `const view = (
+  <SpineSkeleton $push={this.snakesSkeleton} data={sp_snake_1} node={{ x: -94, y: 284, scaleX: 1, name: "snake1", rotation: -4 }} animation="Idle">
+    <SpineBonesControl bones={[["1",-14,73],["2",-35,42],["3",7,11],["4",2,-27],["5",40,-62]]} />
+  </SpineSkeleton>
+);`;
+    const parsed = parse(source, { jsx: true, range: true });
+    const { treeData } = await convertComponentData(parsed, 'Spine.tsx', source);
+    const { component } = genReactComponentString(treeData);
+
+    expect(component).toContain(`node={{ x: -94, y: 284, scaleX: 1, name: 'snake1', rotation: -4 }}`);
+    expect(component).toContain(`bones={[['1', -14, 73], ['2', -35, 42], ['3', 7, 11], ['4', 2, -27], ['5', 40, -62]]}`);
+
+    expect(() => parse(`const view = (${component});`, { jsx: true, range: true })).not.toThrow();
+  });
+});

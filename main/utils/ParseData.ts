@@ -26,6 +26,29 @@ function getPropValue(value) {
   return value;
 }
 
+function parseBoneControls(value: string): BoneControl[] | undefined {
+  const expression = value.trim();
+  if (!swapperWith(expression, '{[', ']}')) return;
+
+  try {
+    const bones = JSON.parse(expression.slice(1, -1).replace(/'/g, '"'));
+    if (!Array.isArray(bones)) return;
+    return bones
+      .filter((bone): bone is unknown[] => Array.isArray(bone))
+      .map(([name, x, y]) => [
+        typeof name === 'string' ? name : '',
+        typeof x === 'number' ? x : 0,
+        typeof y === 'number' ? y : 0,
+      ]);
+  } catch {
+    return;
+  }
+}
+
+function quoteSingle(value: string) {
+  return `'${value.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`;
+}
+
 const getAttributeProps = (openingElement, fileOrigin) => {
   const props = {};
   openingElement?.attributes.forEach(att => {
@@ -46,7 +69,8 @@ const getAttributeProps = (openingElement, fileOrigin) => {
         props[key][p.key.name] = parseValue(p.value);
       });
     } else {
-      props[key] = values.length ? getPropValue(values.join('=')) : true;
+      const value = values.join('=');
+      props[key] = key === 'bones' ? parseBoneControls(value) ?? getPropValue(value) : values.length ? getPropValue(value) : true;
     }
     // console.log(props[key])
   });
@@ -226,7 +250,7 @@ const genPropsLine = (props: { [key: string]: any }) => {
           typeof x === 'number' ? x : 0,
           typeof y === 'number' ? y : 0,
         ]);
-        return `${key}={${JSON.stringify(bones)}}`;
+        return `${key}={[${bones.map(([name, x, y]) => `[${quoteSingle(name)}, ${x}, ${y}]`).join(', ')}]}`;
       }
       if ((key === 'capInsets' || key === 'offset') && Array.isArray(val)) {
         return `${key}={${JSON.stringify(val)}}`;
@@ -241,7 +265,8 @@ const genPropsLine = (props: { [key: string]: any }) => {
           if (key === 'xy') {
             return `${key}: [${(nodeValue as any[]).map(v => typeof v === 'number' ? Math.round(v) : v).join(', ')}]`;
           }
-          return `${key}: ${nodeValue}`;
+          const isQuotedString = typeof nodeValue === 'string' && /^(['"]).*\1$/.test(nodeValue);
+          return `${key}: ${isQuotedString ? quoteSingle(nodeValue.slice(1, -1)) : nodeValue}`;
         }).join(', ')} }}`;
       }
       if (val === '') {

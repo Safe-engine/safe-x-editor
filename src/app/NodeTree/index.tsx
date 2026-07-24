@@ -158,7 +158,10 @@ export default function NodeTree() {
         <button
           type='button'
           className='ml-auto flex h-6 w-6 items-center justify-center rounded-sm text-[#aeb8c5] hover:bg-[#303846] hover:text-white disabled:cursor-not-allowed disabled:opacity-40'
-          onClick={() => loadComponent(filePath)}
+          onClick={() => {
+            loadComponent(filePath)
+            window.postMessage({ type: 'reLoad' }, '*')
+          }}
           disabled={!filePath}
           aria-label='Reload component'
           title='Reload component'
