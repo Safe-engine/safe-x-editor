@@ -85,6 +85,47 @@ function indent(string, w) {
   return string.replace(/^(?!$)/mg, w);
 };
 
+const PROPERTY_PANEL_COMPONENTS = new Set([
+  'BoxCollider',
+  'CircleCollider',
+  'PolygonCollider',
+  'Widget',
+  'RigidBody',
+  'SpineBonesControl',
+]);
+
+function getMissingEngineComponentImports(nodesData, content: string) {
+  const componentTags = new Set<string>();
+  const collectComponentTags = (node) => {
+    if (!node || typeof node !== 'object') return;
+    for (const component of node.components || []) {
+      if (PROPERTY_PANEL_COMPONENTS.has(component.tag)) componentTags.add(component.tag);
+    }
+    for (const child of node.children || []) collectComponentTags(child);
+  };
+
+  (Array.isArray(nodesData) ? nodesData : [nodesData]).forEach(collectComponentTags);
+  const imported = new Set<string>();
+  const importPattern = /import\s+\{([^}]*)\}\s+from\s+['"]@safe-engine\/sdl['"];?/g;
+  for (const match of content.matchAll(importPattern)) {
+    for (const specifier of match[1].split(',')) {
+      imported.add(specifier.trim());
+    }
+  }
+  return [...componentTags].filter((tag) => !imported.has(tag));
+}
+
+function addEngineComponentImports(content: string, components: string[]) {
+  if (!components.length) return content;
+  const importPattern = /import\s+\{([^}]*)\}\s+from\s+['"]@safe-engine\/sdl['"];?/;
+  const match = importPattern.exec(content);
+  if (!match) return `import { ${components.join(', ')} } from '@safe-engine/sdl';\n${content}`;
+
+  const existing = match[1].trim();
+  const merged = existing ? `${existing}, ${components.join(', ')}` : components.join(', ');
+  return `${content.slice(0, match.index)}${match[0].replace(match[1], ` ${merged} `)}${content.slice(match.index + match[0].length)}`;
+}
+
 export const updateComponentTag = ({ nodesData, filePath }) => {
   // console.log('updateComponentTag', nodesData, filePath);
   const { component, imports } = genReactComponentString(nodesData);
@@ -100,8 +141,12 @@ export const updateComponentTag = ({ nodesData, filePath }) => {
   );
   // lintFile(filePath)
   const content = fs.readFileSync(filePath, { encoding: 'utf-8' });
-  if (!imports.length) return true;
-  const filtered = imports.filter((imp) => !content.includes(imp));
-  fs.writeFileSync(filePath, `${filtered.join('\n')}\n${content}`);
+  const generatedImports = imports.filter((imp) => !content.includes(imp));
+  const missingEngineComponents = getMissingEngineComponentImports(nodesData, content);
+  const contentWithEngineImports = addEngineComponentImports(content, missingEngineComponents);
+  if (generatedImports.length || contentWithEngineImports !== content) {
+    const generatedImportBlock = generatedImports.join('\n');
+    fs.writeFileSync(filePath, generatedImportBlock ? `${generatedImportBlock}\n${contentWithEngineImports}` : contentWithEngineImports);
+  }
   return true;
 };
