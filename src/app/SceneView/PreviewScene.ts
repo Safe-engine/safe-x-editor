@@ -286,7 +286,7 @@ export class PreviewScene extends Scene {
       } else if (message.type === 'toggleBoxColliderEditor') {
         this.toggleBoxColliderEditor(message.componentIndex)
       } else if (message.type === 'addDroppedNode') {
-        void this.addDroppedNode(message.item, message.parentId)
+        void this.addDroppedNode(message.item, message.parentId, message.clientX, message.clientY)
       } else if (message.type === 'moveHierarchyNodes') {
         void this.moveHierarchyNodes(message.dragIds, message.parentId, message.index)
       }
@@ -418,9 +418,9 @@ export class PreviewScene extends Scene {
     this.selectionAnchorNode = selectionAnchor
     this.selectionCornerNodes = selectionCorners
     this.rotationHandleNode = rotationHandle
-    arrowSpriteVertical.y = 40
+    arrowSpriteVertical.y = 48
     arrowSpriteVertical.color = { r: 255, g: 0, b: 0, a: 255 }
-    arrowSpriteHorizon.x = 40
+    arrowSpriteHorizon.x = 48
     arrowSpriteHorizon.rotation = 90
     arrowSpriteVertical.rotation = 180
     selectionBorder.zIndex = -2
@@ -920,7 +920,22 @@ export class PreviewScene extends Scene {
     await this.reloadEditingComponent()
   }
 
-  async addDroppedNode(item: any, parentId?: string) {
+  getScenePositionFromClient(clientX?: number, clientY?: number) {
+    const canvas = document.querySelector<HTMLCanvasElement>('#sdl-canvas')
+    const bounds = canvas?.getBoundingClientRect()
+    const dropX = Number(clientX)
+    const dropY = Number(clientY)
+    if (!bounds?.width || !Number.isFinite(dropX) || !Number.isFinite(dropY)) return undefined
+
+    const canvasX = (dropX - bounds.left) * this.logicalCanvasWidth / bounds.width
+    const canvasY = (dropY - bounds.top) * this.logicalCanvasWidth / bounds.width
+    return {
+      x: Math.round((canvasX - this.drawNode.x) / (this.drawNode.scaleX || 1)),
+      y: Math.round((canvasY - this.drawNode.y) / (this.drawNode.scaleY || 1)),
+    }
+  }
+
+  async addDroppedNode(item: any, parentId?: string, clientX?: number, clientY?: number) {
     if (!item || !this.editingComponent?.length) return
 
     const sceneRoot = first<any>(this.editingComponent)
@@ -938,9 +953,19 @@ export class PreviewScene extends Scene {
     const assetKey = asset.key || asset.name
     const node = item.kind === 'component'
       ? { id, expanded: true, tag: item.name, props: {}, components: [], children: [] }
+      : asset.type === 'spine'
+        ? { id, expanded: true, tag: 'SpineSkeleton', props: { data: assetKey }, components: [], children: [] }
+      : asset.type === 'dragonBones'
+        ? { id, expanded: true, tag: 'DragonBones', props: { data: assetKey }, components: [], children: [] }
+      : asset.type === 'tiledMap'
+        ? { id, expanded: true, tag: 'TiledMap', props: { mapFile: assetKey }, components: [], children: [] }
+      : asset.type === 'font'
+        ? { id, expanded: true, tag: 'Label', props: { string: '', font: assetKey }, components: [], children: [] }
       : asset.type === 'spriteFrame' || asset.type === 'frame'
         ? { id, expanded: true, tag: 'Sprite', props: { spriteFrame: assetKey }, components: [], children: [] }
         : { id, expanded: true, tag: 'Node', props: {}, components: [], children: [] }
+    const position = this.getScenePositionFromClient(clientX, clientY)
+    if (position) setNodePositionProps(node.props, position.x, position.y)
 
     this.pushUndoHistory()
     children.push(node)

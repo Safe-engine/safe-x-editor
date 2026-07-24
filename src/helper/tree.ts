@@ -3,6 +3,36 @@ export interface TreeNode {
   children: TreeNode[]
 }
 
+function normalizeResourcePath(path = '') {
+  const parts: string[] = []
+  path.replace(/\\/g, '/').split('/').forEach((part) => {
+    if (!part || part === '.') return
+    if (part === '..') {
+      parts.pop()
+      return
+    }
+    parts.push(part)
+  })
+  return parts.join('/')
+}
+
+function isTiledMapAsset(asset: any) {
+  const { path = '', json } = asset
+  return /\.(tmx|tmj)$/i.test(path) || json?.type === 'map' || (Array.isArray(json?.layers) && Array.isArray(json?.tilesets))
+}
+
+function getTiledMapTexturePaths(jsonAssets: any[]) {
+  const texturePaths = new Set<string>()
+  jsonAssets.filter(isTiledMapAsset).forEach(({ path, json }) => {
+    const directory = normalizeResourcePath(path).split('/').slice(0, -1).join('/')
+    json?.tilesets?.forEach((tileset) => {
+      if (typeof tileset.image !== 'string') return
+      texturePaths.add(normalizeResourcePath(`${directory}/${tileset.image}`))
+    })
+  })
+  return texturePaths
+}
+
 function getId(name: string, isDirectory: boolean, data, type: string) {
   if (isDirectory) return name
   if (type === 'dragonBones') return data.value?.atlas
@@ -41,8 +71,10 @@ function createNode(path: string[], tree: TreeNode[], data, type: string) {
 export function pathListToTree(data): TreeNode[] {
   const { assetsTextureList = [], audioAssets = [], dragonBonesAssets = [], fontAssets = [], jsonAssets = [], spineAssets = [], spriteSheetAssets = [] } = data
   const tree: TreeNode[] = []
+  const tiledMapTexturePaths = getTiledMapTexturePaths(jsonAssets)
   for (let i = 0; i < assetsTextureList.length; i++) {
     const { path } = assetsTextureList[i]
+    if (tiledMapTexturePaths.has(normalizeResourcePath(path))) continue
     const split: string[] = path.split('/')
     createNode(split, tree, assetsTextureList[i], 'spriteFrame')
   }
@@ -60,6 +92,12 @@ export function pathListToTree(data): TreeNode[] {
     const { path } = spineAssets[i]
     const split: string[] = path.split('/')
     createNode(split, tree, spineAssets[i], 'spine')
+  }
+  for (let i = 0; i < jsonAssets.length; i++) {
+    const { path } = jsonAssets[i]
+    if (!isTiledMapAsset(jsonAssets[i])) continue
+    const split: string[] = path.split('/')
+    createNode(split, tree, jsonAssets[i], 'tiledMap')
   }
   for (let i = 0; i < fontAssets.length; i++) {
     const { path } = fontAssets[i]

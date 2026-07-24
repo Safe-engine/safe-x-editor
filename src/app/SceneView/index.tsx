@@ -61,7 +61,12 @@ export default function SceneView() {
       onDrop={(event) => {
         event.preventDefault()
         const item = getDroppedItem(event)
-        if (item) window.postMessage({ type: 'addDroppedNode', item }, '*')
+        if (item) window.postMessage({
+          type: 'addDroppedNode',
+          item,
+          clientX: event.clientX,
+          clientY: event.clientY,
+        }, '*')
       }}
     >
       <canvas id="sdl-canvas" className='block bg-[#1e1e1e]'></canvas>
