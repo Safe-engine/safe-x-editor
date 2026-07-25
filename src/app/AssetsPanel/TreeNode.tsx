@@ -11,6 +11,7 @@ import { FaMusic } from "react-icons/fa";
 import { FaFont } from "react-icons/fa6";
 import { GiSkeletonInside } from 'react-icons/gi';
 import { IoMdCube } from "react-icons/io";
+import { FiPlus } from 'react-icons/fi';
 import { SiSpine } from 'react-icons/si';
 
 const textureExtensions = new Set(['.png', '.jpg', '.jpeg', '.webp', '.gif', '.bmp', '.svg']);
@@ -143,9 +144,10 @@ function renderIcon(data: any) {
 
 type AssetTreeNodeProps = NodeRendererProps<any> & {
   dragItem?: any;
+  onCreate?: (data: any) => void;
 };
 
-export function TreeNode({ node, style, dragItem }: AssetTreeNodeProps) {
+export function TreeNode({ node, style, dragItem, onCreate }: AssetTreeNodeProps) {
   const [tempName, setTempName] = useState('');
   // console.log('style', style);
   // const { openMenu } = useContextMenuStore();
@@ -162,7 +164,7 @@ export function TreeNode({ node, style, dragItem }: AssetTreeNodeProps) {
     style={style}
     draggable={Boolean(dragItem)}
     className={clsx(
-      'h-full items-center rounded-sm px-1 text-[12px] text-[#d6d6d6] hover:cursor-pointer hover:bg-[#303846]',
+      'h-full w-full items-center justify-between rounded-sm px-1 text-[12px] text-[#d6d6d6] hover:cursor-pointer hover:bg-[#303846]',
       node.isSelected && 'bg-[#304766] text-[#f0f0f0]'
     )}
 
@@ -182,5 +184,18 @@ export function TreeNode({ node, style, dragItem }: AssetTreeNodeProps) {
       <Box className="m-auto w-4 shrink-0">{renderIcon(node.data)}</Box>
       <Box className={clsx('truncate', node.isSelected ? 'text-[#ffffff]' : 'text-[#d6d6d6]')}>{node.data.name}</Box>
     </Center>
+    {node.data.createKind && <button
+      type="button"
+      className="ml-1 flex shrink-0 rounded p-0.5 text-[#aeb8c5] hover:bg-[#49637f] hover:text-white"
+      title={`New ${node.data.createKind === 'scene' ? 'Scene' : 'Component'}`}
+      aria-label={`New ${node.data.createKind === 'scene' ? 'Scene' : 'Component'}`}
+      onMouseDown={(event) => event.stopPropagation()}
+      onClick={(event) => {
+        event.stopPropagation()
+        onCreate?.(node.data)
+      }}
+    >
+      <FiPlus size={14} />
+    </button>}
   </HStack >
 }

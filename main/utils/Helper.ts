@@ -46,6 +46,7 @@ function filterTreeFunction(currentNode: DirectoryTree) {
   const { type, path, children } = currentNode;
   if (type === 'directory') {
     if (path.includes('norender')) return false
+    if (pathUtil.basename(path) === 'components' || pathUtil.basename(path) === 'scene') return true
     return !children.every(isEmptyFolder);
   }
   if (pathUtil.basename(path) === '.DS_Store') {

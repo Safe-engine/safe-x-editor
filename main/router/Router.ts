@@ -2,7 +2,7 @@ import { createAsset } from '@@/services/AssetCreateService';
 import { createSpriteImageAsset, generateSpriteImages, getAiImageSettings, replaceSpriteImage, saveAiImageSettings } from '@@/services/AiImageService';
 import { updateProjectColors } from '@@/services/ColorService';
 import {
-  duplicateComponent,
+  createComponentFile, duplicateComponent,
   loadComponent, renameComponent, updateComponentTag,
 } from '@@/services/ComponentService';
 import {
@@ -17,6 +17,7 @@ import { getSettings, saveSettings } from '@@/services/settings.service';
 import {
   CHECK_FILE_EXIST,
   CREATE_ASSET_REQUEST,
+  CREATE_COMPONENT_FILE_REQUEST,
   CREATE_SPRITE_IMAGE_ASSET_REQUEST,
   GENERATE_SPRITE_IMAGES_REQUEST,
   GET_AI_IMAGE_SETTINGS_REQUEST,
@@ -78,6 +79,7 @@ export default function Router() {
     return { success: true, workspacePath };
   });
   addListener(CREATE_ASSET_REQUEST, createAsset);
+  addListener(CREATE_COMPONENT_FILE_REQUEST, createComponentFile);
   addListener(GENERATE_SPRITE_IMAGES_REQUEST, generateSpriteImages);
   addListener(REPLACE_SPRITE_IMAGE_REQUEST, replaceSpriteImage);
   addListener(CREATE_SPRITE_IMAGE_ASSET_REQUEST, createSpriteImageAsset);

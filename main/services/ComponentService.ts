@@ -14,6 +14,31 @@ export const loadComponent = async ({ path }) => {
   return convertComponentData(parsed, path, input);
 };
 
+export function createComponentFile({ rootFolder, directory, name, kind }) {
+  const className = String(name || '').trim();
+  if (!/^[A-Za-z_$][\w$]*$/.test(className)) throw Error('Use a valid class name.');
+  if (kind !== 'component' && kind !== 'scene') throw Error('Invalid file type.');
+
+  const root = pathUtil.resolve(rootFolder, 'src');
+  const targetDirectory = pathUtil.resolve(directory);
+  const expectedFolder = pathUtil.resolve(root, kind === 'component' ? 'components' : 'scene');
+  if (targetDirectory !== expectedFolder || !targetDirectory.startsWith(`${root}${pathUtil.sep}`)) {
+    throw Error(`New ${kind}s can only be created in ${expectedFolder}.`);
+  }
+
+  const targetPath = pathUtil.join(targetDirectory, `${className}.tsx`);
+  if (fs.existsSync(targetPath)) throw Error(`${className}.tsx already exists.`);
+
+  const baseClass = kind === 'component' ? 'ComponentX' : 'Scene';
+  const baseContainer = kind === 'component' ? 'Container' : 'Scene';
+  fs.writeFileSync(targetPath, `import { ${baseClass}, ${baseContainer} } from '@safe-engine/sdl';\n\nexport class ${className} extends ${baseClass} {
+    __view() {
+      <${baseContainer} />
+    }
+  }\n`);
+  return { success: true, path: targetPath };
+}
+
 // function replaceLast(str, word, newWord) {
 //   const n = str.lastIndexOf(word);
 //   // slice the string in 2, one from the start to the lastIndexOf
