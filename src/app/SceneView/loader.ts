@@ -1,4 +1,4 @@
-import { AssetManager, ComponentX, Label, Node, ScrollView, SpineSkeleton, Sprite, TiledMap, UILayout } from '@safe-engine/sdl'
+import { AssetManager, ComponentX, Label, Node, Panel, ScrollView, SpineSkeleton, Sprite, TextInput, TiledMap, UILayout } from '@safe-engine/sdl'
 import { DragonBones } from '@safe-engine/sdl/lib/dragonbones'
 import { getLastRootFolder } from 'data/AppData'
 import { toFileUrl } from 'helper/fileUrl'
@@ -14,7 +14,7 @@ import {
   parseStringFromValue,
 } from 'helper/node'
 import { get } from 'lodash-es'
-import { drawRect } from 'sdl3'
+import { globalCommandBuffer } from '@safe-engine/sdl/lib/render/RenderCommandBuffer'
 import { getComponent } from './component'
 import { addQuotesToTernary } from './utils'
 
@@ -45,15 +45,15 @@ export class RectRender extends ComponentX<{ fillColor?: SdlColor; strokeColor?:
     const width = node.width * node.worldScaleX
     const height = node.height * node.worldScaleY
     if (this.fillColor) {
-      drawRect(x, y, width, height, this.fillColor.r, this.fillColor.g, this.fillColor.b, this.fillColor.a ?? 255)
+      globalCommandBuffer.pushRect(x, y, width, height, this.fillColor.r, this.fillColor.g, this.fillColor.b, this.fillColor.a ?? 255)
     }
     if (this.strokeColor && this.lineWidth > 0) {
       const line = this.lineWidth
       const color = this.strokeColor
-      drawRect(x, y, width, line, color.r, color.g, color.b, color.a ?? 255)
-      drawRect(x, y + height - line, width, line, color.r, color.g, color.b, color.a ?? 255)
-      drawRect(x, y, line, height, color.r, color.g, color.b, color.a ?? 255)
-      drawRect(x + width - line, y, line, height, color.r, color.g, color.b, color.a ?? 255)
+      globalCommandBuffer.pushRect(x, y, width, line, color.r, color.g, color.b, color.a ?? 255)
+      globalCommandBuffer.pushRect(x, y + height - line, width, line, color.r, color.g, color.b, color.a ?? 255)
+      globalCommandBuffer.pushRect(x, y, line, height, color.r, color.g, color.b, color.a ?? 255)
+      globalCommandBuffer.pushRect(x + width - line, y, line, height, color.r, color.g, color.b, color.a ?? 255)
     }
   }
 }
@@ -214,6 +214,24 @@ async function parseChildren(root, parentNode: Node, data: ProjectData, evalInit
       verticalAlign
     })
     renderNode.addComponent(label)
+  } else if (tag === 'Panel') {
+    const { color } = props
+    const colorName = parseStringFromValue(color)
+    const panelColor = data.colors?.find((item) => item.key === colorName)
+    renderNode.addComponent(new Panel({ color: panelColor ? getColor(colorName) : undefined }))
+  } else if (tag === 'TextInput') {
+    const { font = '', value, placeholder, size, maxLength, submitOnEnter, blurOnSubmit } = props
+    const foundFont =
+      fontAssets.find((item) => item.key === parseStringFromValue(font)) ?? fontAssets.find((item) => item.key === 'defaultFont')
+    renderNode.addComponent(new TextInput({
+      font: foundFont?.value,
+      value: value === undefined ? undefined : getLabelText(value),
+      placeholder: placeholder === undefined ? undefined : getLabelText(placeholder),
+      size: size === undefined ? undefined : parseIntFromValue(size),
+      maxLength: maxLength === undefined ? undefined : parseIntFromValue(maxLength),
+      submitOnEnter: submitOnEnter === undefined ? undefined : parseBoolFromValue(submitOnEnter),
+      blurOnSubmit: blurOnSubmit === undefined ? undefined : parseBoolFromValue(blurOnSubmit),
+    }))
   } else if (tag === 'ScrollView' || tag === 'ListView') {
     const { viewSize, contentSize, direction } = props
     const size = parseSize(viewSize ?? contentSize, evalInit)

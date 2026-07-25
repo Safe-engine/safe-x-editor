@@ -800,6 +800,14 @@ function NodeProps() {
                   getFiles(rootFolder);
                 }}
               />
+            ) : selectedNode.tag === 'Panel' && key === 'color' ? (
+              <ColorField
+                key={key}
+                value={value}
+                colors={colors}
+                onChange={(nextValue) => updateProps({ [key]: nextValue })}
+                onEdit={() => setIsColorEditorOpen(true)}
+              />
             ) : key === 'outline' ? (
               <OutlineField
                 key={key}

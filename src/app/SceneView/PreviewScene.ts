@@ -425,7 +425,7 @@ export class PreviewScene extends Scene {
     arrowSpriteVertical.rotation = 180
     selectionBorder.zIndex = -2
     selectionAnchor.zIndex = -1
-    this.arrowContainerNode.zIndex = Infinity - 1
+    this.arrowContainerNode.zIndex = Number.MAX_SAFE_INTEGER
     this.arrowContainerNode.active = false
     arrowContainer.addChild(selectionBorder)
     arrowContainer.addChild(selectionAnchor)
@@ -439,7 +439,7 @@ export class PreviewScene extends Scene {
 
   createSpineBonesControl() {
     const control = createNode('SpineBonesControlHandles')
-    control.zIndex = Infinity
+    control.zIndex = Number.MAX_SAFE_INTEGER - 1
     control.addComponent(new SpineBonesControlRender({ getPoints: () => this.getSpineBoneControlPoints() }))
     this.spineBonesControlNode = control
     this.node.addChild(control)
@@ -551,7 +551,7 @@ export class PreviewScene extends Scene {
     const marqueeSelection = createNode('MarqueeSelection')
     marqueeSelection.anchorX = 0
     marqueeSelection.anchorY = 0
-    marqueeSelection.zIndex = Infinity - 2
+    marqueeSelection.zIndex = Number.MAX_SAFE_INTEGER - 2
     marqueeSelection.active = false
     marqueeSelection.addComponent(
       new RectRender({
