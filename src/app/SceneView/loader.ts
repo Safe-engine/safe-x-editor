@@ -1,8 +1,9 @@
-import { AssetManager, ComponentX, Label, Node, Panel, ScrollView, SpineSkeleton, Sprite, TextInput, TiledMap, UILayout } from '@safe-engine/sdl'
+import { AssetManager, ComponentX, DicedSprite, Label, Node, Panel, ScrollView, SpineSkeleton, Sprite, TextInput, TiledMap, UILayout } from '@safe-engine/sdl'
 import { DragonBones } from '@safe-engine/sdl/lib/dragonbones'
+import { globalCommandBuffer } from '@safe-engine/sdl/lib/render/RenderCommandBuffer'
 import { getLastRootFolder } from 'data/AppData'
-import { toFileUrl } from 'helper/fileUrl'
 import { ProjectData } from 'data/GloablState'
+import { toFileUrl } from 'helper/fileUrl'
 import {
   getNodePosition,
   parseBoolFromValue,
@@ -14,7 +15,6 @@ import {
   parseStringFromValue,
 } from 'helper/node'
 import { get } from 'lodash-es'
-import { globalCommandBuffer } from '@safe-engine/sdl/lib/render/RenderCommandBuffer'
 import { getComponent } from './component'
 import { addQuotesToTernary } from './utils'
 
@@ -293,6 +293,17 @@ async function parseChildren(root, parentNode: Node, data: ProjectData, evalInit
         new DragonBones({ data: dragonBonesAsset.value, skin, animation, playTimes, timeScale } as any),
       )
       await dragonBones.reload()
+    }
+  } else if (tag === 'DicedSprite') {
+    const dataKey = parseStringFromValue(props.data)
+    const dicedData = data.jsonAssets?.find((item) => item.key === dataKey)?.value ?? dataKey
+    if (dicedData) {
+      const dicedSprite = renderNode.addComponent(new DicedSprite({
+        data: dicedData,
+        texture: parseStringFromValue(props.texture),
+        animation: parseStringFromValue(props.animation),
+      }))
+      await dicedSprite.reload()
     }
   } else if (tag === 'TiledMap') {
     const { mapFile } = props

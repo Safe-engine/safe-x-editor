@@ -13,5 +13,5 @@ export const renderList = [
   'ListView', 'ScrollView', 'Slider', 'RenderTexture', 'UILayout', 'Panel',
   'DragonBones', 'ProgressBar', 'Label', 'TextInput', 'Button',
   'Container', 'Sprite', 'Mask', 'Particle', 'Graphics', 'TiledMap',
-  'RichText', 'SpineSkeleton', 'Scene', 'CircleProgress'
+  'RichText', 'SpineSkeleton', 'Scene', 'CircleProgress', 'DicedSprite'
 ];
