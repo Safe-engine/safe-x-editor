@@ -44,7 +44,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: safex-component-editor-${{ matrix.platform }}
-          path: release/*
+          path: |
+            release/*.dmg
+            release/*.exe
           if-no-files-found: error
 
   release:
