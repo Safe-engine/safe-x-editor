@@ -59,7 +59,7 @@ jobs:
       - name: Read release version
         id: version
         shell: bash
-        run: echo "tag=v$(node -p \"require('./package.json').version\")" >> "$GITHUB_OUTPUT"
+        run: echo "tag=v$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
 
       - name: Download installers
         uses: actions/download-artifact@v4
