@@ -4,6 +4,7 @@ import assert from 'assert';
 import fs from 'fs';
 import pathUtil from 'path';
 import { convertComponentData, genReactComponentString, getJSXBlock } from '../utils/ParseData';
+import { renderList } from '../utils/constants';
 import { spliceString } from '../utils/StringHelper';
 
 export const loadComponent = async ({ path }) => {
@@ -124,6 +125,7 @@ function getMissingEngineComponentImports(nodesData, content: string) {
   const componentTags = new Set<string>();
   const collectComponentTags = (node) => {
     if (!node || typeof node !== 'object') return;
+    if (renderList.includes(node.tag)) componentTags.add(node.tag);
     for (const component of node.components || []) {
       if (PROPERTY_PANEL_COMPONENTS.has(component.tag)) componentTags.add(component.tag);
     }

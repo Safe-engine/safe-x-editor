@@ -283,6 +283,8 @@ export class PreviewScene extends Scene {
         void this.reloadProjectData()
       } else if (message.type === 'updateSelectedNode') {
         void this.updateSelectedNode(message.component, message.updated)
+      } else if (message.type === 'changeSelectedNodeType') {
+        void this.changeSelectedNodeType(message.tag)
       } else if (message.type === 'toggleBoxColliderEditor') {
         this.toggleBoxColliderEditor(message.componentIndex)
       } else if (message.type === 'addDroppedNode') {
@@ -885,6 +887,18 @@ export class PreviewScene extends Scene {
       const liveControl = currentNode?.getComponent(SpineBonesControl)
       if (liveControl) liveControl.props.bones = control.bones
     }
+  }
+
+  async changeSelectedNodeType(tag: string) {
+    if (!tag || !this.editingPaths[0]) return
+    this.pushUndoHistory()
+    for (const editingPath of this.editingPaths) {
+      const editNode = this.getEditingNodeByPath(editingPath)
+      if (!editNode) continue
+      editNode.tag = tag
+      editNode.props = editNode.props?.node ? { node: editNode.props.node } : {}
+    }
+    await this.reloadEditingComponent()
   }
 
   async undoEdit() {

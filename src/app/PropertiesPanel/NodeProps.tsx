@@ -4,7 +4,7 @@ import { ContextMenu } from 'components/ContextMenu';
 import { parseFloatFromValue, parseOutline, parseStringFromValue } from 'helper/node';
 import { memo, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { FiBox, FiCircle, FiEdit2, FiGrid, FiLink, FiLogIn, FiPlus, FiRotateCcw, FiShare2, FiTrash2, FiTriangle } from 'react-icons/fi';
+import { FiBox, FiCircle, FiEdit2, FiGrid, FiLink, FiLogIn, FiPlus, FiRepeat, FiRotateCcw, FiShare2, FiTrash2, FiTriangle } from 'react-icons/fi';
 import { GET_COLLIDER_SETTINGS_REQUEST, SAVE_COLLIDER_SETTINGS_REQUEST, UPDATE_PROJECT_COLORS_REQUEST } from 'shared/constant.message';
 import { useActions, useSelector } from 'states/app.context';
 import { selectAssets, selectColors, selectDesignResolution, selectFilesData, selectRootFolder, selectSelectedNode } from 'states/app.selectors';
@@ -104,6 +104,12 @@ const COMPONENT_OPTIONS = [
   { tag: 'Widget', label: 'Widget', icon: FiGrid, props: {} },
   { tag: 'RigidBody', label: 'RigidBody', icon: FiLink, props: {} },
   { tag: 'SpineBonesControl', label: 'Spine Bones Control', icon: FiShare2, props: { bones: [] }, requiresSpineSkeleton: true },
+];
+
+const PANEL_COMPONENT_OPTIONS = [
+  { tag: 'Sprite', label: 'Sprite' },
+  { tag: 'Button', label: 'Button' },
+  { tag: 'ProgressBar', label: 'Progress Bar' },
 ];
 
 const SPINE_PROP_ORDER = ['data', 'atlas', 'skin', 'animation', 'timeScale', 'loop'];
@@ -623,7 +629,7 @@ function PropGroup({ title, children }) {
 }
 
 function NodeProps() {
-  const { getFiles, loadComponent, updateMultiNodes } = useActions();
+  const { changeSelectedNodeType, getFiles, loadComponent, updateMultiNodes } = useActions();
   const assets = useSelector(selectAssets);
   const colors = useSelector(selectColors);
   const designResolution = useSelector(selectDesignResolution);
@@ -717,6 +723,12 @@ function NodeProps() {
   function updateComponents(components) {
     updateMultiNodes([{ component: 'components', updated: components }]);
     updatePreview('components', components);
+  }
+
+  function changeNodeType(tag) {
+    changeSelectedNodeType(tag);
+    window.postMessage({ type: 'changeSelectedNodeType', tag }, '*');
+    setComponentMenuPosition(null);
   }
 
   function addComponent(option) {
@@ -908,10 +920,30 @@ function NodeProps() {
           />
         ))}
     </InspectorSection>
-    {(propEntries.length > 0 || supportsSpriteFrame(selectedNode)) && (
+    {(propEntries.length > 0 || supportsSpriteFrame(selectedNode) || selectedNode.tag === 'Panel') && (
       <InspectorSection
         title={selectedNode.tag}
-        headerAction={<LoadComponentButton tag={selectedNode.tag} path={selectedComponentPath} onLoad={loadComponent} />}
+        headerAction={
+          <>
+            {selectedNode.tag === 'Panel' && (
+              <button
+                className='mr-1 flex h-5 w-5 items-center justify-center rounded-sm text-[#bdbdbd] hover:bg-[#3569a8] hover:text-white'
+                type='button'
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  const { left, bottom } = event.currentTarget.getBoundingClientRect();
+                  setComponentMenuPosition({ x: Math.max(8, Math.min(left, window.innerWidth - 216)), y: bottom + 4 });
+                }}
+                title='Change component type'
+                aria-label='Change component type'
+              >
+                <FiRepeat size={13} />
+              </button>
+            )}
+            <LoadComponentButton tag={selectedNode.tag} path={selectedComponentPath} onLoad={loadComponent} />
+          </>
+        }
       >
         {selectedNode.tag === 'Particle' ? (
           <ParticleSettings
@@ -1011,6 +1043,14 @@ function NodeProps() {
             )
           )
         ))}
+        {selectedNode.tag === 'Panel' && !Object.prototype.hasOwnProperty.call(props, 'color') && (
+          <ColorField
+            value={undefined}
+            colors={colors}
+            onChange={(color) => updateProps({ color })}
+            onEdit={() => setIsColorEditorOpen(true)}
+          />
+        )}
         {supportsSpriteFrame(selectedNode) && !Object.prototype.hasOwnProperty.call(props, 'spriteFrame') && (
           <SpriteFrameField
             value={undefined}
@@ -1136,6 +1176,14 @@ function NodeProps() {
                 getFiles(rootFolder);
               }}
             />
+          ) : component.tag === 'Panel' && key === 'color' ? (
+            <ColorField
+              key={`${component.tag}-${index}-${key}`}
+              value={value}
+              colors={colors}
+              onChange={(nextValue) => updateComponentProps(index, { [key]: nextValue })}
+              onEdit={() => setIsColorEditorOpen(true)}
+            />
           ) : (
             <Field
               key={`${component.tag}-${index}-${key}`}
@@ -1145,6 +1193,14 @@ function NodeProps() {
             />
           )
         ))}
+        {component.tag === 'Panel' && !Object.prototype.hasOwnProperty.call(component.props || {}, 'color') && (
+          <ColorField
+            value={undefined}
+            colors={colors}
+            onChange={(color) => updateComponentProps(index, { color })}
+            onEdit={() => setIsColorEditorOpen(true)}
+          />
+        )}
         {supportsSpriteFrame(component) && !Object.prototype.hasOwnProperty.call(component.props || {}, 'spriteFrame') && (
           <SpriteFrameField
             value={undefined}
@@ -1194,12 +1250,12 @@ function NodeProps() {
       width={208}
       visible={Boolean(componentMenuPosition)}
       onClose={() => setComponentMenuPosition(null)}
-      actions={availableComponentOptions.map((option) => {
+      actions={(selectedNode.tag === 'Panel' ? PANEL_COMPONENT_OPTIONS : availableComponentOptions).map((option) => {
         const Icon = option.icon;
         return {
           label: option.label,
-          icon: <Icon className='text-[#a8c7ff]' size={16} />,
-          onClick: () => addComponent(option),
+          icon: Icon && <Icon className='text-[#a8c7ff]' size={16} />,
+          onClick: () => selectedNode.tag === 'Panel' ? changeNodeType(option.tag) : addComponent(option),
         };
       })}
     />
