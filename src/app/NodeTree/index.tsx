@@ -134,6 +134,10 @@ export default function NodeTree() {
     window.postMessage({ type: 'addDroppedNode', item, parentId }, '*');
   }
 
+  const onAddNode = (name: string, parentId: string) => {
+    window.postMessage({ type: 'addDroppedNode', item: { kind: 'component', name }, parentId }, '*');
+  }
+
   function getDroppedItem(event: React.DragEvent) {
     try {
       return JSON.parse(event.dataTransfer.getData('application/x-safex-node'));
@@ -195,7 +199,7 @@ export default function NodeTree() {
           onMove={onMove}
           openByDefault
         >
-          {(props) => <TreeItem {...props} onFocusNode={onFocusNode} onDropNode={onDropNode} />}
+          {(props) => <TreeItem {...props} onAddNode={onAddNode} onFocusNode={onFocusNode} onDropNode={onDropNode} />}
         </Tree>
       </div>
       {/* <ContextMenu

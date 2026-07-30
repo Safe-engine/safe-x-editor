@@ -31,7 +31,8 @@ export function createComponentFile({ rootFolder, directory, name, kind }) {
 
   const baseClass = kind === 'component' ? 'ComponentX' : 'Scene';
   const baseContainer = kind === 'component' ? 'Container' : 'Scene';
-  fs.writeFileSync(targetPath, `import { ${baseClass}, ${baseContainer} } from '@safe-engine/sdl';\n\nexport class ${className} extends ${baseClass} {
+  const importBaseContainer = kind === 'component' ? ', ' + baseContainer : '';
+  fs.writeFileSync(targetPath, `import { ${baseClass}${importBaseContainer} } from '@safe-engine/sdl';\n\nexport class ${className} extends ${baseClass} {
     __view() {
       <${baseContainer} />
     }

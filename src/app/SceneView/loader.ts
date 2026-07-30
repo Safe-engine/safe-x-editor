@@ -187,7 +187,7 @@ async function parseChildren(root, parentNode: Node, data: ProjectData, evalInit
     return parseStringFromValue(string) ?? string
   }
 
-  if (tag === 'Sprite' || tag === 'Button' || tag === 'ProgressBar' || tag === 'CircleProgressBar') {
+  if (tag === 'Sprite' || tag === 'Button' || tag === 'ProgressBar' || tag === 'CircleProgress') {
     const texture = await getTexture(props.spriteFrame)
     const [left, top, right, bottom] = props.capInsets ?? []
     if (texture) renderNode.addComponent(new Sprite({

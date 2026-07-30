@@ -12,7 +12,7 @@ import CapInsetsField from './CapInsetsField';
 import { ColliderSettingsDialog } from './ColliderSettingsDialog';
 import ColorEditorDialog from './ColorEditorDialog';
 import NodeIdentityRow from './NodeIdentityRow';
-import { LABEL_DEFAULT_PROPS, SPINE_DEFAULT_PROPS, WIDGET_DIRECTIONS } from './NodeProps.constants';
+import { LABEL_DEFAULT_PROPS, PARTICLE_DEFAULT_PROPS, SPINE_DEFAULT_PROPS, WIDGET_DIRECTIONS } from './NodeProps.constants';
 import SpriteFrameField from './SpriteFrameField';
 import WidgetInsets from './WidgetInsets';
 
@@ -242,6 +242,110 @@ function SpineBonesList({ value, onChange }) {
         </div>
       )}
     </div>
+  );
+}
+
+function ParticleColorsField({ value, onChange }) {
+  let colorValues = value;
+  if (typeof colorValues === 'string') {
+    try {
+      colorValues = JSON.parse(parseStringFromValue(colorValues));
+    } catch {
+      colorValues = [];
+    }
+  }
+  const colors = Array.isArray(colorValues)
+    ? colorValues.map((color) => ({
+      ...color,
+      r: Math.max(0, Math.min(255, parseNumber(color?.r, 0))),
+      g: Math.max(0, Math.min(255, parseNumber(color?.g, 0))),
+      b: Math.max(0, Math.min(255, parseNumber(color?.b, 0))),
+    }))
+    : [];
+
+  function update(index, nextColor) {
+    onChange(colors.map((color, colorIndex) => colorIndex === index ? nextColor : color));
+  }
+
+  return (
+    <div className='px-2 py-1'>
+      <div className='mb-1 flex items-center justify-between text-[11px] text-[#c8c8c8]'>
+        <span>Colors</span>
+        <button
+          className='flex h-5 items-center gap-1 rounded-sm border border-[#111] bg-[#303030] px-1.5 text-[#bdbdbd] hover:text-[#f0f0f0]'
+          type='button'
+          onClick={() => onChange([...colors, { r: 255, g: 255, b: 255 }])}
+        >
+          <FiPlus size={12} /> Add
+        </button>
+      </div>
+      {colors.length === 0 ? (
+        <div className='py-1 text-[11px] text-[#8f8f8f]'>Uses default colors.</div>
+      ) : (
+        <div className='space-y-1'>
+          {colors.map((color, index) => (
+            <div key={index} className='flex min-w-0 gap-1'>
+              <input
+                className='h-6 w-8 shrink-0 rounded-sm border border-[#111] bg-[#151515]'
+                type='color'
+                value={`#${[color.r, color.g, color.b].map((channel) => channel.toString(16).padStart(2, '0')).join('')}`}
+                onChange={(event) => {
+                  const hex = event.target.value.slice(1);
+                  update(index, { r: parseInt(hex.slice(0, 2), 16), g: parseInt(hex.slice(2, 4), 16), b: parseInt(hex.slice(4, 6), 16) });
+                }}
+                title={`Particle color ${index + 1}`}
+              />
+              <div className='grid min-w-0 flex-1 grid-cols-3 gap-1'>
+                <AxisInput axis='R' color='#ff6565' value={color.r} onChange={(r) => update(index, { ...color, r })} />
+                <AxisInput axis='G' color='#71d36b' value={color.g} onChange={(g) => update(index, { ...color, g })} />
+                <AxisInput axis='B' color='#6aa7ff' value={color.b} onChange={(b) => update(index, { ...color, b })} />
+              </div>
+              <button
+                className='flex h-6 w-6 shrink-0 items-center justify-center rounded-sm border border-[#111] bg-[#303030] text-[#bdbdbd] hover:text-[#f0f0f0]'
+                type='button'
+                onClick={() => onChange(colors.filter((_, colorIndex) => colorIndex !== index))}
+                title={`Remove color ${index + 1}`}
+              >
+                <FiTrash2 size={12} />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ParticleSettings({ props, assets, rootFolder, onChange, onImageReplaced }) {
+  return (
+    <>
+      <Field label='Config file' value={props.configFile} onChange={(configFile) => onChange({ configFile })} />
+      <SpriteFrameField
+        value={props.spriteFrame}
+        textures={assets?.assetsTextureList || []}
+        rootFolder={rootFolder}
+        onChange={(spriteFrame) => onChange({ spriteFrame })}
+        onImageReplaced={onImageReplaced}
+      />
+      <Field label='Additive' value={props.additive} onChange={(additive) => onChange({ additive })} />
+      <Field label='Count' value={props.count} onChange={(count) => onChange({ count })} />
+      <Field label='Duration' value={props.duration} onChange={(duration) => onChange({ duration })} />
+      <Field label='Speed' value={props.speed} onChange={(speed) => onChange({ speed })} />
+      <Field label='Gravity' value={props.gravity} onChange={(gravity) => onChange({ gravity })} />
+      <Field label='Radius' value={props.radius} onChange={(radius) => onChange({ radius })} />
+      <AxisRow
+        label='Emitter size'
+        isSize
+        values={{ x: props.width, y: props.height }}
+        onChange={(axis, value) => onChange({ [axis === 'x' ? 'width' : 'height']: value })}
+      />
+      <Field label='Angle' value={props.angle} onChange={(angle) => onChange({ angle })} />
+      <Field label='Angle spread' value={props.angleSpread} onChange={(angleSpread) => onChange({ angleSpread })} />
+      <Field label='Rotation' value={props.rotation} onChange={(rotation) => onChange({ rotation })} />
+      <Field label='Follow velocity' value={props.rotationFollowVelocity} onChange={(rotationFollowVelocity) => onChange({ rotationFollowVelocity })} />
+      <ParticleColorsField value={props.colors} onChange={(colors) => onChange({ colors })} />
+      <Field label='Emit on touch' value={props.emitOnTouch} onChange={(emitOnTouch) => onChange({ emitOnTouch })} />
+    </>
   );
 }
 
@@ -621,6 +725,10 @@ function NodeProps() {
     return component.tag === 'Sprite';
   }
 
+  function supportsSpriteFrame(component) {
+    return ['Sprite', 'Button', 'ProgressBar', 'CircleProgress'].includes(component.tag);
+  }
+
   if (!selectedNode) {
     return (
       <div className='p-3 text-[12px] text-[#8f8f8f]'>
@@ -644,6 +752,8 @@ function NodeProps() {
     ? LABEL_DEFAULT_PROPS
     : selectedNode.tag === 'SpineSkeleton'
       ? SPINE_DEFAULT_PROPS
+      : selectedNode.tag === 'Particle'
+        ? PARTICLE_DEFAULT_PROPS
       : {};
   const displayedProps = {
     ...props,
@@ -770,12 +880,23 @@ function NodeProps() {
           />
         ))}
     </InspectorSection>
-    {(propEntries.length > 0 || selectedNode.tag === 'Sprite') && (
+    {(propEntries.length > 0 || supportsSpriteFrame(selectedNode)) && (
       <InspectorSection
         title={selectedNode.tag}
         headerAction={<LoadComponentButton tag={selectedNode.tag} path={selectedComponentPath} onLoad={loadComponent} />}
       >
-        {propEntries.filter(([key]) => key !== 'capInsets' && key !== 'tiled').map(([key, value]) => (
+        {selectedNode.tag === 'Particle' ? (
+          <ParticleSettings
+            props={displayedProps}
+            assets={assets}
+            rootFolder={rootFolder}
+            onChange={updateProps}
+            onImageReplaced={(nextSpriteFrame) => {
+              if (nextSpriteFrame) updateProps({ spriteFrame: nextSpriteFrame });
+              getFiles(rootFolder);
+            }}
+          />
+        ) : propEntries.filter(([key]) => key !== 'capInsets' && key !== 'tiled').map(([key, value]) => (
           isObject(value) ? (
             <PropGroup key={key} title={key}>
               {Object.entries(value).map(([childKey, childValue]) => (
@@ -848,6 +969,18 @@ function NodeProps() {
             )
           )
         ))}
+        {supportsSpriteFrame(selectedNode) && !Object.prototype.hasOwnProperty.call(props, 'spriteFrame') && (
+          <SpriteFrameField
+            value={undefined}
+            textures={assets?.assetsTextureList || []}
+            rootFolder={rootFolder}
+            onChange={(nextValue) => updateProps({ spriteFrame: nextValue })}
+            onImageReplaced={(nextSpriteFrame) => {
+              if (nextSpriteFrame) updateProps({ spriteFrame: nextSpriteFrame });
+              getFiles(rootFolder);
+            }}
+          />
+        )}
         {selectedNode.tag === 'Sprite' && (
           <Field
             label='Tiled'
@@ -970,6 +1103,18 @@ function NodeProps() {
             />
           )
         ))}
+        {supportsSpriteFrame(component) && !Object.prototype.hasOwnProperty.call(component.props || {}, 'spriteFrame') && (
+          <SpriteFrameField
+            value={undefined}
+            textures={assets?.assetsTextureList || []}
+            rootFolder={rootFolder}
+            onChange={(nextValue) => updateComponentProps(index, { spriteFrame: nextValue })}
+            onImageReplaced={(nextSpriteFrame) => {
+              if (nextSpriteFrame) updateComponentProps(index, { spriteFrame: nextSpriteFrame });
+              getFiles(rootFolder);
+            }}
+          />
+        )}
         {isSpriteComponent(component) && (
           <>
             <Field
