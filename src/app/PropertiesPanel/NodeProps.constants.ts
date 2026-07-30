@@ -13,6 +13,29 @@ export const SPINE_DEFAULT_PROPS = {
   loop: true,
 };
 
+export const PARTICLE_DEFAULT_PROPS = {
+  configFile: '',
+  spriteFrame: '',
+  additive: false,
+  count: 16,
+  duration: 0.55,
+  speed: 150,
+  gravity: 260,
+  radius: 7,
+  width: 0,
+  height: 0,
+  angle: 0,
+  angleSpread: 360,
+  rotation: 0,
+  rotationFollowVelocity: false,
+  colors: [
+    { r: 255, g: 222, b: 89 },
+    { r: 255, g: 143, b: 86 },
+    { r: 116, g: 219, b: 255 },
+  ],
+  emitOnTouch: false,
+};
+
 export const WIDGET_DIRECTIONS = [
   { key: 'top', label: 'Top', className: 'col-span-3 row-start-1 w-32 justify-self-center', horizontal: true },
   { key: 'left', label: 'Left', className: 'col-start-1 row-start-2' },
