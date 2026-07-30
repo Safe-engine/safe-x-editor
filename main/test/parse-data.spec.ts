@@ -54,3 +54,11 @@ describe('SpineBonesControl', () => {
     expect(() => parse(`const view = (${component});`, { jsx: true, range: true })).not.toThrow();
   });
 });
+
+describe('Sprite', () => {
+  it('writes an empty spriteFrame as an empty JSX expression', () => {
+    const { component } = genReactComponentString({ tag: 'Sprite', props: { spriteFrame: '' } });
+
+    expect(component).toBe('<Sprite spriteFrame={} />');
+  });
+});
