@@ -621,6 +621,10 @@ function NodeProps() {
     return component.tag === 'Sprite';
   }
 
+  function supportsSpriteFrame(component) {
+    return ['Sprite', 'Button', 'ProgressBar', 'CircleProgress'].includes(component.tag);
+  }
+
   if (!selectedNode) {
     return (
       <div className='p-3 text-[12px] text-[#8f8f8f]'>
@@ -770,7 +774,7 @@ function NodeProps() {
           />
         ))}
     </InspectorSection>
-    {(propEntries.length > 0 || selectedNode.tag === 'Sprite') && (
+    {(propEntries.length > 0 || supportsSpriteFrame(selectedNode)) && (
       <InspectorSection
         title={selectedNode.tag}
         headerAction={<LoadComponentButton tag={selectedNode.tag} path={selectedComponentPath} onLoad={loadComponent} />}
@@ -848,6 +852,18 @@ function NodeProps() {
             )
           )
         ))}
+        {supportsSpriteFrame(selectedNode) && !Object.prototype.hasOwnProperty.call(props, 'spriteFrame') && (
+          <SpriteFrameField
+            value={undefined}
+            textures={assets?.assetsTextureList || []}
+            rootFolder={rootFolder}
+            onChange={(nextValue) => updateProps({ spriteFrame: nextValue })}
+            onImageReplaced={(nextSpriteFrame) => {
+              if (nextSpriteFrame) updateProps({ spriteFrame: nextSpriteFrame });
+              getFiles(rootFolder);
+            }}
+          />
+        )}
         {selectedNode.tag === 'Sprite' && (
           <Field
             label='Tiled'
@@ -970,6 +986,18 @@ function NodeProps() {
             />
           )
         ))}
+        {supportsSpriteFrame(component) && !Object.prototype.hasOwnProperty.call(component.props || {}, 'spriteFrame') && (
+          <SpriteFrameField
+            value={undefined}
+            textures={assets?.assetsTextureList || []}
+            rootFolder={rootFolder}
+            onChange={(nextValue) => updateComponentProps(index, { spriteFrame: nextValue })}
+            onImageReplaced={(nextSpriteFrame) => {
+              if (nextSpriteFrame) updateComponentProps(index, { spriteFrame: nextSpriteFrame });
+              getFiles(rootFolder);
+            }}
+          />
+        )}
         {isSpriteComponent(component) && (
           <>
             <Field

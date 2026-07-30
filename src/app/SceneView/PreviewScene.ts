@@ -952,7 +952,7 @@ export class PreviewScene extends Scene {
     const asset = item.asset || {}
     const assetKey = asset.key || asset.name
     const node = item.kind === 'component'
-      ? { id, expanded: true, tag: item.name, props: {}, components: [], children: [] }
+      ? { id, expanded: true, tag: item.name, props: ['Label', 'RichText'].includes(item.name) ? { string: '' } : {}, components: [], children: [] }
       : asset.type === 'spine'
         ? { id, expanded: true, tag: 'SpineSkeleton', props: { data: assetKey }, components: [], children: [] }
       : asset.type === 'dragonBones'

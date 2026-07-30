@@ -19,7 +19,7 @@
       },
       "devDependencies": {
         "@headlessui/react": "^1.7.19",
-        "@safe-engine/sdl": "^1.2.8",
+        "@safe-engine/sdl": "^1.2.9",
         "@types/estraverse": "^5.1.7",
         "@types/fs-extra": "^11.0.4",
         "@types/lodash-es": "^4.17.12",
@@ -284,7 +284,7 @@
 
     "@rolldown/pluginutils": ["@rolldown/pluginutils@1.0.1", "", {}, "sha512-2j9bGt5Jh8hj+vPtgzPtl72j0yRxHAyumoo6TNfAjsLB04UtpSvPbPcDcBMxz7n+9CYB0c1GxQFxYRg2jimqGw=="],
 
-    "@safe-engine/sdl": ["@safe-engine/sdl@1.2.9", "", { "dependencies": { "@esotericsoftware/spine-core": "4.2.118", "dragonbones-es": "^1.0.0", "planck": "^1.5.0", "safex-sync-res": "^1.4.4", "vite-plugin-safex-transform": "^1.1.2" } }, "sha512-cp2LztHHR50oI8+glR1JHgBn1BmUT9h1oLqR4+lozTdM1EU4GZfHudpS8u1HyArTe/AfC5J811I+t4XnOhNE7Q=="],
+    "@safe-engine/sdl": ["@safe-engine/sdl@1.2.10", "", { "dependencies": { "@esotericsoftware/spine-core": "4.2.118", "dragonbones-es": "^1.0.0", "planck": "^1.5.0", "safex-sync-res": "^1.4.4", "vite-plugin-safex-transform": "^1.1.2" } }, "sha512-n3zUlhVDmuuAbeclI1eznF96mhPiClb42h8ZuPffxLbJdBQUHPkEkGDWXTg3QDgLSn1g8NKDcwiD2jWxDRP4HQ=="],
 
     "@sindresorhus/is": ["@sindresorhus/is@4.6.0", "", {}, "sha512-t09vSN3MdfsyCHoFcTRCH/iUtG7OJ0CsjzB8cjAmKc/va/kIgeDI/TxsigdncE/4be734m0cvIYwNaV4i2XqAw=="],
 

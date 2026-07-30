@@ -4,13 +4,20 @@ import { get } from "lodash-es";
 import { useState } from "react";
 import { NodeRendererProps } from "react-arborist";
 import { AiFillFolderOpen } from "react-icons/ai";
-import { FiEye } from "react-icons/fi";
+import { FiChevronRight, FiEye, FiPlus } from "react-icons/fi";
 import { RiBox3Line } from "react-icons/ri";
 
 type TreeItemProps = NodeRendererProps<any> & {
+  onAddNode: (name: string, parentId: string) => void;
   onFocusNode: (node: any) => void;
   onDropNode: (item: any, parentId: string) => void;
 };
+
+const addNodeMenu = [
+  { label: 'Group', items: ['Container', 'UILayout', 'Panel', 'ScrollView'] },
+  { label: 'Animation', items: ['DragonBones', 'SpineSkeleton', 'DicedSprite', 'Particle'] },
+  { label: 'UI', items: ['ProgressBar', 'CircleProgress', 'Slider', 'Button', 'RichText', 'Label'] },
+];
 
 function renderIcon(data: any) {
   if (data.isDirectory) {
@@ -37,8 +44,10 @@ function renderName(node: any) {
     </Box>
 }
 
-export function TreeItem({ node, style, dragHandle, onFocusNode, onDropNode }: TreeItemProps) {
+export function TreeItem({ node, style, dragHandle, onAddNode, onFocusNode, onDropNode }: TreeItemProps) {
   const [isDropTarget, setIsDropTarget] = useState(false);
+  const [isAddMenuOpen, setIsAddMenuOpen] = useState(false);
+  const [activeMenu, setActiveMenu] = useState(addNodeMenu[0].label);
   const handleContextMenu = (
     e: React.MouseEvent,
     node: any
@@ -85,18 +94,69 @@ export function TreeItem({ node, style, dragHandle, onFocusNode, onDropNode }: T
       <Box className={clsx('truncate font-semibold', node.isSelected ? 'text-[#ffffff]' : 'text-[#d6d6d6]')}>{node.data.tag}</Box>
       {renderName(node)}
     </Center>
-    <button
-      type="button"
-      className="ml-1 flex shrink-0 rounded p-0.5 text-[#aeb8c5] hover:bg-[#49637f] hover:text-white"
-      title="Focus in preview"
-      aria-label="Focus in preview"
-      onMouseDown={(event) => event.stopPropagation()}
-      onClick={(event) => {
-        event.stopPropagation()
-        onFocusNode(node)
-      }}
-    >
-      <FiEye size={14} />
-    </button>
+    <div className="relative ml-1 flex shrink-0 items-center">
+      <button
+        type="button"
+        className="flex rounded p-0.5 text-[#aeb8c5] hover:bg-[#49637f] hover:text-white"
+        title="Add node"
+        aria-label="Add node"
+        onMouseDown={(event) => event.stopPropagation()}
+        onClick={(event) => {
+          event.stopPropagation()
+          setActiveMenu(addNodeMenu[0].label)
+          setIsAddMenuOpen((open) => !open)
+        }}
+      >
+        <FiPlus size={14} />
+      </button>
+      {isAddMenuOpen && (
+        <div
+          className="absolute right-0 top-6 z-50 flex min-w-44 rounded-sm border border-[#111] bg-[#252525] py-1 text-[12px] text-[#dcdcdc] shadow-lg"
+          onMouseDown={(event) => event.stopPropagation()}
+          onClick={(event) => event.stopPropagation()}
+        >
+          <div className="w-24 border-r border-[#3a3a3a]">
+            {addNodeMenu.map((menu) => (
+              <button
+                key={menu.label}
+                type="button"
+                className={clsx('flex w-full items-center justify-between px-2 py-1.5 text-left hover:bg-[#304766] hover:text-white', activeMenu === menu.label && 'bg-[#304766] text-white')}
+                onMouseEnter={() => setActiveMenu(menu.label)}
+              >
+                {menu.label}<FiChevronRight size={12} />
+              </button>
+            ))}
+          </div>
+          <div className="min-w-28">
+            {addNodeMenu.find((menu) => menu.label === activeMenu)?.items.map((name) => (
+              <button
+                key={name}
+                type="button"
+                className="block w-full px-2 py-1.5 text-left hover:bg-[#304766] hover:text-white"
+                onClick={() => {
+                  onAddNode(name, node.data.id)
+                  setIsAddMenuOpen(false)
+                }}
+              >
+                {name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+      <button
+        type="button"
+        className="flex rounded p-0.5 text-[#aeb8c5] hover:bg-[#49637f] hover:text-white"
+        title="Focus in preview"
+        aria-label="Focus in preview"
+        onMouseDown={(event) => event.stopPropagation()}
+        onClick={(event) => {
+          event.stopPropagation()
+          onFocusNode(node)
+        }}
+      >
+        <FiEye size={14} />
+      </button>
+    </div>
   </HStack >
 }
