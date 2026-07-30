@@ -182,6 +182,34 @@ function SpineSelectField({ label, value, items, onChange }) {
   );
 }
 
+function LabelSelectField({ label, value, items, onChange }) {
+  const selected = parseStringFromValue(value);
+  const options = Array.from(new Set([selected, ...items].filter(Boolean)));
+  return (
+    <label className='grid min-h-7 grid-cols-[70px_minmax(0,1fr)] items-center gap-2 px-2 py-0.5'>
+      <div className='truncate text-[11px] text-[#c8c8c8]' title={label}>{label}</div>
+      <SelectBox items={options} selected={selected} setSelected={onChange} />
+    </label>
+  );
+}
+
+function LabelSizeField({ value, onChange }) {
+  const size = parseNumber(value);
+  return (
+    <label className='grid min-h-7 grid-cols-[70px_minmax(0,1fr)] items-center gap-2 px-2 py-0.5'>
+      <div className='truncate text-[11px] text-[#c8c8c8]' title='size'>size</div>
+      <input
+        className='h-6 w-full min-w-0 rounded-sm border border-[#111] bg-[#151515] px-2 text-[12px] text-[#e2e2e2] outline-none focus:border-[#4a90e2]'
+        type='number'
+        min='1'
+        step='1'
+        value={size}
+        onChange={(event) => onChange(parseNumber(event.target.value, size))}
+      />
+    </label>
+  );
+}
+
 function SpineBonesList({ value, onChange }) {
   let boneValues = value;
   if (typeof boneValues === 'string') {
@@ -957,6 +985,20 @@ function NodeProps() {
                 label={key}
                 value={value}
                 items={spineData.animations}
+                onChange={(nextValue) => updateProps({ [key]: nextValue })}
+              />
+            ) : selectedNode.tag === 'Label' && key === 'font' ? (
+              <LabelSelectField
+                key={key}
+                label={key}
+                value={value}
+                items={['defaultFont', ...(assets?.fontAssets || []).map((font) => font.key)]}
+                onChange={(nextValue) => updateProps({ [key]: nextValue })}
+              />
+            ) : selectedNode.tag === 'Label' && key === 'size' ? (
+              <LabelSizeField
+                key={key}
+                value={value}
                 onChange={(nextValue) => updateProps({ [key]: nextValue })}
               />
             ) : (
