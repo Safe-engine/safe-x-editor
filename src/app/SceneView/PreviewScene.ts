@@ -961,8 +961,8 @@ export class PreviewScene extends Scene {
       }
     }
     const parentNode = parentId ? findNode(this.editingComponent, parentId) : undefined
-    const children = parentNode?.children || (sceneRoot?.tag === 'SceneComponent' ? sceneRoot.children : this.editingComponent)
-    const id = parentNode ? `${parentNode.id}-${children.length}` : sceneRoot?.tag === 'SceneComponent' ? `0-${children.length}` : `${children.length}`
+    const children = parentNode?.children ?? (sceneRoot.children ??= [])
+    const id = parentNode ? `${parentNode.id}-${children.length}` : `${sceneRoot.id}-${children.length}`
     const asset = item.asset || {}
     const assetKey = asset.key || asset.name
     const node = item.kind === 'component'
@@ -988,7 +988,7 @@ export class PreviewScene extends Scene {
     window.postMessage({ type: 'previewRestoreComponentTree', treeData: this.editingComponent, selectPaths: this.editingPaths }, '*')
   }
 
-  async moveHierarchyNodes(dragIds: string[], parentId: string | null, index: number) {
+  async moveHierarchyNodes(dragIds: string[], parentId: string | null, _index: number | null) {
     if (!dragIds?.length || !this.editingComponent?.length) return
 
     const sceneRoot = first<any>(this.editingComponent)
@@ -1002,14 +1002,15 @@ export class PreviewScene extends Scene {
     }
     const draggedNodes = dragIds.map((id) => findNode(this.editingComponent, id)).filter(Boolean)
     const parentNode = parentId ? findNode(this.editingComponent, parentId) : undefined
-    const targetChildren = parentNode ? parentNode.children : rootChildren
+    const targetChildren = parentNode ? (parentNode.children ??= []) : rootChildren
     const containsNode = (node: any, target: any): boolean => node === target || (node.children || []).some((child) => containsNode(child, target))
 
     if (!draggedNodes.length || !targetChildren || draggedNodes.some((node) => node.tag === 'SceneComponent' || containsNode(node, parentNode))) return
 
     this.pushUndoHistory()
     const movedIds = new Set(draggedNodes.map((node) => node.id))
-    const movedBeforeIndex = targetChildren.slice(0, index).filter((node) => movedIds.has(node.id)).length
+    const targetIndex = targetChildren.length
+    const movedBeforeIndex = targetChildren.slice(0, targetIndex).filter((node) => movedIds.has(node.id)).length
     const removeNodes = (nodes: any[]): any[] => nodes
       .filter((node) => !movedIds.has(node.id))
       .map((node) => ({ ...node, children: removeNodes(node.children || []) }))
@@ -1022,7 +1023,7 @@ export class PreviewScene extends Scene {
         ? remainingSceneRoot.children
         : remainingTree
 
-    remainingTargetChildren.splice(Math.max(0, index - movedBeforeIndex), 0, ...draggedNodes)
+    remainingTargetChildren.splice(Math.max(0, targetIndex - movedBeforeIndex), 0, ...draggedNodes)
     this.editingComponent = remainingTree
     const assignIds = (nodes: any[], prefix = '') => nodes.forEach((node, nodeIndex) => {
       node.id = prefix ? `${prefix}-${nodeIndex}` : `${nodeIndex}`
