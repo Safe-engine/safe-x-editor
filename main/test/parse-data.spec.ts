@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'bun:test';
 import { parse } from '@typescript-eslint/typescript-estree';
 import { convertComponentData, genReactComponentString } from '../utils/ParseData';
+import { removeTextureMatchingNodeSize } from '../../src/helper/node';
+import { removeTextureMatchingNodeSizes } from '../utils/NodeSize';
 
 const source = `const view = (
   <Container>
@@ -60,5 +62,28 @@ describe('Sprite', () => {
     const { component } = genReactComponentString({ tag: 'Sprite', props: { spriteFrame: '' } });
 
     expect(component).toBe('<Sprite spriteFrame={} />');
+  });
+});
+
+describe('node texture size', () => {
+  it('removes explicit dimensions that match the texture size', () => {
+    expect(removeTextureMatchingNodeSize({ width: 64, height: 32, x: 10 }, { width: 64, height: 32 }))
+      .toEqual({ x: 10 });
+  });
+
+  it('keeps dimensions when they differ from the texture size', () => {
+    expect(removeTextureMatchingNodeSize({ width: 64, height: 24 }, { width: 64, height: 32 }))
+      .toEqual({ width: 64, height: 24 });
+  });
+
+  it('removes matching Sprite and ProgressBar dimensions before saving', () => {
+    const nodes = [
+      { tag: 'Sprite', props: { spriteFrame: '{sf_icon}', node: { width: 64, height: 32 } } },
+      { tag: 'ProgressBar', props: { spriteFrame: '{sf_icon}', node: { width: 64, height: 32 } } },
+    ];
+
+    removeTextureMatchingNodeSizes(nodes, [{ key: 'sf_icon', size: { width: 64, height: 32 } }]);
+
+    expect(nodes.map((node) => node.props.node)).toEqual([{}, {}]);
   });
 });

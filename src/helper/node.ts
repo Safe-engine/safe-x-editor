@@ -49,6 +49,16 @@ export function parseFloatFromValue(value) {
   return parseFloat(parseStringFromValue(value))
 }
 
+export function removeTextureMatchingNodeSize(node, textureSize) {
+  const width = Number(parseStringFromValue(node?.width))
+  const height = Number(parseStringFromValue(node?.height))
+  if (!textureSize?.width || !textureSize?.height || width !== textureSize.width || height !== textureSize.height) {
+    return node
+  }
+  const { width: _width, height: _height, ...nodeWithoutSize } = node
+  return nodeWithoutSize
+}
+
 export function parseBoolFromValue(value) {
   if (typeof value === 'boolean') return value
   if (value === undefined || value === null) return undefined

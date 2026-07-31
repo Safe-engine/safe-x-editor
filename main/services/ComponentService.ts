@@ -6,6 +6,9 @@ import pathUtil from 'path';
 import { convertComponentData, genReactComponentString, getJSXBlock } from '../utils/ParseData';
 import { renderList } from '../utils/constants';
 import { spliceString } from '../utils/StringHelper';
+import { removeTextureMatchingNodeSizes } from '../utils/NodeSize';
+import { GlobalData } from '../parser/global';
+import { parseAssetsSrcFile } from './assets';
 
 export const loadComponent = async ({ path }) => {
   // console.log('loadComponent', path);
@@ -156,6 +159,11 @@ function addEngineComponentImports(content: string, components: string[]) {
 
 export const updateComponentTag = ({ nodesData, filePath }) => {
   // console.log('updateComponentTag', nodesData, filePath);
+  const assetsPath = pathUtil.join(GlobalData.rootProject, 'src', 'assets');
+  const assetPanel: any = { webview: { asWebviewUri: (uri) => uri.fsPath } };
+  const textures = parseAssetsSrcFile(pathUtil.join(assetsPath, 'TextureAssets.ts'), assetPanel);
+  const spriteFrames = parseAssetsSrcFile(pathUtil.join(assetsPath, 'SpriteFrames.ts'), assetPanel);
+  removeTextureMatchingNodeSizes(nodesData, textures, spriteFrames);
   const { component, imports } = genReactComponentString(nodesData);
   const input = fs.readFileSync(filePath, { encoding: 'utf8' });
   const parsed = parse(input, { jsx: true, range: true });

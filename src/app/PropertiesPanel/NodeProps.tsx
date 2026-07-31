@@ -1,7 +1,7 @@
 import { sendRequest } from 'app/app.ipc';
 import SelectBox from 'base/SelectBox';
 import { ContextMenu } from 'components/ContextMenu';
-import { parseFloatFromValue, parseOutline, parseStringFromValue } from 'helper/node';
+import { parseFloatFromValue, parseOutline, parseStringFromValue, removeTextureMatchingNodeSize } from 'helper/node';
 import { memo, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { FiBox, FiCircle, FiEdit2, FiGrid, FiLink, FiLogIn, FiPlus, FiRepeat, FiRotateCcw, FiShare2, FiTrash2, FiTriangle } from 'react-icons/fi';
@@ -699,10 +699,16 @@ function NodeProps() {
   }
 
   function updateNodeProps(updated) {
-    const node = {
+    const updatedNode = {
       ...(selectedNode.props?.node || {}),
       ...updated,
     };
+    for (const [key, value] of Object.entries(updatedNode)) {
+      if (value === undefined) delete updatedNode[key];
+    }
+    const node = ['Sprite', 'ProgressBar'].includes(selectedNode.tag)
+      ? removeTextureMatchingNodeSize(updatedNode, textureSize)
+      : updatedNode;
     updateMultiNodes([{ component: 'props', updated: { node } }]);
     updatePreview('props', {
       node: {
@@ -980,6 +986,11 @@ function NodeProps() {
                   if (nextSpriteFrame) updateProps({ [key]: nextSpriteFrame });
                   getFiles(rootFolder);
                 }}
+                resizeTo={['Sprite', 'ProgressBar'].includes(selectedNode.tag) ? {
+                  width: node.width ?? textureSize.width,
+                  height: node.height ?? textureSize.height,
+                } : undefined}
+                onTextureResized={() => updateNodeProps({ width: undefined, height: undefined })}
               />
             ) : selectedNode.tag === 'Panel' && key === 'color' ? (
               <ColorField
@@ -1175,6 +1186,10 @@ function NodeProps() {
                 if (nextSpriteFrame) updateComponentProps(index, { [key]: nextSpriteFrame });
                 getFiles(rootFolder);
               }}
+              resizeTo={['Sprite', 'ProgressBar'].includes(component.tag) ? {
+                width: node.width ?? textureSize.width,
+                height: node.height ?? textureSize.height,
+              } : undefined}
             />
           ) : component.tag === 'Panel' && key === 'color' ? (
             <ColorField
