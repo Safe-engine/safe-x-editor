@@ -275,6 +275,9 @@ const genPropsLine = (props: { [key: string]: any }, tag?: string) => {
         }
         return `${key}=""`;
       }
+      if (key === 'spriteFrame' && !swapperWith(val, '{', '}') && !/^{.*}$/.test(val)) {
+        return `${key}={${val}}`;
+      }
       if (swapperWith(val, '{', '}') || /^{.*}$/.test(val)) {
         return `${key}=${val}`;
       }

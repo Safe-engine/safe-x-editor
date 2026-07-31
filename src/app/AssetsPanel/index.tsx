@@ -3,7 +3,7 @@ import { sendRequest } from 'app/app.ipc'
 import Input from 'base/Input'
 import Modal from 'base/Modal'
 import clsx from 'clsx'
-import { getLastLoadedFile, getLastRootFolder, setLastLoadedFile } from 'data/AppData'
+import { getLastLoadedFile, getLastRootFolder } from 'data/AppData'
 import { ipcMain } from 'helper/electronRemote'
 import { toFileUrl } from 'helper/fileUrl'
 import pathUtils from 'path-browserify'
@@ -160,7 +160,7 @@ export default function AssetsPanel() {
 
   useEffect(() => {
     const lastFile = getLastLoadedFile()
-    if (treeData[1] && lastFile) {
+    if (treeData.length && lastFile) {
       console.log('treeData Files', lastFile)
       const node = treeRef.current.get(lastFile)
       // console.log('getLastLoadedFile node', node)
@@ -194,7 +194,6 @@ export default function AssetsPanel() {
         toggleFolder(key)
       }
     } else {
-      setLastLoadedFile(path)
       loadComponent(path);
     }
   }
@@ -263,7 +262,6 @@ export default function AssetsPanel() {
     setCreateFileKind(null);
     getFiles(rootFolder);
     loadComponent(response.path);
-    setLastLoadedFile(response.path);
   }
 
   return (

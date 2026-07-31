@@ -58,6 +58,12 @@ describe('SpineBonesControl', () => {
 });
 
 describe('Sprite', () => {
+  it('writes spriteFrame asset names as JSX expressions', () => {
+    const { component } = genReactComponentString({ tag: 'Sprite', props: { spriteFrame: 'sf_char_progress' } });
+
+    expect(component).toBe('<Sprite spriteFrame={sf_char_progress} />');
+  });
+
   it('writes an empty spriteFrame as an empty JSX expression', () => {
     const { component } = genReactComponentString({ tag: 'Sprite', props: { spriteFrame: '' } });
 
