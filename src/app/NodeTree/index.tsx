@@ -76,6 +76,8 @@ export default function NodeTree() {
         anchor: nextSelection[0] || null,
         mostRecent: nextSelection[nextSelection.length - 1] || null,
       });
+      const mostRecentPath = nextSelection[nextSelection.length - 1];
+      if (mostRecentPath) void tree.scrollTo(mostRecentPath);
     } finally {
       isApplyingPreviewSelection.current = false;
     }

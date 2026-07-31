@@ -9,9 +9,10 @@ import { CircleRender } from './CircleRender'
 import { parseBoneControls, updatePreviewWidgetInsets } from './component'
 import { GridRender } from './GridRender'
 import { loadSceneViewSdl, preloadSdlAssets, RectRender } from './loader'
+import { registerKeyboardHandler, registerMessageHandler, registerMouseHandler } from './PreviewSceneEvents'
 import { PreviewSceneSelection } from './PreviewSceneSelection'
 import { SpineBonesControlRender } from './SpineBonesControlRender'
-import { createNode, getComponentChildrenNum, getCurrentNode, getEditingRoot, KEY, setNodePositionProps } from './utils'
+import { createNode, getComponentChildrenNum, getCurrentNode, getEditingRoot, setNodePositionProps } from './utils'
 
 export class PreviewScene extends PreviewSceneSelection {
   static readonly SELECTION_ANCHOR_SIZE = 16
@@ -104,194 +105,15 @@ export class PreviewScene extends PreviewSceneSelection {
   }
 
   keyboardHandler() {
-    window.addEventListener('keydown', async (event) => {
-      const keyCode = event.code
-      this.updateInputModifiers(event)
-      const target = event.target as HTMLElement | null
-      if (target?.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target?.tagName)) return
-      // if (
-      //   [KEY.dash, KEY.equal, KEY.x, KEY.y, KEY.h, KEY.c, KEY.s, KEY.r, KEY.a, KEY.z, KEY.up, KEY.down, KEY.left, KEY.right].includes(
-      //     keyCode,
-      //   )
-      // ) {
-      //   event.preventDefault()
-      // }
-      if (keyCode === KEY.shift || keyCode === KEY.shiftR) {
-        // this.changeSelectPath(['1-1-1'])
-      }
-      if (event.ctrlKey || event.metaKey) {
-        if (keyCode === KEY.s) {
-          await this.saveComponent()
-        } else if (keyCode === KEY.r) {
-          // setLastSceneScale(0.5)
-          setLastSceneX(0)
-          setLastSceneY(0)
-          await this.loadComponent(GlobalState.filePath)
-        } else if (keyCode === KEY.a) {
-          await this.loadProjectData()
-          await this.loadComponent(GlobalState.filePath)
-        } else if (keyCode === KEY.z && event.shiftKey) {
-          await this.redoEdit()
-        } else if (keyCode === KEY.z) {
-          await this.undoEdit()
-        } else if (keyCode === KEY.y) {
-          await this.redoEdit()
-        }
-        return
-      }
-      if (keyCode === KEY.backspace || keyCode === KEY.delete) {
-        event.preventDefault()
-        await this.deleteSelectedNodes()
-        return
-      }
-      if (event.shiftKey) {
-        if (keyCode === KEY.dash) {
-          this.setRootScale(-0.05)
-        } else if (keyCode === KEY.equal) {
-          this.setRootScale(0.05)
-        } else if (keyCode === KEY.x) {
-          this.lockX = !this.lockX
-          this.updateArrowOpacity()
-        } else if (keyCode === KEY.y) {
-          this.lockY = !this.lockY
-          this.updateArrowOpacity()
-        } else if (keyCode === KEY.h) {
-          this.toggleSelectedNode()
-        } else if (keyCode === KEY.up) {
-          this.moveSelectedNodeWithHistory(0, -10)
-        } else if (keyCode === KEY.down) {
-          this.moveSelectedNodeWithHistory(0, 10)
-        } else if (keyCode === KEY.left) {
-          this.moveSelectedNodeWithHistory(-10, 0)
-        } else if (keyCode === KEY.right) {
-          this.moveSelectedNodeWithHistory(10, 0)
-        } else if (keyCode === KEY.up) {
-          this.moveSelectedNodeWithHistory(0, -1)
-        } else if (keyCode === KEY.down) {
-          this.moveSelectedNodeWithHistory(0, 1)
-        } else if (keyCode === KEY.left) {
-          this.moveSelectedNodeWithHistory(-1, 0)
-        } else if (keyCode === KEY.right) {
-          this.moveSelectedNodeWithHistory(1, 0)
-        } else if (keyCode === KEY.c) {
-          this.selectAllChildren()
-        }
-      }
-    })
-    window.addEventListener('keyup', (event) => {
-      this.updateInputModifiers(event)
-    })
-    window.addEventListener('blur', () => {
-      this.isShiftPressed = false
-      this.isMultiSelectModifierPressed = false
-    })
+    registerKeyboardHandler(this)
   }
 
   mouseHandler() {
-    const canvas = document.querySelector<HTMLCanvasElement>('#sdl-canvas')
-    canvas?.addEventListener(
-      'wheel',
-      (event) => {
-        this.setRootScale(event.deltaY > 0 ? -0.05 : 0.05)
-        event.preventDefault()
-      },
-      { passive: false },
-    )
-    canvas?.addEventListener('pointerdown', (event) => {
-      this.isMiddleMouse = event.button === 1
-      if (this.isMiddleMouse) this.middleMouseSelectionPaths = [...this.editingPaths]
-      this.updateInputModifiers(event)
-    }, true)
-    canvas?.addEventListener('pointermove', (event) => {
-      this.updateInputModifiers(event)
-      const bounds = canvas.getBoundingClientRect()
-      const x = (event.clientX - bounds.left) * this.logicalCanvasWidth / bounds.width
-      const y = (event.clientY - bounds.top) * this.logicalCanvasWidth / bounds.width
-      this.updateSpineBoneTooltip(x, y, event.clientX, event.clientY)
-      const activeArrowAxis = !this.isShiftPressed && !this.isMultiSelectModifierPressed && this.editingPaths[0]
-        ? this.getActiveArrowAxis(x, y)
-        : undefined
-      if (activeArrowAxis === 'anchor') {
-        canvas.style.cursor = 'move'
-        return
-      }
-      if (!this.isShiftPressed && !this.isMultiSelectModifierPressed && this.getActiveRotationHandle(x, y)) {
-        canvas.style.cursor = 'grab'
-        return
-      }
-      const colliderResizeEdge = !this.isShiftPressed && !this.isMultiSelectModifierPressed
-        ? this.getActiveBoxColliderResizeEdge(x, y)
-        : undefined
-      if (colliderResizeEdge) {
-        canvas.style.cursor = colliderResizeEdge === 'left' || colliderResizeEdge === 'right' ? 'ew-resize' : 'ns-resize'
-        return
-      }
-      if (!this.isShiftPressed && !this.isMultiSelectModifierPressed && this.getActiveBoxColliderEditor(x, y)) {
-        canvas.style.cursor = 'move'
-        return
-      }
-      const handle = !this.isShiftPressed && !this.isMultiSelectModifierPressed ? this.getActiveResizeEdge(x, y) : undefined
-      const canResizeX = handle?.includes('left') || handle?.includes('right') ? !this.lockX : false
-      const canResizeY = handle?.includes('top') || handle?.includes('bottom') ? !this.lockY : false
-      canvas.style.cursor = canResizeX && canResizeY
-        ? handle === 'top-left' || handle === 'bottom-right' ? 'nwse-resize' : 'nesw-resize'
-        : canResizeX ? 'ew-resize' : canResizeY ? 'ns-resize' : 'default'
-    })
-    canvas?.addEventListener('pointerleave', () => {
-      canvas.style.cursor = 'default'
-      if (this.spineBoneTooltipNode) this.spineBoneTooltipNode.style.display = 'none'
-    })
-    canvas?.addEventListener('pointerup', () => {
-      this.isMiddleMouse = false
-      this.middleMouseSelectionPaths = undefined
-      this.isShiftPressed = false
-      this.isMultiSelectModifierPressed = false
-      this.lastTouch = undefined
-    })
-    canvas?.addEventListener('pointercancel', () => {
-      this.isMiddleMouse = false
-      this.middleMouseSelectionPaths = undefined
-      this.isShiftPressed = false
-      this.isMultiSelectModifierPressed = false
-      this.lastTouch = undefined
-    })
+    registerMouseHandler(this)
   }
 
   messageHandler() {
-    const listener = (event) => {
-      const message = event.data
-      if (message.type === 'reLoad') {
-        if (this.isEditing) {
-          this.showSaveDialog(GlobalState.filePath)
-        } else {
-          void this.loadComponent(GlobalState.filePath)
-        }
-      } else if (message.type === 'changeFilePath') {
-        GlobalState.tempFilePath = message.filePath
-        if (this.isEditing) {
-          this.showSaveDialog(GlobalState.tempFilePath)
-        } else {
-          void this.loadComponent(GlobalState.tempFilePath)
-        }
-      } else if (message.type === 'changeSelectPath') {
-        this.changeSelectPath(message.selectPaths, false)
-      } else if (message.type === 'focusPreviewNode') {
-        this.focusNode(message.path)
-      } else if (message.type === 'reloadProjectData') {
-        void this.reloadProjectData()
-      } else if (message.type === 'updateSelectedNode') {
-        void this.updateSelectedNode(message.component, message.updated)
-      } else if (message.type === 'changeSelectedNodeType') {
-        void this.changeSelectedNodeType(message.tag)
-      } else if (message.type === 'toggleBoxColliderEditor') {
-        this.toggleBoxColliderEditor(message.componentIndex)
-      } else if (message.type === 'addDroppedNode') {
-        void this.addDroppedNode(message.item, message.parentId, message.clientX, message.clientY)
-      } else if (message.type === 'moveHierarchyNodes') {
-        void this.moveHierarchyNodes(message.dragIds, message.parentId, message.index)
-      }
-    }
-    window.addEventListener('message', listener)
+    registerMessageHandler(this)
   }
 
   async loadProjectData() {
@@ -363,10 +185,8 @@ export class PreviewScene extends PreviewSceneSelection {
     this.drawNode = createNode('PreviewDrawNode')
     this.drawNode.anchorX = 0
     this.drawNode.anchorY = 0
+    this.drawNode.addComponent(new GridRender())
     this.node.addChild(this.drawNode)
-    const grid = createNode('PreviewGrid')
-    grid.addComponent(new GridRender())
-    this.drawNode.addChild(grid)
     this.drawNode.x = this.borderNode.x = getLastSceneX()
     this.drawNode.y = this.borderNode.y = getLastSceneY()
     this.drawNode.scale = this.borderNode.scale = getLastSceneScale()
