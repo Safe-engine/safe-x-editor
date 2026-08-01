@@ -809,7 +809,7 @@ export class PreviewScene extends PreviewSceneSelection {
     window.postMessage({ type: 'previewRestoreComponentTree', treeData: this.editingComponent, selectPaths: this.editingPaths }, '*')
   }
 
-  async moveHierarchyNodes(dragIds: string[], parentId: string | null, _index: number | null) {
+  async moveHierarchyNodes(dragIds: string[], parentId: string | null, index: number | null) {
     if (!dragIds?.length || !this.editingComponent?.length) return
 
     const sceneRoot = first<any>(this.editingComponent)
@@ -830,7 +830,7 @@ export class PreviewScene extends PreviewSceneSelection {
 
     this.pushUndoHistory()
     const movedIds = new Set(draggedNodes.map((node) => node.id))
-    const targetIndex = targetChildren.length
+    const targetIndex = Math.max(0, Math.min(index ?? targetChildren.length, targetChildren.length))
     const movedBeforeIndex = targetChildren.slice(0, targetIndex).filter((node) => movedIds.has(node.id)).length
     const removeNodes = (nodes: any[]): any[] => nodes
       .filter((node) => !movedIds.has(node.id))
