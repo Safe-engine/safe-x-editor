@@ -14,6 +14,22 @@ import { PreviewSceneSelection } from './PreviewSceneSelection'
 import { SpineBonesControlRender } from './SpineBonesControlRender'
 import { createNode, getComponentChildrenNum, getCurrentNode, getEditingRoot, setNodePositionProps } from './utils'
 
+let assetVersion = 0
+
+function versionAssets(assets: any) {
+  const version = ++assetVersion
+  const versionValue = (value: any) => typeof value === 'string'
+    ? `${value}${value.includes('?') ? '&' : '?'}previewVersion=${version}`
+    : value
+  const versionList = (items: any[] = []) => items.map((item) => ({ ...item, value: versionValue(item.value) }))
+
+  return {
+    ...assets,
+    assetsTextureList: versionList(assets?.assetsTextureList),
+    spriteFramesAssets: versionList(assets?.spriteFramesAssets),
+  }
+}
+
 export class PreviewScene extends PreviewSceneSelection {
   static readonly SELECTION_ANCHOR_SIZE = 16
   static readonly RESIZE_CORNER_SIZE = 12
@@ -125,7 +141,7 @@ export class PreviewScene extends PreviewSceneSelection {
     })
     const { designedResolution, assets, componentsCache, colors, defaultProps, jsonCaches, staticPropsMap, enumsList, projectName, ...rest } = data
     GlobalState.data = {
-      ...assets,
+      ...versionAssets(assets),
       ...rest,
       componentsCache,
       designedResolution,

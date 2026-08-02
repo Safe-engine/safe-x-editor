@@ -167,6 +167,16 @@ export async function replaceSpriteImage({ rootFolder, targetPath, targetKey, jo
   return { success: true };
 }
 
+export async function replaceSpriteImageFromFile({ rootFolder, targetPath, sourcePath }: { rootFolder: string; targetPath: string; sourcePath: string }) {
+  if (!sourcePath || !existsSync(sourcePath) || !imageExtensions.has(extname(sourcePath).toLowerCase())) {
+    throw Error('Choose an existing PNG, JPG, WebP, or SVG image.');
+  }
+
+  const destination = targetImagePath(rootFolder, targetPath);
+  await new Promise<void>((resolve, reject) => copyFile(sourcePath, destination, (error) => error ? reject(error) : resolve()));
+  return { success: true };
+}
+
 export async function createSpriteImageAsset({ rootFolder, targetPath, targetKey, jobId, imageIndex }: { rootFolder: string; targetPath: string; targetKey: string; jobId: string; imageIndex: number }) {
   const job = imageJobs.get(jobId);
   const source = job?.files[imageIndex];
