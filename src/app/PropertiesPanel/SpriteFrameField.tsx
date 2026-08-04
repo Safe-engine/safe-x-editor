@@ -1,13 +1,14 @@
 import { Combobox } from '@headlessui/react';
-import { parseStringFromValue } from 'helper/node';
-import { toFileUrl } from 'helper/fileUrl';
-import { dialog, getCurrentWindow } from 'helper/electronRemote';
-import { useState } from 'react';
-import toast from 'react-hot-toast';
-import { FiCheck, FiChevronDown, FiEdit3, FiSave, FiUpload } from 'react-icons/fi';
+import { sendRequest } from 'app/app.ipc';
 import Button from 'base/Button';
 import Modal from 'base/Modal';
-import { sendRequest } from 'app/app.ipc';
+import { dialog, getCurrentWindow } from 'helper/electronRemote';
+import { toFileUrl } from 'helper/fileUrl';
+import { parseStringFromValue } from 'helper/node';
+import { useState } from 'react';
+import toast from 'react-hot-toast';
+import { FiCheck, FiChevronDown, FiSave, FiUpload } from 'react-icons/fi';
+import { LuSparkle } from 'react-icons/lu';
 import { REPLACE_SPRITE_IMAGE_FILE_REQUEST, RESIZE_SPRITE_IMAGE_REQUEST } from 'shared/constant.message';
 import SpriteFrameAiDialog from './SpriteFrameAiDialog';
 
@@ -157,7 +158,7 @@ export default function SpriteFrameField({ value, textures, rootFolder, onChange
           onClick={() => setIsAiDialogOpen(true)}
           title={selectedTexture ? 'Edit image with AI' : 'Choose a sprite frame first'}
         >
-          <FiEdit3 size={14} />
+          <LuSparkle size={14} />
         </button>
         {resizeTo && (
           <button
