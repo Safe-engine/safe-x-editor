@@ -32,6 +32,19 @@ describe('parseJsonCache', () => {
 });
 
 describe('parseAssetsSrcFile', () => {
+  it('keeps the source asset path when no webview is provided', () => {
+    const folder = mkdtempSync(join(tmpdir(), 'safe-x-editor-'));
+    folders.push(folder);
+    GlobalData.rootProject = folder;
+    mkdirSync(join(folder, 'src', 'assets'), { recursive: true });
+    const assetsFile = join(folder, 'src', 'assets', 'SpriteFrames.ts');
+    writeFileSync(assetsFile, 'export const frame = "frames/hero.plist";');
+
+    expect(parseAssetsSrcFile(assetsFile)).toEqual([
+      expect.objectContaining({ key: 'frame', value: 'frames/hero.plist' }),
+    ]);
+  });
+
   it('reads SVG dimensions from its viewBox', () => {
     const folder = mkdtempSync(join(tmpdir(), 'safe-x-editor-'));
     folders.push(folder);

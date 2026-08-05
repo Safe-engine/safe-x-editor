@@ -3,11 +3,11 @@ import { parse } from '@typescript-eslint/typescript-estree';
 import assert from 'assert';
 import fs from 'fs';
 import pathUtil from 'path';
-import { convertComponentData, genReactComponentString, getJSXBlock } from '../utils/ParseData';
-import { renderList } from '../utils/constants';
-import { spliceString } from '../utils/StringHelper';
-import { removeTextureMatchingNodeSizes } from '../utils/NodeSize';
 import { GlobalData } from '../parser/global';
+import { renderList } from '../utils/constants';
+import { removeTextureMatchingNodeSizes } from '../utils/NodeSize';
+import { convertComponentData, genReactComponentString, getJSXBlock } from '../utils/ParseData';
+import { spliceString } from '../utils/StringHelper';
 import { parseAssetsSrcFile } from './assets';
 
 export const loadComponent = async ({ path }) => {
@@ -157,6 +157,93 @@ function addEngineComponentImports(content: string, components: string[]) {
   return `${content.slice(0, match.index)}${match[0].replace(match[1], ` ${merged} `)}${content.slice(match.index + match[0].length)}`;
 }
 
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function getColorNamesUsedByProps(nodesData, colorNames: Set<string>) {
+  const used = new Set<string>();
+  const collectColorValue = (value) => {
+    if (value === undefined || value === null) return;
+    const source = Array.isArray(value) ? value.join(',') : String(value);
+    for (const colorName of colorNames) {
+      if (new RegExp(`\\b${escapeRegExp(colorName)}\\b`).test(source)) used.add(colorName);
+    }
+  };
+  const collectProps = (props) => {
+    for (const [key, value] of Object.entries(props || {})) {
+      if (['color', 'outline', 'shadow'].includes(key)) collectColorValue(value);
+      if (key === 'node' && value && typeof value === 'object') collectColorValue(value.color);
+    }
+  };
+  const collectNode = (node) => {
+    if (!node || typeof node !== 'object') return;
+    collectProps(node.props);
+    for (const component of node.components || []) collectProps(component.props);
+    for (const child of node.children || []) collectNode(child);
+  };
+
+  (Array.isArray(nodesData) ? nodesData : [nodesData]).forEach(collectNode);
+  return [...used];
+}
+
+function addColorImports(content: string, filePath: string, nodesData) {
+  const colorsFilePath = pathUtil.join(GlobalData.rootProject, 'src', 'helper', 'colors.ts');
+  const colorNames = new Set(parseAssetsSrcFile(colorsFilePath, undefined, true).map((color) => color.key));
+  const usedColorNames = getColorNamesUsedByProps(nodesData, colorNames);
+  if (!usedColorNames.length) return content;
+
+  let importPath = pathUtil.relative(pathUtil.dirname(filePath), colorsFilePath).replace(/\\/g, '/').replace(/\.ts$/, '');
+  if (!importPath.startsWith('.')) importPath = `./${importPath}`;
+  const importPattern = new RegExp(`import\\s+\\{([^}]*)\\}\\s+from\\s+(['"])${escapeRegExp(importPath)}\\2;?`);
+  const match = importPattern.exec(content);
+  if (!match) return `import { ${usedColorNames.join(', ')} } from '${importPath}';\n${content}`;
+
+  const importedNames = match[1].split(',').map((name) => name.trim());
+  const missingNames = usedColorNames.filter((name) => !importedNames.includes(name));
+  if (!missingNames.length) return content;
+  const merged = `${importedNames.filter(Boolean).join(', ')}, ${missingNames.join(', ')}`;
+  return `${content.slice(0, match.index)}${match[0].replace(match[1], ` ${merged} `)}${content.slice(match.index + match[0].length)}`;
+}
+
+function getSpriteFrameNamesUsedByProps(nodesData, spriteFrameNames: Set<string>) {
+  const used = new Set<string>();
+  const collectProps = (props) => {
+    const spriteFrame = props?.spriteFrame;
+    if (typeof spriteFrame !== 'string') return;
+    const name = spriteFrame.replace(/^\{(.*)\}$/, '$1');
+    if (spriteFrameNames.has(name)) used.add(name);
+  };
+  const collectNode = (node) => {
+    if (!node || typeof node !== 'object') return;
+    collectProps(node.props);
+    for (const component of node.components || []) collectProps(component.props);
+    for (const child of node.children || []) collectNode(child);
+  };
+
+  (Array.isArray(nodesData) ? nodesData : [nodesData]).forEach(collectNode);
+  return [...used];
+}
+
+function addSpriteFrameImports(content: string, filePath: string, nodesData) {
+  const spriteFramesFilePath = pathUtil.join(GlobalData.rootProject, 'src', 'assets', 'TextureAssets.ts');
+  const spriteFrameNames = new Set(parseAssetsSrcFile(spriteFramesFilePath).map((asset) => asset.key));
+  const usedSpriteFrameNames = getSpriteFrameNamesUsedByProps(nodesData, spriteFrameNames);
+  if (!usedSpriteFrameNames.length) return content;
+
+  let importPath = pathUtil.relative(pathUtil.dirname(filePath), spriteFramesFilePath).replace(/\\/g, '/').replace(/\.ts$/, '');
+  if (!importPath.startsWith('.')) importPath = `./${importPath}`;
+  const importPattern = new RegExp(`import\\s+\\{([^}]*)\\}\\s+from\\s+(['"])${escapeRegExp(importPath)}\\2;?`);
+  const match = importPattern.exec(content);
+  if (!match) return `import { ${usedSpriteFrameNames.join(', ')} } from '${importPath}'\n${content}`;
+
+  const importedNames = match[1].split(',').map((name) => name.trim());
+  const missingNames = usedSpriteFrameNames.filter((name) => !importedNames.includes(name));
+  if (!missingNames.length) return content;
+  const merged = `${importedNames.filter(Boolean).join(', ')}, ${missingNames.join(', ')}`;
+  return `${content.slice(0, match.index)}${match[0].replace(match[1], ` ${merged} `)}${content.slice(match.index + match[0].length)}`;
+}
+
 export const updateComponentTag = ({ nodesData, filePath }) => {
   // console.log('updateComponentTag', nodesData, filePath);
   const assetsPath = pathUtil.join(GlobalData.rootProject, 'src', 'assets');
@@ -180,9 +267,11 @@ export const updateComponentTag = ({ nodesData, filePath }) => {
   const generatedImports = imports.filter((imp) => !content.includes(imp));
   const missingEngineComponents = getMissingEngineComponentImports(nodesData, content);
   const contentWithEngineImports = addEngineComponentImports(content, missingEngineComponents);
-  if (generatedImports.length || contentWithEngineImports !== content) {
+  const contentWithColorImports = addColorImports(contentWithEngineImports, filePath, nodesData);
+  const contentWithSpriteFrameImports = addSpriteFrameImports(contentWithColorImports, filePath, nodesData);
+  if (generatedImports.length || contentWithSpriteFrameImports !== content) {
     const generatedImportBlock = generatedImports.join('\n');
-    fs.writeFileSync(filePath, generatedImportBlock ? `${generatedImportBlock}\n${contentWithEngineImports}` : contentWithEngineImports);
+    fs.writeFileSync(filePath, generatedImportBlock ? `${generatedImportBlock}\n${contentWithSpriteFrameImports}` : contentWithSpriteFrameImports);
   }
   return true;
 };

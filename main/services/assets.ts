@@ -55,7 +55,7 @@ export function parseAssets(parsed, panel?: WebviewView, isColor = false) {
               path: relativePath,
               key: name,
               json: getJsonData(relativePath, fileUri.fsPath),
-              value: panel.webview.asWebviewUri(fileUri).toString()
+              value: relativePath
             });
             return;
           }
