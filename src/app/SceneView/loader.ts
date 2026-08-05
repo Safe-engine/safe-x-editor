@@ -296,11 +296,16 @@ async function parseChildren(root, parentNode: Node, data: ProjectData, evalInit
     }
   } else if (tag === 'DicedSprite') {
     const dataKey = parseStringFromValue(props.data)
-    const dicedData = data.jsonAssets?.find((item) => item.key === dataKey)?.value ?? dataKey
+    const dicedAsset = data.jsonAssets?.find((item) => item.key === dataKey)
+    const dicedData = dicedAsset?.value ?? dataKey
+    const texture = parseStringFromValue(props.texture)
+      ?? (dicedAsset?.json?.meta?.name
+        ? projectAssetUrl(`${dicedAsset.path.replace(/[^/\\]+$/, '')}${dicedAsset.json.meta.name}.png`)
+        : undefined)
     if (dicedData) {
       const dicedSprite = renderNode.addComponent(new DicedSprite({
         data: dicedData,
-        texture: parseStringFromValue(props.texture),
+        texture,
         animation: parseStringFromValue(props.animation),
       }))
       await dicedSprite.reload()
