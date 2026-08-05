@@ -1,4 +1,4 @@
-import { app } from 'electron';
+import { app, clipboard } from 'electron';
 import { execFile } from 'child_process';
 import { copyFile, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
@@ -94,8 +94,34 @@ function targetImagePath(rootFolder: string, targetPath: string) {
   return candidate;
 }
 
-function targetImageDestinationPath(currentImage: string) {
-  return join(dirname(currentImage), `${basename(currentImage, extname(currentImage))}_new.svg`);
+function targetImageDestinationPath(currentImage: string, extension = extname(currentImage)) {
+  const currentName = basename(currentImage, extension);
+  const match = currentName.match(/^(.*?)(\d+)$/);
+  const name = match?.[1] || currentName;
+  let number = match ? Number(match[2]) + 1 : 2;
+  let destination = join(dirname(currentImage), `${name}${number}${extension}`);
+
+  while (existsSync(destination)) {
+    number += 1;
+    destination = join(dirname(currentImage), `${name}${number}${extension}`);
+  }
+  return destination;
+}
+
+function nextTextureAssetKey(rootFolder: string, targetKey: string) {
+  const assetFile = join(rootFolder, 'src', 'assets', 'TextureAssets.ts');
+  const existing = existsSync(assetFile) ? readFileSync(assetFile, 'utf-8') : '';
+  const currentKey = String(targetKey || 'sprite').replace(/[^a-zA-Z0-9_$]/g, '_');
+  const match = currentKey.match(/^(.*?)(\d+)$/);
+  const base = match?.[1] || currentKey;
+  let number = match ? Number(match[2]) + 1 : 2;
+  let key = `${base}${number}`;
+
+  while (new RegExp(`(?:export\\s+)?const\\s+${escapeRegExp(key)}\\b`).test(existing)) {
+    number += 1;
+    key = `${base}${number}`;
+  }
+  return { assetFile, key };
 }
 
 function escapeRegExp(value: string) {
@@ -177,25 +203,72 @@ export async function replaceSpriteImageFromFile({ rootFolder, targetPath, sourc
   return { success: true };
 }
 
+export function replaceSpriteImageFromClipboard({ rootFolder, targetPath, targetKey }: { rootFolder: string; targetPath: string; targetKey: string }) {
+  const image = clipboard.readImage();
+  if (image.isEmpty()) throw Error('The clipboard does not contain an image.');
+
+  const currentImage = targetImagePath(rootFolder, targetPath);
+  const destination = extname(currentImage).toLowerCase() === '.png'
+    ? currentImage
+    : join(dirname(currentImage), `${basename(currentImage, extname(currentImage))}_pasted.png`);
+  writeFileSync(destination, image.toPNG());
+  if (destination !== currentImage) {
+    updateTextureAssetPath(rootFolder, targetKey, relative(resolve(rootFolder, 'res'), destination).replace(/\\/g, '/'));
+  }
+  return { success: true };
+}
+
+async function createSpriteImageAssetFromSource({ rootFolder, targetPath, targetKey, extension, write }: { rootFolder: string; targetPath: string; targetKey: string; extension: string; write: (destination: string) => Promise<void> | void }) {
+  const currentImage = targetImagePath(rootFolder, targetPath);
+  const destination = targetImageDestinationPath(currentImage, extension);
+  const relativePath = relative(resolve(rootFolder, 'res'), destination).replace(/\\/g, '/');
+  const { assetFile, key } = nextTextureAssetKey(rootFolder, targetKey);
+
+  await write(destination);
+  const existing = existsSync(assetFile) ? readFileSync(assetFile, 'utf-8') : '';
+  writeFileSync(assetFile, `${existing}${existing && !existing.endsWith('\n') ? '\n' : ''}export const ${key} = ${JSON.stringify(relativePath)};\n`, 'utf-8');
+  return { success: true, key };
+}
+
+export async function createSpriteImageAssetFromFile({ rootFolder, targetPath, targetKey, sourcePath }: { rootFolder: string; targetPath: string; targetKey: string; sourcePath: string }) {
+  if (!sourcePath || !existsSync(sourcePath) || !imageExtensions.has(extname(sourcePath).toLowerCase())) {
+    throw Error('Choose an existing PNG, JPG, WebP, or SVG image.');
+  }
+  return createSpriteImageAssetFromSource({
+    rootFolder,
+    targetPath,
+    targetKey,
+    extension: extname(sourcePath),
+    write: (destination) => new Promise<void>((resolve, reject) => copyFile(sourcePath, destination, (error) => error ? reject(error) : resolve())),
+  });
+}
+
+export function createSpriteImageAssetFromClipboard({ rootFolder, targetPath, targetKey }: { rootFolder: string; targetPath: string; targetKey: string }) {
+  const image = clipboard.readImage();
+  if (image.isEmpty()) throw Error('The clipboard does not contain an image.');
+
+  return createSpriteImageAssetFromSource({
+    rootFolder,
+    targetPath,
+    targetKey,
+    extension: '.png',
+    write: (destination) => writeFileSync(destination, image.toPNG()),
+  });
+}
+
 export async function createSpriteImageAsset({ rootFolder, targetPath, targetKey, jobId, imageIndex }: { rootFolder: string; targetPath: string; targetKey: string; jobId: string; imageIndex: number }) {
   const job = imageJobs.get(jobId);
   const source = job?.files[imageIndex];
   if (!source || !existsSync(source)) throw Error('This generated image is no longer available. Generate again.');
 
-  const currentImage = targetImagePath(rootFolder, targetPath);
-  const destination = targetImageDestinationPath(currentImage);
-  const relativePath = relative(resolve(rootFolder, 'res'), destination).replace(/\\/g, '/');
-  const key = `${String(targetKey || 'sprite').replace(/[^a-zA-Z0-9_$]/g, '_')}_new`;
-  const assetFile = join(rootFolder, 'src', 'assets', 'TextureAssets.ts');
-  const existing = existsSync(assetFile) ? readFileSync(assetFile, 'utf-8') : '';
-
-  await new Promise<void>((resolve, reject) => copyFile(source, destination, (error) => error ? reject(error) : resolve()));
-  if (new RegExp(`(?:export\\s+)?const\\s+${key}\\b`).test(existing)) {
-    updateTextureAssetPath(rootFolder, key, relativePath);
-  } else {
-    writeFileSync(assetFile, `${existing}${existing && !existing.endsWith('\n') ? '\n' : ''}export const ${key} = ${JSON.stringify(relativePath)};\n`, 'utf-8');
-  }
+  const result = await createSpriteImageAssetFromSource({
+    rootFolder,
+    targetPath,
+    targetKey,
+    extension: extname(source),
+    write: (destination) => new Promise<void>((resolve, reject) => copyFile(source, destination, (error) => error ? reject(error) : resolve())),
+  });
   imageJobs.delete(jobId);
   rmSync(job.directory, { recursive: true, force: true });
-  return { success: true, key };
+  return result;
 }

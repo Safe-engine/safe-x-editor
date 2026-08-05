@@ -2,14 +2,13 @@ import { Combobox } from '@headlessui/react';
 import { sendRequest } from 'app/app.ipc';
 import Button from 'base/Button';
 import Modal from 'base/Modal';
-import { dialog, getCurrentWindow } from 'helper/electronRemote';
 import { toFileUrl } from 'helper/fileUrl';
 import { parseStringFromValue } from 'helper/node';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
-import { FiCheck, FiChevronDown, FiSave, FiUpload } from 'react-icons/fi';
+import { FiCheck, FiChevronDown, FiSave } from 'react-icons/fi';
 import { LuSparkle } from 'react-icons/lu';
-import { REPLACE_SPRITE_IMAGE_FILE_REQUEST, RESIZE_SPRITE_IMAGE_REQUEST } from 'shared/constant.message';
+import { RESIZE_SPRITE_IMAGE_REQUEST } from 'shared/constant.message';
 import SpriteFrameAiDialog from './SpriteFrameAiDialog';
 
 function texturePreviewUrl(texture, rootFolder) {
@@ -32,7 +31,6 @@ export default function SpriteFrameField({ value, textures, rootFolder, onChange
   const [isAiDialogOpen, setIsAiDialogOpen] = useState(false);
   const [isResizeDialogOpen, setIsResizeDialogOpen] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
-  const [isReplacing, setIsReplacing] = useState(false);
   const filteredTextures = textures.filter((texture) => textureLabel(texture).toLowerCase().includes(filter.toLowerCase()));
   const width = Math.round(resizeTo?.width);
   const height = Math.round(resizeTo?.height);
@@ -61,36 +59,6 @@ export default function SpriteFrameField({ value, textures, rootFolder, onChange
       toast.error('Unable to resize texture');
     } finally {
       setIsResizing(false);
-    }
-  }
-
-  async function replaceTextureFromFile() {
-    if (!selectedTexture || isReplacing) return;
-    const [sourcePath] = dialog.showOpenDialogSync(getCurrentWindow(), {
-      title: 'Choose replacement image',
-      properties: ['openFile'],
-      filters: [{ name: 'Images', extensions: ['png', 'jpg', 'jpeg', 'webp', 'svg'] }],
-    }) || [];
-    if (!sourcePath) return;
-
-    setIsReplacing(true);
-    try {
-      const response: any = await sendRequest({
-        key: REPLACE_SPRITE_IMAGE_FILE_REQUEST,
-        rootFolder,
-        targetPath: selectedTexture.value || selectedTexture.path,
-        sourcePath,
-      });
-      if (!response?.success) {
-        toast.error(response?.message || 'Unable to replace texture');
-        return;
-      }
-      toast.success('Texture replaced');
-      onImageReplaced();
-    } catch {
-      toast.error('Unable to replace texture');
-    } finally {
-      setIsReplacing(false);
     }
   }
 
@@ -140,17 +108,6 @@ export default function SpriteFrameField({ value, textures, rootFolder, onChange
             </Combobox.Options>
           </div>
         </Combobox>
-        {resizeTo && (
-          <button
-            className='flex h-7 w-7 shrink-0 items-center justify-center rounded-sm border border-[#111] bg-[#2a2a2a] text-[#bdbdbd] hover:bg-[#343434] hover:text-white disabled:cursor-not-allowed disabled:opacity-40'
-            type='button'
-            disabled={!selectedTexture || isReplacing}
-            onClick={() => void replaceTextureFromFile()}
-            title={selectedTexture ? 'Replace texture from image file' : 'Choose a sprite frame first'}
-          >
-            <FiUpload size={14} />
-          </button>
-        )}
         <button
           className='flex h-7 w-7 shrink-0 items-center justify-center rounded-sm border border-[#111] bg-[#2a2a2a] text-[#bdbdbd] hover:bg-[#343434] hover:text-white disabled:cursor-not-allowed disabled:opacity-40'
           type='button'
@@ -179,7 +136,6 @@ export default function SpriteFrameField({ value, textures, rootFolder, onChange
           rootFolder={rootFolder}
           targetPath={selectedTexture.value || selectedTexture.path}
           targetKey={selectedTexture.key}
-          targetLabel={textureLabel(selectedTexture)}
           onReplaced={onImageReplaced}
         />
       )}
