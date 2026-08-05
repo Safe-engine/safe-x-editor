@@ -808,6 +808,8 @@ export class PreviewScene extends PreviewSceneSelection {
         ? { id, expanded: true, tag: 'SpineSkeleton', props: { data: assetKey }, components: [], children: [] }
       : asset.type === 'dragonBones'
         ? { id, expanded: true, tag: 'DragonBones', props: { data: assetKey }, components: [], children: [] }
+      : asset.type === 'dicedSprite'
+        ? { id, expanded: true, tag: 'DicedSprite', props: { data: assetKey, animation: asset.json?.animations?.[0]?.name || '' }, components: [], children: [] }
       : asset.type === 'tiledMap'
         ? { id, expanded: true, tag: 'TiledMap', props: { mapFile: assetKey }, components: [], children: [] }
       : asset.type === 'font'

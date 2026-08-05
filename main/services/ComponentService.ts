@@ -244,6 +244,39 @@ function addSpriteFrameImports(content: string, filePath: string, nodesData) {
   return `${content.slice(0, match.index)}${match[0].replace(match[1], ` ${merged} `)}${content.slice(match.index + match[0].length)}`;
 }
 
+function getDicedSpriteDataNamesUsedByProps(nodesData, jsonAssetNames: Set<string>) {
+  const used = new Set<string>();
+  const collectNode = (node) => {
+    if (!node || typeof node !== 'object') return;
+    const data = node.tag === 'DicedSprite' ? node.props?.data : undefined;
+    const name = typeof data === 'string' ? data.replace(/^\{(.*)\}$/, '$1') : undefined;
+    if (name && jsonAssetNames.has(name)) used.add(name);
+    for (const child of node.children || []) collectNode(child);
+  };
+
+  (Array.isArray(nodesData) ? nodesData : [nodesData]).forEach(collectNode);
+  return [...used];
+}
+
+function addDicedSpriteDataImports(content: string, filePath: string, nodesData) {
+  const jsonAssetsFilePath = pathUtil.join(GlobalData.rootProject, 'src', 'assets', 'JsonAssets.ts');
+  const jsonAssetNames = new Set(parseAssetsSrcFile(jsonAssetsFilePath).map((asset) => asset.key));
+  const usedJsonAssetNames = getDicedSpriteDataNamesUsedByProps(nodesData, jsonAssetNames);
+  if (!usedJsonAssetNames.length) return content;
+
+  let importPath = pathUtil.relative(pathUtil.dirname(filePath), jsonAssetsFilePath).replace(/\\/g, '/').replace(/\.ts$/, '');
+  if (!importPath.startsWith('.')) importPath = `./${importPath}`;
+  const importPattern = new RegExp(`import\\s+\\{([^}]*)\\}\\s+from\\s+(['"])${escapeRegExp(importPath)}\\2;?`);
+  const match = importPattern.exec(content);
+  if (!match) return `import { ${usedJsonAssetNames.join(', ')} } from '${importPath}'\n${content}`;
+
+  const importedNames = match[1].split(',').map((name) => name.trim());
+  const missingNames = usedJsonAssetNames.filter((name) => !importedNames.includes(name));
+  if (!missingNames.length) return content;
+  const merged = `${importedNames.filter(Boolean).join(', ')}, ${missingNames.join(', ')}`;
+  return `${content.slice(0, match.index)}${match[0].replace(match[1], ` ${merged} `)}${content.slice(match.index + match[0].length)}`;
+}
+
 export const updateComponentTag = ({ nodesData, filePath }) => {
   // console.log('updateComponentTag', nodesData, filePath);
   const assetsPath = pathUtil.join(GlobalData.rootProject, 'src', 'assets');
@@ -269,9 +302,10 @@ export const updateComponentTag = ({ nodesData, filePath }) => {
   const contentWithEngineImports = addEngineComponentImports(content, missingEngineComponents);
   const contentWithColorImports = addColorImports(contentWithEngineImports, filePath, nodesData);
   const contentWithSpriteFrameImports = addSpriteFrameImports(contentWithColorImports, filePath, nodesData);
-  if (generatedImports.length || contentWithSpriteFrameImports !== content) {
+  const contentWithDicedSpriteDataImports = addDicedSpriteDataImports(contentWithSpriteFrameImports, filePath, nodesData);
+  if (generatedImports.length || contentWithDicedSpriteDataImports !== content) {
     const generatedImportBlock = generatedImports.join('\n');
-    fs.writeFileSync(filePath, generatedImportBlock ? `${generatedImportBlock}\n${contentWithSpriteFrameImports}` : contentWithSpriteFrameImports);
+    fs.writeFileSync(filePath, generatedImportBlock ? `${generatedImportBlock}\n${contentWithDicedSpriteDataImports}` : contentWithDicedSpriteDataImports);
   }
   return true;
 };

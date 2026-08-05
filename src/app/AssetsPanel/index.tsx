@@ -56,6 +56,11 @@ function spriteSheetTexturePath(data: any) {
   return data.path?.replace(/\.(json|plist)$/i, '.png');
 }
 
+function dicedSpriteTexturePath(data: any) {
+  const name = data.json?.meta?.name;
+  return name ? pathUtils.join(pathUtils.dirname(data.path), `${name}.png`).replace(/\\/g, '/') : '';
+}
+
 function isTexture(data: any) {
   const extension = data.extension || data.name?.match(/\.[^.]+$/)?.[0];
   return !data.isDirectory && textureExtensions.has(extension?.toLowerCase());
@@ -78,6 +83,13 @@ function getPreviewAsset(data: any, rootFolder: string) {
     return {
       ...data,
       value: data.value,
+    };
+  }
+  if (data.type === 'dicedSprite') {
+    return {
+      ...data,
+      value: resourceFileUrl(data.value || data.path, rootFolder),
+      texture: resourceFileUrl(dicedSpriteTexturePath(data), rootFolder),
     };
   }
   if (!isTexture(data)) return null;

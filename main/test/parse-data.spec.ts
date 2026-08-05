@@ -71,6 +71,14 @@ describe('Sprite', () => {
   });
 });
 
+describe('DicedSprite', () => {
+  it('writes diced sprite data asset names as JSX expressions', () => {
+    const { component } = genReactComponentString({ tag: 'DicedSprite', props: { data: 'pet_choang_coc_json', animation: 'idle' } });
+
+    expect(component).toBe('<DicedSprite data={pet_choang_coc_json} animation="idle" />');
+  });
+});
+
 describe('node texture size', () => {
   it('removes explicit dimensions that match the texture size', () => {
     expect(removeTextureMatchingNodeSize({ width: 64, height: 32, x: 10 }, { width: 64, height: 32 }))
