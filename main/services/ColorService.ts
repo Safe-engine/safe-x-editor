@@ -47,7 +47,7 @@ function getColorStatements(source: string) {
 export async function updateProjectColors({ rootFolder, colors }: { rootFolder: string; colors: ProjectColor[] }) {
   if (!rootFolder) throw Error('No project is loaded.');
 
-  const filePath = join(rootFolder, 'src', 'helper', 'constant.ts');
+  const filePath = join(rootFolder, 'src', 'helper', 'colors.ts');
   if (!existsSync(filePath)) throw Error('Project color constants file was not found.');
 
   const source = readFileSync(filePath, 'utf-8');

@@ -140,7 +140,8 @@ export function parseJsonCache(cacheFile, jsonAssets) {
   return varsList;
 }
 
-export function parseEnums(cacheFile, jsonAssets) {
+export function parseEnums(cacheFile) {
+  if (!existsSync(cacheFile)) { return {}; }
   const ast: any = parseFile(cacheFile);
   const varsList = {};
   ESTraverse.traverse(ast, {
