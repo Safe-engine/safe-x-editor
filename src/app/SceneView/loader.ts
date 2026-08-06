@@ -302,7 +302,7 @@ async function parseChildren(root, parentNode: Node, data: ProjectData, evalInit
       ?? (dicedAsset?.json?.meta?.name
         ? projectAssetUrl(`${dicedAsset.path.replace(/[^/\\]+$/, '')}${dicedAsset.json.meta.name}.png`)
         : undefined)
-    if (dicedData) {
+    if (dicedData && dicedAsset) {
       const dicedSprite = renderNode.addComponent(new DicedSprite({
         data: dicedData,
         texture,

@@ -39,6 +39,29 @@ describe('JSX comments', () => {
   });
 });
 
+describe('__view JSX blocks', () => {
+  for (const [name, view] of [
+    ['bare block', '<Container><Sprite /></Container>'],
+    ['returned block', 'return <Container><Sprite /></Container>'],
+    ['parenthesized returned block', 'return (<Container><Sprite /></Container>)'],
+  ]) {
+    it(`parses a ${name}`, async () => {
+      const source = `export class Example extends ComponentX {
+  __view() {
+    ${view}
+  }
+}`;
+      const parsed = parse(source, { jsx: true, range: true });
+      const { treeData } = await convertComponentData(parsed, 'Example.tsx', source);
+
+      expect(treeData).toEqual(expect.objectContaining({
+        tag: 'Container',
+        children: [expect.objectContaining({ tag: 'Sprite' })],
+      }));
+    });
+  }
+});
+
 describe('SpineBonesControl', () => {
   it('round-trips static bones arrays as a TSX expression', async () => {
     const source = `const view = (
