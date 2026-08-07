@@ -106,22 +106,25 @@ async function parseChildren(root, parentNode: Node, data: ProjectData, evalInit
   let renderNode = makeNode(tag)
   if (loop) {
     const { startIndex, startIndexSymbol, count, mapFrom, itemSymbol } = loop
-    parentNode.addChild(renderNode)
+    // A JSX loop produces sibling elements. Keep that relationship in the
+    // preview when its parent is a layout so UILayout can position each item.
+    const loopParent = parentNode.getComponent(UILayout) ? parentNode : renderNode
+    if (loopParent !== parentNode) parentNode.addChild(renderNode)
     if (!mapFrom?.includes('Array(')) {
       const arrayData = mapFrom?.includes('JsonCache')
         ? get(jsonCaches[mapFrom.split('.')[1]]?.json, mapFrom.split('.').slice(2).join('.'), [])
         : staticPropsMap[mapFrom]
       for (let index = 0; index < (arrayData?.length ?? 0); index++) {
         const loopInit = `const ${startIndexSymbol}=${index};const ${itemSymbol}=${JSON.stringify(arrayData[index])};${evalInit}`
-        await parseChildren({ tag, props, children, components }, renderNode, data, loopInit, baseProps)
+        await parseChildren({ tag, props, children, components }, loopParent, data, loopInit, baseProps)
       }
     } else {
       for (let index = 0; index < count; index++) {
         const loopInit = `const ${startIndexSymbol}=${index + startIndex};${evalInit}`
-        await parseChildren({ tag, props, children, components }, renderNode, data, loopInit, baseProps)
+        await parseChildren({ tag, props, children, components }, loopParent, data, loopInit, baseProps)
       }
     }
-    return renderNode
+    return loopParent
   }
 
   function tryGetValue(key: string) {
@@ -296,11 +299,16 @@ async function parseChildren(root, parentNode: Node, data: ProjectData, evalInit
     }
   } else if (tag === 'DicedSprite') {
     const dataKey = parseStringFromValue(props.data)
-    const dicedData = data.jsonAssets?.find((item) => item.key === dataKey)?.value ?? dataKey
-    if (dicedData) {
+    const dicedAsset = data.jsonAssets?.find((item) => item.key === dataKey)
+    const dicedData = dicedAsset?.value ?? dataKey
+    const texture = parseStringFromValue(props.texture)
+      ?? (dicedAsset?.json?.meta?.name
+        ? projectAssetUrl(`${dicedAsset.path.replace(/[^/\\]+$/, '')}${dicedAsset.json.meta.name}.png`)
+        : undefined)
+    if (dicedData && dicedAsset) {
       const dicedSprite = renderNode.addComponent(new DicedSprite({
         data: dicedData,
-        texture: parseStringFromValue(props.texture),
+        texture,
         animation: parseStringFromValue(props.animation),
       }))
       await dicedSprite.reload()
@@ -316,10 +324,11 @@ async function parseChildren(root, parentNode: Node, data: ProjectData, evalInit
       await tiledMap.reload()
     }
   } else if (tag === 'UILayout') {
-    const { direction, gap, paddingBottom, paddingTop, paddingLeft, paddingRight } = props
+    const { direction, spaceX, spaceY, paddingBottom, paddingTop, paddingLeft, paddingRight } = props
     const layoutProps: Record<string, unknown> = {}
     if (direction !== undefined) layoutProps.direction = direction
-    if (gap !== undefined) layoutProps.gap = parseIntFromValue(gap)
+    if (spaceX !== undefined) layoutProps.spaceX = parseIntFromValue(spaceX)
+    if (spaceY !== undefined) layoutProps.spaceY = parseIntFromValue(spaceY)
     if (paddingTop !== undefined) layoutProps.paddingTop = parseIntFromValue(paddingTop)
     if (paddingRight !== undefined) layoutProps.paddingRight = parseIntFromValue(paddingRight)
     if (paddingBottom !== undefined) layoutProps.paddingBottom = parseIntFromValue(paddingBottom)

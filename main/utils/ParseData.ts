@@ -237,7 +237,7 @@ export const convertComponentData = async (parsed, filePath, fileOrigin) => {
   };
 };
 
-const genPropsLine = (props: { [key: string]: any }) => {
+const genPropsLine = (props: { [key: string]: any }, tag?: string) => {
   const lines = Object.entries(props)
     .map(([key, val]) => {
       if (val === undefined || val === null) { return ''; }
@@ -270,7 +270,19 @@ const genPropsLine = (props: { [key: string]: any }) => {
         }).join(', ')} }}`;
       }
       if (val === '') {
+        if (tag === 'Sprite' && key === 'spriteFrame') {
+          return `${key}={}`;
+        }
         return `${key}=""`;
+      }
+      if (key === 'spriteFrame' && !swapperWith(val, '{', '}') && !/^{.*}$/.test(val)) {
+        return `${key}={${val}}`;
+      }
+      if (tag === 'DicedSprite' && key === 'data' && !swapperWith(val, '{', '}') && !/^{.*}$/.test(val)) {
+        return `${key}={${val}}`;
+      }
+      if (key === 'color' && /^[A-Za-z_$][\w$]*$/.test(val)) {
+        return `${key}={${val}}`;
       }
       if (swapperWith(val, '{', '}') || /^{.*}$/.test(val)) {
         return `${key}=${val}`;
@@ -311,7 +323,7 @@ const createTag = (root, imports, baseIndent = '') => {
 ${childIndent}${createTag({ tag, name, props, children, title, components, comments, imported, isSubModule }, imports, childIndent)}
 ${baseIndent}))}`;
   }
-  const propsLine = genPropsLine(props);
+  const propsLine = genPropsLine(props, tag);
   // console.log('propsLine', propsLine, ';');
   if (!children.length && isEmpty(components) && !comments.length) {
     return `<${tag}${!isEmpty(propsLine) ? ' ' : ''}${propsLine} />`;

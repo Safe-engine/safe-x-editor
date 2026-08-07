@@ -45,7 +45,7 @@ export const getFilesInFolder = async ({ src }) => {
   const spineAssets = parseAssetsSrcFile(spineAssetsFile, panel);
   const spineSourceAssets = parseAssetsSrcFile(spineAssetsFile);
   const spriteFramesAssets = parseAssetsSrcFile(join(assetsTSFolder, 'SpriteFrames.ts'));
-  const colors = parseAssetsSrcFile(join(src, 'src', 'helper', 'constant.ts'), panel, true);
+  const colors = parseAssetsSrcFile(join(src, 'src', 'helper', 'colors.ts'), panel, true);
   const jsonCaches = parseJsonCache(join(src, 'src', 'data', 'JsonCache.ts'), jsonAssets);
   const enumsList = parseEnums(join(src, 'src', 'helper', 'constant.ts'), jsonAssets);
   const designedResolution = getResolutionSettings(src);

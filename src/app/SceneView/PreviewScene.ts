@@ -1,5 +1,4 @@
-import { MeshAttachment, RegionAttachment } from '@esotericsoftware/spine-core'
-import { Label, loadAll, Node, Scene, SpineBonesControl, SpineSkeleton, Sprite, Touch } from '@safe-engine/sdl'
+import { Label, loadAll, Node, SpineBonesControl, SpineSkeleton, Sprite, Touch, UILayout } from '@safe-engine/sdl'
 import { getLastLoadedFile, getLastRootFolder, getLastSceneScale, getLastSceneX, getLastSceneY, setLastSceneScale, setLastSceneX, setLastSceneY } from 'data/AppData'
 import { GlobalState } from 'data/GloablState'
 import { normalizeNodeProps, parseBoolFromValue, parseFloatFromValue } from 'helper/node'
@@ -8,17 +7,33 @@ import { sendRequest } from '../app.ipc'
 import { arrow } from './assets'
 import { CircleRender } from './CircleRender'
 import { parseBoneControls, updatePreviewWidgetInsets } from './component'
+import { GridRender } from './GridRender'
 import { loadSceneViewSdl, preloadSdlAssets, RectRender } from './loader'
+import { registerKeyboardHandler, registerMessageHandler, registerMouseHandler } from './PreviewSceneEvents'
+import { PreviewSceneSelection } from './PreviewSceneSelection'
 import { SpineBonesControlRender } from './SpineBonesControlRender'
-import { createNode, getComponentChildrenNum, getCurrentNode, getEditingRoot, KEY, setNodePositionProps } from './utils'
+import { createNode, getComponentChildrenNum, getCurrentNode, getEditingRoot, setNodePositionProps } from './utils'
 
-export class PreviewScene extends Scene {
-  static readonly ARROW_HIT_RADIUS = 32
+let assetVersion = 0
+
+function versionAssets(assets: any) {
+  const version = ++assetVersion
+  const versionValue = (value: any) => typeof value === 'string'
+    ? `${value}${value.includes('?') ? '&' : '?'}previewVersion=${version}`
+    : value
+  const versionList = (items: any[] = []) => items.map((item) => ({ ...item, value: versionValue(item.value) }))
+
+  return {
+    ...assets,
+    assetsTextureList: versionList(assets?.assetsTextureList),
+    spriteFramesAssets: versionList(assets?.spriteFramesAssets),
+  }
+}
+
+export class PreviewScene extends PreviewSceneSelection {
   static readonly SELECTION_ANCHOR_SIZE = 16
-  static readonly RESIZE_EDGE_HIT_SIZE = 8
   static readonly RESIZE_CORNER_SIZE = 12
   static readonly ROTATION_HANDLE_SIZE = 14
-  static readonly ROTATION_HANDLE_OFFSET = 30
   static readonly MARQUEE_DRAG_THRESHOLD = 4
 
   arrowContainerNode: Node
@@ -106,192 +121,15 @@ export class PreviewScene extends Scene {
   }
 
   keyboardHandler() {
-    window.addEventListener('keydown', async (event) => {
-      const keyCode = event.code
-      this.updateInputModifiers(event)
-      const target = event.target as HTMLElement | null
-      if (target?.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target?.tagName)) return
-      // if (
-      //   [KEY.dash, KEY.equal, KEY.x, KEY.y, KEY.h, KEY.c, KEY.s, KEY.r, KEY.a, KEY.z, KEY.up, KEY.down, KEY.left, KEY.right].includes(
-      //     keyCode,
-      //   )
-      // ) {
-      //   event.preventDefault()
-      // }
-      if (keyCode === KEY.shift || keyCode === KEY.shiftR) {
-        // this.changeSelectPath(['1-1-1'])
-      }
-      if (event.ctrlKey || event.metaKey) {
-        if (keyCode === KEY.s) {
-          await this.saveComponent()
-        } else if (keyCode === KEY.r) {
-          // setLastSceneScale(0.5)
-          setLastSceneX(0)
-          setLastSceneY(0)
-          await this.loadComponent(GlobalState.filePath)
-        } else if (keyCode === KEY.a) {
-          await this.loadProjectData()
-          await this.loadComponent(GlobalState.filePath)
-        } else if (keyCode === KEY.z && event.shiftKey) {
-          await this.redoEdit()
-        } else if (keyCode === KEY.z) {
-          await this.undoEdit()
-        } else if (keyCode === KEY.y) {
-          await this.redoEdit()
-        }
-        return
-      }
-      if (keyCode === KEY.backspace || keyCode === KEY.delete) {
-        event.preventDefault()
-        await this.deleteSelectedNodes()
-        return
-      }
-      if (event.shiftKey) {
-        if (keyCode === KEY.dash) {
-          this.setRootScale(-0.05)
-        } else if (keyCode === KEY.equal) {
-          this.setRootScale(0.05)
-        } else if (keyCode === KEY.x) {
-          this.lockX = !this.lockX
-          this.updateArrowOpacity()
-        } else if (keyCode === KEY.y) {
-          this.lockY = !this.lockY
-          this.updateArrowOpacity()
-        } else if (keyCode === KEY.h) {
-          this.toggleSelectedNode()
-        } else if (keyCode === KEY.up) {
-          this.moveSelectedNodeWithHistory(0, -10)
-        } else if (keyCode === KEY.down) {
-          this.moveSelectedNodeWithHistory(0, 10)
-        } else if (keyCode === KEY.left) {
-          this.moveSelectedNodeWithHistory(-10, 0)
-        } else if (keyCode === KEY.right) {
-          this.moveSelectedNodeWithHistory(10, 0)
-        } else if (keyCode === KEY.up) {
-          this.moveSelectedNodeWithHistory(0, -1)
-        } else if (keyCode === KEY.down) {
-          this.moveSelectedNodeWithHistory(0, 1)
-        } else if (keyCode === KEY.left) {
-          this.moveSelectedNodeWithHistory(-1, 0)
-        } else if (keyCode === KEY.right) {
-          this.moveSelectedNodeWithHistory(1, 0)
-        } else if (keyCode === KEY.c) {
-          this.selectAllChildren()
-        }
-      }
-    })
-    window.addEventListener('keyup', (event) => {
-      this.updateInputModifiers(event)
-    })
-    window.addEventListener('blur', () => {
-      this.isShiftPressed = false
-      this.isMultiSelectModifierPressed = false
-    })
+    registerKeyboardHandler(this)
   }
 
   mouseHandler() {
-    const canvas = document.querySelector<HTMLCanvasElement>('#sdl-canvas')
-    canvas?.addEventListener(
-      'wheel',
-      (event) => {
-        this.setRootScale(event.deltaY > 0 ? -0.05 : 0.05)
-        event.preventDefault()
-      },
-      { passive: false },
-    )
-    canvas?.addEventListener('pointerdown', (event) => {
-      this.isMiddleMouse = event.button === 1
-      if (this.isMiddleMouse) this.middleMouseSelectionPaths = [...this.editingPaths]
-      this.updateInputModifiers(event)
-    }, true)
-    canvas?.addEventListener('pointermove', (event) => {
-      this.updateInputModifiers(event)
-      const bounds = canvas.getBoundingClientRect()
-      const x = (event.clientX - bounds.left) * this.logicalCanvasWidth / bounds.width
-      const y = (event.clientY - bounds.top) * this.logicalCanvasWidth / bounds.width
-      this.updateSpineBoneTooltip(x, y, event.clientX, event.clientY)
-      const activeArrowAxis = !this.isShiftPressed && !this.isMultiSelectModifierPressed && this.editingPaths[0]
-        ? this.getActiveArrowAxis(x, y)
-        : undefined
-      if (activeArrowAxis === 'anchor') {
-        canvas.style.cursor = 'move'
-        return
-      }
-      if (!this.isShiftPressed && !this.isMultiSelectModifierPressed && this.getActiveRotationHandle(x, y)) {
-        canvas.style.cursor = 'grab'
-        return
-      }
-      const colliderResizeEdge = !this.isShiftPressed && !this.isMultiSelectModifierPressed
-        ? this.getActiveBoxColliderResizeEdge(x, y)
-        : undefined
-      if (colliderResizeEdge) {
-        canvas.style.cursor = colliderResizeEdge === 'left' || colliderResizeEdge === 'right' ? 'ew-resize' : 'ns-resize'
-        return
-      }
-      if (!this.isShiftPressed && !this.isMultiSelectModifierPressed && this.getActiveBoxColliderEditor(x, y)) {
-        canvas.style.cursor = 'move'
-        return
-      }
-      const handle = !this.isShiftPressed && !this.isMultiSelectModifierPressed ? this.getActiveResizeEdge(x, y) : undefined
-      const canResizeX = handle?.includes('left') || handle?.includes('right') ? !this.lockX : false
-      const canResizeY = handle?.includes('top') || handle?.includes('bottom') ? !this.lockY : false
-      canvas.style.cursor = canResizeX && canResizeY
-        ? handle === 'top-left' || handle === 'bottom-right' ? 'nwse-resize' : 'nesw-resize'
-        : canResizeX ? 'ew-resize' : canResizeY ? 'ns-resize' : 'default'
-    })
-    canvas?.addEventListener('pointerleave', () => {
-      canvas.style.cursor = 'default'
-      if (this.spineBoneTooltipNode) this.spineBoneTooltipNode.style.display = 'none'
-    })
-    canvas?.addEventListener('pointerup', () => {
-      this.isMiddleMouse = false
-      this.middleMouseSelectionPaths = undefined
-      this.isShiftPressed = false
-      this.isMultiSelectModifierPressed = false
-      this.lastTouch = undefined
-    })
-    canvas?.addEventListener('pointercancel', () => {
-      this.isMiddleMouse = false
-      this.middleMouseSelectionPaths = undefined
-      this.isShiftPressed = false
-      this.isMultiSelectModifierPressed = false
-      this.lastTouch = undefined
-    })
+    registerMouseHandler(this)
   }
 
   messageHandler() {
-    const listener = (event) => {
-      const message = event.data
-      if (message.type === 'reLoad') {
-        if (this.isEditing) {
-          this.showSaveDialog(GlobalState.filePath)
-        } else {
-          void this.loadComponent(GlobalState.filePath)
-        }
-      } else if (message.type === 'changeFilePath') {
-        GlobalState.tempFilePath = message.filePath
-        if (this.isEditing) {
-          this.showSaveDialog(GlobalState.tempFilePath)
-        } else {
-          void this.loadComponent(GlobalState.tempFilePath)
-        }
-      } else if (message.type === 'changeSelectPath') {
-        this.changeSelectPath(message.selectPaths, false)
-      } else if (message.type === 'focusPreviewNode') {
-        this.focusNode(message.path)
-      } else if (message.type === 'reloadProjectData') {
-        void this.reloadProjectData()
-      } else if (message.type === 'updateSelectedNode') {
-        void this.updateSelectedNode(message.component, message.updated)
-      } else if (message.type === 'toggleBoxColliderEditor') {
-        this.toggleBoxColliderEditor(message.componentIndex)
-      } else if (message.type === 'addDroppedNode') {
-        void this.addDroppedNode(message.item, message.parentId, message.clientX, message.clientY)
-      } else if (message.type === 'moveHierarchyNodes') {
-        void this.moveHierarchyNodes(message.dragIds, message.parentId, message.index)
-      }
-    }
-    window.addEventListener('message', listener)
+    registerMessageHandler(this)
   }
 
   async loadProjectData() {
@@ -303,7 +141,7 @@ export class PreviewScene extends Scene {
     })
     const { designedResolution, assets, componentsCache, colors, defaultProps, jsonCaches, staticPropsMap, enumsList, projectName, ...rest } = data
     GlobalState.data = {
-      ...assets,
+      ...versionAssets(assets),
       ...rest,
       componentsCache,
       designedResolution,
@@ -363,6 +201,7 @@ export class PreviewScene extends Scene {
     this.drawNode = createNode('PreviewDrawNode')
     this.drawNode.anchorX = 0
     this.drawNode.anchorY = 0
+    this.drawNode.addComponent(new GridRender())
     this.node.addChild(this.drawNode)
     this.drawNode.x = this.borderNode.x = getLastSceneX()
     this.drawNode.y = this.borderNode.y = getLastSceneY()
@@ -573,6 +412,7 @@ export class PreviewScene extends Scene {
     console.log('gen success', data)
     this.loadedComponentSnapshot = this.serializeEditingComponent()
     this.isEditing = false
+    this.notifyEditingState()
   }
 
   createSaveDialog() {
@@ -682,6 +522,7 @@ export class PreviewScene extends Scene {
       this.loadedComponentSnapshot = this.serializeEditingComponent()
       this.hideSaveDialog()
       this.isEditing = false
+      this.notifyEditingState()
       this.updateArrowPosition()
     } finally {
       this.loadingPath = ''
@@ -707,6 +548,11 @@ export class PreviewScene extends Scene {
 
   syncEditingFlag() {
     this.isEditing = this.serializeEditingComponent() !== this.loadedComponentSnapshot
+    this.notifyEditingState()
+  }
+
+  notifyEditingState() {
+    window.postMessage({ type: 'previewEditingState', isEditing: this.isEditing }, '*')
   }
 
   async restoreHistoryEntry(historyEntry: HistoryEntry) {
@@ -887,6 +733,18 @@ export class PreviewScene extends Scene {
     }
   }
 
+  async changeSelectedNodeType(tag: string) {
+    if (!tag || !this.editingPaths[0]) return
+    this.pushUndoHistory()
+    for (const editingPath of this.editingPaths) {
+      const editNode = this.getEditingNodeByPath(editingPath)
+      if (!editNode) continue
+      editNode.tag = tag
+      editNode.props = editNode.props?.node ? { node: editNode.props.node } : {}
+    }
+    await this.reloadEditingComponent()
+  }
+
   async undoEdit() {
     const historyEntry = this.undoStack.pop()
     if (!historyEntry) return
@@ -947,16 +805,27 @@ export class PreviewScene extends Scene {
       }
     }
     const parentNode = parentId ? findNode(this.editingComponent, parentId) : undefined
-    const children = parentNode?.children || (sceneRoot?.tag === 'SceneComponent' ? sceneRoot.children : this.editingComponent)
-    const id = parentNode ? `${parentNode.id}-${children.length}` : sceneRoot?.tag === 'SceneComponent' ? `0-${children.length}` : `${children.length}`
+    const children = parentNode?.children ?? (sceneRoot.children ??= [])
+    const id = parentNode ? `${parentNode.id}-${children.length}` : `${sceneRoot.id}-${children.length}`
     const asset = item.asset || {}
     const assetKey = asset.key || asset.name
     const node = item.kind === 'component'
-      ? { id, expanded: true, tag: item.name, props: ['Label', 'RichText'].includes(item.name) ? { string: '' } : {}, components: [], children: [] }
+      ? {
+        id,
+        expanded: true,
+        tag: item.name,
+        props: item.name === 'UILayout'
+          ? { node: { width: 200, height: 200 } }
+          : ['Label', 'RichText'].includes(item.name) ? { string: '' } : {},
+        components: [],
+        children: [],
+      }
       : asset.type === 'spine'
         ? { id, expanded: true, tag: 'SpineSkeleton', props: { data: assetKey }, components: [], children: [] }
       : asset.type === 'dragonBones'
         ? { id, expanded: true, tag: 'DragonBones', props: { data: assetKey }, components: [], children: [] }
+      : asset.type === 'dicedSprite'
+        ? { id, expanded: true, tag: 'DicedSprite', props: { data: assetKey, animation: asset.json?.animations?.[0]?.name || '' }, components: [], children: [] }
       : asset.type === 'tiledMap'
         ? { id, expanded: true, tag: 'TiledMap', props: { mapFile: assetKey }, components: [], children: [] }
       : asset.type === 'font'
@@ -974,7 +843,7 @@ export class PreviewScene extends Scene {
     window.postMessage({ type: 'previewRestoreComponentTree', treeData: this.editingComponent, selectPaths: this.editingPaths }, '*')
   }
 
-  async moveHierarchyNodes(dragIds: string[], parentId: string | null, index: number) {
+  async moveHierarchyNodes(dragIds: string[], parentId: string | null, index: number | null) {
     if (!dragIds?.length || !this.editingComponent?.length) return
 
     const sceneRoot = first<any>(this.editingComponent)
@@ -988,14 +857,15 @@ export class PreviewScene extends Scene {
     }
     const draggedNodes = dragIds.map((id) => findNode(this.editingComponent, id)).filter(Boolean)
     const parentNode = parentId ? findNode(this.editingComponent, parentId) : undefined
-    const targetChildren = parentNode ? parentNode.children : rootChildren
+    const targetChildren = parentNode ? (parentNode.children ??= []) : rootChildren
     const containsNode = (node: any, target: any): boolean => node === target || (node.children || []).some((child) => containsNode(child, target))
 
     if (!draggedNodes.length || !targetChildren || draggedNodes.some((node) => node.tag === 'SceneComponent' || containsNode(node, parentNode))) return
 
     this.pushUndoHistory()
     const movedIds = new Set(draggedNodes.map((node) => node.id))
-    const movedBeforeIndex = targetChildren.slice(0, index).filter((node) => movedIds.has(node.id)).length
+    const targetIndex = Math.max(0, Math.min(index ?? targetChildren.length, targetChildren.length))
+    const movedBeforeIndex = targetChildren.slice(0, targetIndex).filter((node) => movedIds.has(node.id)).length
     const removeNodes = (nodes: any[]): any[] => nodes
       .filter((node) => !movedIds.has(node.id))
       .map((node) => ({ ...node, children: removeNodes(node.children || []) }))
@@ -1008,7 +878,7 @@ export class PreviewScene extends Scene {
         ? remainingSceneRoot.children
         : remainingTree
 
-    remainingTargetChildren.splice(Math.max(0, index - movedBeforeIndex), 0, ...draggedNodes)
+    remainingTargetChildren.splice(Math.max(0, targetIndex - movedBeforeIndex), 0, ...draggedNodes)
     this.editingComponent = remainingTree
     const assignIds = (nodes: any[], prefix = '') => nodes.forEach((node, nodeIndex) => {
       node.id = prefix ? `${prefix}-${nodeIndex}` : `${nodeIndex}`
@@ -1202,6 +1072,7 @@ export class PreviewScene extends Scene {
 
     if (didResizeWidth) currentNode.width = newWidth
     if (didResizeHeight) currentNode.height = newHeight
+    currentNode.getComponent(UILayout)?.layoutChildren()
 
     const editNode = this.getEditingNodeByPath(editingPath)
     if (!editNode) return false
@@ -1323,280 +1194,6 @@ export class PreviewScene extends Scene {
     setLastSceneX(this.drawNode.x)
     setLastSceneY(this.drawNode.y)
     this.updateArrowPosition()
-  }
-
-  getCombinedBoundsFromPaths(paths: string[]) {
-    let combinedBounds: SelectionBounds | undefined
-    paths.forEach((path) => {
-      const childrenIndex = this.getChildrenIndex(path)
-      const currentNode = getCurrentNode(this.drawNode, childrenIndex)
-      const nodeBounds = this.getNodeBounds(currentNode)
-      if (!nodeBounds) return
-      if (!combinedBounds) {
-        combinedBounds = { ...nodeBounds }
-        return
-      }
-      combinedBounds.left = Math.min(combinedBounds.left, nodeBounds.left)
-      combinedBounds.top = Math.min(combinedBounds.top, nodeBounds.top)
-      combinedBounds.right = Math.max(combinedBounds.right, nodeBounds.right)
-      combinedBounds.bottom = Math.max(combinedBounds.bottom, nodeBounds.bottom)
-    })
-    return combinedBounds
-  }
-
-  updateArrowPosition() {
-    if (this.marqueeSelection?.active) {
-      this.arrowContainerNode.active = false
-      return
-    }
-    if (!this.editingPaths[0]) {
-      this.arrowContainerNode.active = false
-      return
-    }
-    if (this.editingPaths.length > 1) {
-      this.selectionCornerNodes.forEach((corner) => (corner.active = false))
-      this.rotationHandleNode.active = false
-      const combinedBounds = this.getCombinedBoundsFromPaths(this.editingPaths)
-      if (!combinedBounds) {
-        this.arrowContainerNode.active = false
-        return
-      }
-      this.arrowContainerNode.active = true
-      this.arrowContainerNode.x = (combinedBounds.left + combinedBounds.right) / 2
-      this.arrowContainerNode.y = (combinedBounds.top + combinedBounds.bottom) / 2
-      this.selectionBorderNode.width = combinedBounds.right - combinedBounds.left
-      this.selectionBorderNode.height = combinedBounds.bottom - combinedBounds.top
-      this.selectionBorderNode.anchorX = 0.5
-      this.selectionBorderNode.anchorY = 0.5
-      this.selectionBorderNode.scaleX = 1
-      this.selectionBorderNode.scaleY = 1
-      return
-    }
-    const childrenIndex = this.getChildrenIndex(this.editingPaths[0])
-    const currentNode = getCurrentNode(this.drawNode, childrenIndex)
-    this.arrowContainerNode.active = true
-    this.arrowContainerNode.x = currentNode.worldX
-    this.arrowContainerNode.y = currentNode.worldY
-    this.selectionBorderNode.width = currentNode.width
-    this.selectionBorderNode.height = currentNode.height
-    this.selectionBorderNode.anchorX = currentNode.anchorX
-    this.selectionBorderNode.anchorY = currentNode.anchorY
-    this.selectionBorderNode.scaleX = currentNode.worldScaleX ?? 1
-    this.selectionBorderNode.scaleY = currentNode.worldScaleY ?? 1
-    const bounds = this.getNodeBounds(currentNode)
-    if (!bounds) return
-    this.rotationHandleNode.active = true
-    this.rotationHandleNode.x = (bounds.left + bounds.right) / 2 - this.arrowContainerNode.x
-    this.rotationHandleNode.y = bounds.top - this.arrowContainerNode.y - PreviewScene.ROTATION_HANDLE_OFFSET
-    const cornerPositions = [
-      [bounds.left, bounds.top],
-      [bounds.right, bounds.top],
-      [bounds.left, bounds.bottom],
-      [bounds.right, bounds.bottom],
-    ]
-    this.selectionCornerNodes.forEach((corner, index) => {
-      corner.active = true
-      corner.x = cornerPositions[index][0] - this.arrowContainerNode.x
-      corner.y = cornerPositions[index][1] - this.arrowContainerNode.y
-    })
-  }
-
-  getSelectionBounds(x1: number, y1: number, x2: number, y2: number): SelectionBounds {
-    return {
-      left: Math.min(x1, x2),
-      top: Math.min(y1, y2),
-      right: Math.max(x1, x2),
-      bottom: Math.max(y1, y2),
-    }
-  }
-
-  getNodeBounds(node: Node): SelectionBounds | undefined {
-    if (!node.active) return undefined
-    if (node.width && node.height) {
-      const scaleX = node.worldScaleX ?? 1
-      const scaleY = node.worldScaleY ?? 1
-      const radians = (node.worldRotation * Math.PI) / 180
-      const cosine = Math.cos(radians)
-      const sine = Math.sin(radians)
-      const left = -node.anchorX * node.width
-      const top = -node.anchorY * node.height
-      const corners = [
-        [left, top],
-        [left + node.width, top],
-        [left, top + node.height],
-        [left + node.width, top + node.height],
-      ].map(([x, y]) => ({
-        x: node.worldX + x * scaleX * cosine - y * scaleY * sine,
-        y: node.worldY + x * scaleX * sine + y * scaleY * cosine,
-      }))
-      return this.getSelectionBounds(
-        Math.min(...corners.map((corner) => corner.x)),
-        Math.min(...corners.map((corner) => corner.y)),
-        Math.max(...corners.map((corner) => corner.x)),
-        Math.max(...corners.map((corner) => corner.y)),
-      )
-    }
-    return this.getSpineSkeletonBounds(node)
-  }
-
-  getSpineSkeletonBounds(node: Node): SelectionBounds | undefined {
-    const skeleton = node.getComponent(SpineSkeleton)?.skeleton
-    if (!skeleton) return undefined
-    const radians = (node.worldRotation * Math.PI) / 180
-    const cosine = Math.cos(radians)
-    const sine = Math.sin(radians)
-    const scaleX = node.worldScaleX ?? 1
-    const scaleY = node.worldScaleY ?? 1
-    let result: SelectionBounds | undefined
-    const includeVertices = (vertices: Float32Array) => {
-      for (let index = 0; index < vertices.length; index += 2) {
-        const scaledX = vertices[index] * scaleX
-        const scaledY = vertices[index + 1] * scaleY
-        const x = node.worldX + scaledX * cosine - scaledY * sine
-        const y = node.worldY + scaledX * sine + scaledY * cosine
-        if (!result) {
-          result = { left: x, top: y, right: x, bottom: y }
-          continue
-        }
-        result.left = Math.min(result.left, x)
-        result.top = Math.min(result.top, y)
-        result.right = Math.max(result.right, x)
-        result.bottom = Math.max(result.bottom, y)
-      }
-    }
-    skeleton.drawOrder.forEach((slot) => {
-      const attachment = slot.getAttachment()
-      if (!slot.bone.active || !attachment) return
-      if (attachment instanceof RegionAttachment) {
-        const vertices = new Float32Array(8)
-        attachment.computeWorldVertices(slot, vertices, 0, 2)
-        includeVertices(vertices)
-      } else if (attachment instanceof MeshAttachment) {
-        const vertices = new Float32Array(attachment.worldVerticesLength)
-        attachment.computeWorldVertices(slot, 0, attachment.worldVerticesLength, vertices, 0, 2)
-        includeVertices(vertices)
-      }
-    })
-    return result
-  }
-
-  isNodeInsideSelectionBounds(node: Node, bounds: SelectionBounds) {
-    const nodeBounds = this.getNodeBounds(node)
-    if (!nodeBounds) return false
-    return (
-      nodeBounds.left >= bounds.left &&
-      nodeBounds.right <= bounds.right &&
-      nodeBounds.top >= bounds.top &&
-      nodeBounds.bottom <= bounds.bottom
-    )
-  }
-
-  isPointInsideNode(node: Node, x: number, y: number) {
-    if (node.width && node.height && node.worldScaleX && node.worldScaleY) {
-      const radians = (-node.worldRotation * Math.PI) / 180
-      const cosine = Math.cos(radians)
-      const sine = Math.sin(radians)
-      const dx = x - node.worldX
-      const dy = y - node.worldY
-      const localX = (dx * cosine - dy * sine) / node.worldScaleX
-      const localY = (dx * sine + dy * cosine) / node.worldScaleY
-      const left = -node.anchorX * node.width
-      const top = -node.anchorY * node.height
-      return localX >= left && localX <= left + node.width && localY >= top && localY <= top + node.height
-    }
-    const bounds = this.getNodeBounds(node)
-    if (!bounds) return false
-    return x >= bounds.left && x <= bounds.right && y >= bounds.top && y <= bounds.bottom
-  }
-
-  findSelectionPathInNode(node: Node, path: string[], x: number, y: number): string | undefined {
-    if (!node.active) return undefined
-    for (let index = node.children.length - 1; index >= 0; index--) {
-      const childPath = this.findSelectionPathInNode(node.children[index], [...path, `${index}`], x, y)
-      if (childPath) return childPath
-    }
-    if (this.isPointInsideNode(node, x, y)) return path.join('-')
-    return undefined
-  }
-
-  findSelectionPath(x: number, y: number) {
-    const isSceneNode = first<any>(this.editingComponent)?.tag === 'SceneComponent'
-    const pathPrefix = isSceneNode ? ['0'] : []
-    for (let index = this.drawNode.children.length - 1; index >= 0; index--) {
-      const childPath = this.findSelectionPathInNode(this.drawNode.children[index], [...pathPrefix, `${index}`], x, y)
-      if (childPath) return childPath
-    }
-    return undefined
-  }
-
-  collectSelectionPathsInNode(node: Node, path: string[], bounds: SelectionBounds, selectedPaths: string[]) {
-    if (!node.active) return
-    let hasSelectedChild = false
-    node.children.forEach((child, index) => {
-      const previousCount = selectedPaths.length
-      this.collectSelectionPathsInNode(child, [...path, `${index}`], bounds, selectedPaths)
-      hasSelectedChild = hasSelectedChild || selectedPaths.length > previousCount
-    })
-    if (!hasSelectedChild && this.isNodeInsideSelectionBounds(node, bounds)) selectedPaths.push(path.join('-'))
-  }
-
-  findSelectionPathsInBounds(bounds: SelectionBounds) {
-    const isSceneNode = first<any>(this.editingComponent)?.tag === 'SceneComponent'
-    const pathPrefix = isSceneNode ? ['0'] : []
-    const selectedPaths: string[] = []
-    this.drawNode.children.forEach((child, index) => {
-      this.collectSelectionPathsInNode(child, [...pathPrefix, `${index}`], bounds, selectedPaths)
-    })
-    return selectedPaths
-  }
-
-  getActiveArrowAxis(x: number, y: number) {
-    const anchorX = this.arrowContainerNode.x + this.selectionAnchorNode.x
-    const anchorY = this.arrowContainerNode.y + this.selectionAnchorNode.y
-    const anchorHalfWidth = this.selectionAnchorNode.width / 2
-    const anchorHalfHeight = this.selectionAnchorNode.height / 2
-    if (Math.abs(x - anchorX) <= anchorHalfWidth && Math.abs(y - anchorY) <= anchorHalfHeight) {
-      return 'anchor' as const
-    }
-    const radius = PreviewScene.ARROW_HIT_RADIUS
-    const horizontalX = this.arrowContainerNode.x + this.arrowSpriteHorizonNode.x
-    const horizontalY = this.arrowContainerNode.y + this.arrowSpriteHorizonNode.y
-    if (Math.abs(x - horizontalX) <= radius && Math.abs(y - horizontalY) <= radius) {
-      return 'x' as const
-    }
-    const verticalX = this.arrowContainerNode.x + this.arrowSpriteVerticalNode.x
-    const verticalY = this.arrowContainerNode.y + this.arrowSpriteVerticalNode.y
-    if (Math.abs(x - verticalX) <= radius && Math.abs(y - verticalY) <= radius) {
-      return 'y' as const
-    }
-    return undefined
-  }
-
-  getActiveResizeEdge(x: number, y: number) {
-    if (this.editingPaths.length !== 1) return undefined
-    const currentNode = getCurrentNode(this.drawNode, this.getChildrenIndex(this.editingPaths[0]))
-    const bounds = this.getNodeBounds(currentNode)
-    if (!bounds) return undefined
-    const hitSize = PreviewScene.RESIZE_EDGE_HIT_SIZE
-    if (Math.abs(x - bounds.left) <= hitSize && Math.abs(y - bounds.top) <= hitSize) return 'top-left' as const
-    if (Math.abs(x - bounds.right) <= hitSize && Math.abs(y - bounds.top) <= hitSize) return 'top-right' as const
-    if (Math.abs(x - bounds.left) <= hitSize && Math.abs(y - bounds.bottom) <= hitSize) return 'bottom-left' as const
-    if (Math.abs(x - bounds.right) <= hitSize && Math.abs(y - bounds.bottom) <= hitSize) return 'bottom-right' as const
-    if (y >= bounds.top - hitSize && y <= bounds.bottom + hitSize) {
-      if (Math.abs(x - bounds.left) <= hitSize) return 'left' as const
-      if (Math.abs(x - bounds.right) <= hitSize) return 'right' as const
-    }
-    if (x >= bounds.left - hitSize && x <= bounds.right + hitSize) {
-      if (Math.abs(y - bounds.top) <= hitSize) return 'top' as const
-      if (Math.abs(y - bounds.bottom) <= hitSize) return 'bottom' as const
-    }
-    return undefined
-  }
-
-  getActiveRotationHandle(x: number, y: number) {
-    if (this.editingPaths.length !== 1 || !this.rotationHandleNode.active) return false
-    const radius = this.rotationHandleNode.width / 2 + 4
-    return Math.hypot(x - this.rotationHandleNode.worldX, y - this.rotationHandleNode.worldY) <= radius
   }
 
   onTouchStart(event: Touch) {

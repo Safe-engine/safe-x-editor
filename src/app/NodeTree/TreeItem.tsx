@@ -4,7 +4,7 @@ import { get } from "lodash-es";
 import { useState } from "react";
 import { NodeRendererProps } from "react-arborist";
 import { AiFillFolderOpen } from "react-icons/ai";
-import { FiChevronRight, FiEye, FiPlus } from "react-icons/fi";
+import { FiChevronRight, FiEye, FiPlus, FiRepeat } from "react-icons/fi";
 import { RiBox3Line } from "react-icons/ri";
 
 type TreeItemProps = NodeRendererProps<any> & {
@@ -22,6 +22,9 @@ const addNodeMenu = [
 function renderIcon(data: any) {
   if (data.isDirectory) {
     return <AiFillFolderOpen color="#d6d6d6" />;
+  }
+  if (data.loop) {
+    return <FiRepeat color="#9fb7ff" />;
   }
   return <RiBox3Line color="#9fb7ff" />;
 }
@@ -44,6 +47,10 @@ function renderName(node: any) {
     </Box>
 }
 
+function isExternalNodeDrop(event: React.DragEvent) {
+  return event.dataTransfer.types.includes('application/x-safex-node');
+}
+
 export function TreeItem({ node, style, dragHandle, onAddNode, onFocusNode, onDropNode }: TreeItemProps) {
   const [isDropTarget, setIsDropTarget] = useState(false);
   const [isAddMenuOpen, setIsAddMenuOpen] = useState(false);
@@ -61,24 +68,26 @@ export function TreeItem({ node, style, dragHandle, onAddNode, onFocusNode, onDr
     className={clsx(
       'h-full w-full items-center justify-between rounded-sm px-1 text-[12px] text-[#d6d6d6] hover:cursor-pointer hover:bg-[#303846]',
       node.isSelected && 'bg-[#304766] text-[#f0f0f0]',
+      node.willReceiveDrop && 'bg-[#315a3a] ring-1 ring-inset ring-[#58d68d]',
       isDropTarget && 'bg-[#315a3a] ring-1 ring-inset ring-[#58d68d]'
     )}
     onDoubleClick={() => onFocusNode(node)}
     onContextMenu={(e) => handleContextMenu(e, node.data)}
     onDragEnter={(event) => {
-      if (event.dataTransfer.types.includes('application/x-safex-node')) setIsDropTarget(true);
+      if (isExternalNodeDrop(event)) setIsDropTarget(true);
     }}
     onDragLeave={(event) => {
       if (!event.currentTarget.contains(event.relatedTarget as globalThis.Node)) setIsDropTarget(false);
     }}
     onDragOver={(event) => {
-      if (!event.dataTransfer.types.includes('application/x-safex-node')) return;
+      if (!isExternalNodeDrop(event)) return;
       event.preventDefault();
       event.stopPropagation();
       setIsDropTarget(true);
       event.dataTransfer.dropEffect = 'copy';
     }}
     onDrop={(event) => {
+      if (!isExternalNodeDrop(event)) return;
       event.preventDefault();
       event.stopPropagation();
       setIsDropTarget(false);

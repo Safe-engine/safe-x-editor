@@ -1,9 +1,11 @@
 import Button from 'base/Button';
 import Modal from 'base/Modal';
-import { useState } from 'react';
+import { dialog, getCurrentWindow } from 'helper/electronRemote';
+import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { sendRequest } from 'app/app.ipc';
-import { CREATE_SPRITE_IMAGE_ASSET_REQUEST, GENERATE_SPRITE_IMAGES_REQUEST, REPLACE_SPRITE_IMAGE_REQUEST } from 'shared/constant.message';
+import { FiClipboard, FiUpload } from 'react-icons/fi';
+import { CREATE_SPRITE_IMAGE_ASSET_CLIPBOARD_REQUEST, CREATE_SPRITE_IMAGE_ASSET_FILE_REQUEST, CREATE_SPRITE_IMAGE_ASSET_REQUEST, GENERATE_SPRITE_IMAGES_REQUEST, REPLACE_SPRITE_IMAGE_CLIPBOARD_REQUEST, REPLACE_SPRITE_IMAGE_FILE_REQUEST, REPLACE_SPRITE_IMAGE_REQUEST } from 'shared/constant.message';
 
 type Props = {
   isOpen: boolean;
@@ -11,16 +13,16 @@ type Props = {
   rootFolder: string;
   targetPath: string;
   targetKey: string;
-  targetLabel: string;
   onReplaced: (key?: string) => void;
 };
 
-export default function SpriteFrameAiDialog({ isOpen, onClose, rootFolder, targetPath, targetKey, targetLabel, onReplaced }: Props) {
+export default function SpriteFrameAiDialog({ isOpen, onClose, rootFolder, targetPath, targetKey, onReplaced }: Props) {
   const [prompt, setPrompt] = useState('');
   const [images, setImages] = useState<any[]>([]);
   const [jobId, setJobId] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [isReplacing, setIsReplacing] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
   const [mode, setMode] = useState<'replace' | 'new'>('replace');
 
   async function generate() {
@@ -46,6 +48,53 @@ export default function SpriteFrameAiDialog({ isOpen, onClose, rootFolder, targe
     }
   }
 
+  async function replaceTexture(sourcePath?: string) {
+    if (isImporting) return;
+    setIsImporting(true);
+    try {
+      const response: any = await sendRequest(sourcePath
+        ? mode === 'replace'
+          ? { key: REPLACE_SPRITE_IMAGE_FILE_REQUEST, rootFolder, targetPath, sourcePath }
+          : { key: CREATE_SPRITE_IMAGE_ASSET_FILE_REQUEST, rootFolder, targetPath, targetKey, sourcePath }
+        : mode === 'replace'
+          ? { key: REPLACE_SPRITE_IMAGE_CLIPBOARD_REQUEST, rootFolder, targetPath, targetKey }
+          : { key: CREATE_SPRITE_IMAGE_ASSET_CLIPBOARD_REQUEST, rootFolder, targetPath, targetKey });
+      if (!response?.success) {
+        toast.error(response?.message || 'Unable to replace texture');
+        return;
+      }
+      toast.success(mode === 'replace' ? 'Texture replaced' : 'New sprite asset created');
+      onReplaced(response.key);
+      if (mode === 'new') onClose();
+    } catch {
+      toast.error('Unable to replace texture');
+    } finally {
+      setIsImporting(false);
+    }
+  }
+
+  function uploadTexture() {
+    const [sourcePath] = dialog.showOpenDialogSync(getCurrentWindow(), {
+      title: 'Choose replacement image',
+      properties: ['openFile'],
+      filters: [{ name: 'Images', extensions: ['png', 'jpg', 'jpeg', 'webp', 'svg'] }],
+    }) || [];
+    if (sourcePath) void replaceTexture(sourcePath);
+  }
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      const clipboard = (globalThis as any).require?.('electron')?.clipboard;
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'v' && !clipboard?.readImage?.().isEmpty()) {
+        event.preventDefault();
+        void replaceTexture();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isOpen, isImporting, mode, rootFolder, targetPath, targetKey]);
+
   async function selectImage(index: number) {
     if (!jobId || isReplacing) return;
     setIsReplacing(true);
@@ -63,8 +112,18 @@ export default function SpriteFrameAiDialog({ isOpen, onClose, rootFolder, targe
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={`Edit ${targetLabel} with AI`}>
-      <div className='mt-4 w-[620px] text-[12px]'>
+    <Modal isOpen={isOpen} onClose={() => !isImporting && onClose()} title='Change Sprite Frame'>
+      <div className='relative mt-4 w-[620px] text-[12px]'>
+        {isImporting && (
+          <div className='absolute inset-0 z-10 flex items-center justify-center gap-2 rounded-sm bg-[#151515]/90 text-[#c8c8c8]'>
+            <span className='h-4 w-4 animate-spin rounded-full border-2 border-[#4a90e2] border-t-transparent' aria-hidden='true' />
+            <span>Replacing texture…</span>
+          </div>
+        )}
+        <div className='mb-3 flex justify-end gap-2'>
+          <Button className='w-auto' type='button' disabled={isImporting} onClick={uploadTexture}><FiUpload className='mr-1' />Upload</Button>
+          <Button className='w-auto' type='button' disabled={isImporting} onClick={() => void replaceTexture()} title='Paste image from clipboard (Ctrl/Cmd + V)'><FiClipboard className='mr-1' />Paste</Button>
+        </div>
         <div className='grid grid-cols-4 gap-3'>
           {isGenerating && (
             <div className='col-span-4 flex aspect-[4/1] items-center justify-center gap-2 rounded-sm border border-[#111] bg-[#151515] text-[#c8c8c8]'>

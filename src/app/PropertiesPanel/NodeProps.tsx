@@ -1,10 +1,10 @@
 import { sendRequest } from 'app/app.ipc';
 import SelectBox from 'base/SelectBox';
 import { ContextMenu } from 'components/ContextMenu';
-import { parseFloatFromValue, parseOutline, parseStringFromValue } from 'helper/node';
+import { parseFloatFromValue, parseOutline, parseStringFromValue, removeTextureMatchingNodeSize } from 'helper/node';
 import { memo, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { FiBox, FiCircle, FiEdit2, FiGrid, FiLink, FiLogIn, FiPlus, FiRotateCcw, FiShare2, FiTrash2, FiTriangle } from 'react-icons/fi';
+import { FiBox, FiCircle, FiEdit2, FiGrid, FiLink, FiLogIn, FiPlus, FiRepeat, FiRotateCcw, FiShare2, FiTrash2, FiTriangle } from 'react-icons/fi';
 import { GET_COLLIDER_SETTINGS_REQUEST, SAVE_COLLIDER_SETTINGS_REQUEST, UPDATE_PROJECT_COLORS_REQUEST } from 'shared/constant.message';
 import { useActions, useSelector } from 'states/app.context';
 import { selectAssets, selectColors, selectDesignResolution, selectFilesData, selectRootFolder, selectSelectedNode } from 'states/app.selectors';
@@ -12,7 +12,7 @@ import CapInsetsField from './CapInsetsField';
 import { ColliderSettingsDialog } from './ColliderSettingsDialog';
 import ColorEditorDialog from './ColorEditorDialog';
 import NodeIdentityRow from './NodeIdentityRow';
-import { LABEL_DEFAULT_PROPS, PARTICLE_DEFAULT_PROPS, SPINE_DEFAULT_PROPS, WIDGET_DIRECTIONS } from './NodeProps.constants';
+import { LABEL_DEFAULT_PROPS, PARTICLE_DEFAULT_PROPS, SPINE_DEFAULT_PROPS, UI_LAYOUT_DEFAULT_PROPS, UI_LAYOUT_DIRECTIONS, WIDGET_DIRECTIONS } from './NodeProps.constants';
 import SpriteFrameField from './SpriteFrameField';
 import WidgetInsets from './WidgetInsets';
 
@@ -106,6 +106,14 @@ const COMPONENT_OPTIONS = [
   { tag: 'SpineBonesControl', label: 'Spine Bones Control', icon: FiShare2, props: { bones: [] }, requiresSpineSkeleton: true },
 ];
 
+const PANEL_COMPONENT_OPTIONS = [
+  { tag: 'Sprite', label: 'Sprite' },
+  { tag: 'Button', label: 'Button' },
+  { tag: 'ProgressBar', label: 'Progress Bar' },
+];
+
+const LOOP_COMPONENT_OPTION = { label: 'Loop Component', icon: FiRepeat };
+
 const SPINE_PROP_ORDER = ['data', 'atlas', 'skin', 'animation', 'timeScale', 'loop'];
 
 function Field({ label, value, onChange }) {
@@ -178,6 +186,34 @@ function SpineSelectField({ label, value, items, onChange }) {
     <label className='grid min-h-7 grid-cols-[70px_minmax(0,1fr)] items-center gap-2 px-2 py-0.5'>
       <div className='truncate text-[11px] text-[#c8c8c8]' title={label}>{label}</div>
       <SelectBox items={options} selected={value ?? ''} setSelected={onChange} />
+    </label>
+  );
+}
+
+function LabelSelectField({ label, value, items, onChange }) {
+  const selected = parseStringFromValue(value);
+  const options = Array.from(new Set([selected, ...items].filter(Boolean)));
+  return (
+    <label className='grid min-h-7 grid-cols-[70px_minmax(0,1fr)] items-center gap-2 px-2 py-0.5'>
+      <div className='truncate text-[11px] text-[#c8c8c8]' title={label}>{label}</div>
+      <SelectBox items={options} selected={selected} setSelected={onChange} />
+    </label>
+  );
+}
+
+function LabelSizeField({ value, onChange }) {
+  const size = parseNumber(value);
+  return (
+    <label className='grid min-h-7 grid-cols-[70px_minmax(0,1fr)] items-center gap-2 px-2 py-0.5'>
+      <div className='truncate text-[11px] text-[#c8c8c8]' title='size'>size</div>
+      <input
+        className='h-6 w-full min-w-0 rounded-sm border border-[#111] bg-[#151515] px-2 text-[12px] text-[#e2e2e2] outline-none focus:border-[#4a90e2]'
+        type='number'
+        min='1'
+        step='1'
+        value={size}
+        onChange={(event) => onChange(parseNumber(event.target.value, size))}
+      />
     </label>
   );
 }
@@ -595,7 +631,7 @@ function PropGroup({ title, children }) {
 }
 
 function NodeProps() {
-  const { getFiles, loadComponent, updateMultiNodes } = useActions();
+  const { changeSelectedNodeType, getFiles, loadComponent, updateMultiNodes } = useActions();
   const assets = useSelector(selectAssets);
   const colors = useSelector(selectColors);
   const designResolution = useSelector(selectDesignResolution);
@@ -665,10 +701,16 @@ function NodeProps() {
   }
 
   function updateNodeProps(updated) {
-    const node = {
+    const updatedNode = {
       ...(selectedNode.props?.node || {}),
       ...updated,
     };
+    for (const [key, value] of Object.entries(updatedNode)) {
+      if (value === undefined) delete updatedNode[key];
+    }
+    const node = ['Sprite', 'ProgressBar'].includes(selectedNode.tag)
+      ? removeTextureMatchingNodeSize(updatedNode, textureSize)
+      : updatedNode;
     updateMultiNodes([{ component: 'props', updated: { node } }]);
     updatePreview('props', {
       node: {
@@ -689,6 +731,23 @@ function NodeProps() {
   function updateComponents(components) {
     updateMultiNodes([{ component: 'components', updated: components }]);
     updatePreview('components', components);
+  }
+
+  function updateLoop(updated) {
+    updateMultiNodes([{ component: 'loop', updated }]);
+    updatePreview('loop', updated);
+  }
+
+  function addLoopComponent() {
+    if (selectedNode.loop) return;
+    updateLoop({ count: 9, mapFrom: 'Array(9)', startIndex: 0, startIndexSymbol: 'index', itemSymbol: '_' });
+    setComponentMenuPosition(null);
+  }
+
+  function changeNodeType(tag) {
+    changeSelectedNodeType(tag);
+    window.postMessage({ type: 'changeSelectedNodeType', tag }, '*');
+    setComponentMenuPosition(null);
   }
 
   function addComponent(option) {
@@ -739,6 +798,8 @@ function NodeProps() {
 
   const props = selectedNode.props || {};
   const node = props.node || {};
+  const loop = selectedNode.loop;
+  const { count } = loop || {};
   const position = getNodePosition(node);
   const textureSize = getTextureSize(props.spriteFrame, assets);
   const components = selectedNode.components || [];
@@ -747,11 +808,16 @@ function NodeProps() {
     !components.some((component) => component.tag === option.tag)
     && (!option.requiresSpineSkeleton || selectedNode.tag === 'SpineSkeleton')
   ));
+  const addComponentOptions = selectedNode.loop
+    ? availableComponentOptions
+    : [...availableComponentOptions, LOOP_COMPONENT_OPTION];
   const spineData = assets?.spineAnimations?.[parseStringFromValue(props.data)];
   const defaultProps = selectedNode.tag === 'Label'
     ? LABEL_DEFAULT_PROPS
     : selectedNode.tag === 'SpineSkeleton'
       ? SPINE_DEFAULT_PROPS
+      : selectedNode.tag === 'UILayout'
+        ? UI_LAYOUT_DEFAULT_PROPS
       : selectedNode.tag === 'Particle'
         ? PARTICLE_DEFAULT_PROPS
       : {};
@@ -880,10 +946,42 @@ function NodeProps() {
           />
         ))}
     </InspectorSection>
-    {(propEntries.length > 0 || supportsSpriteFrame(selectedNode)) && (
+    {loop && (
+      <InspectorSection title='Loop Component'>
+        <Field
+          label='count'
+          value={Math.trunc(count)}
+          onChange={(nextValue) => {
+            const nextCount = Math.trunc(nextValue);
+            updateLoop({ count: nextCount, mapFrom: `Array(${nextCount})` });
+          }}
+        />
+      </InspectorSection>
+    )}
+    {(propEntries.length > 0 || supportsSpriteFrame(selectedNode) || selectedNode.tag === 'Panel') && (
       <InspectorSection
         title={selectedNode.tag}
-        headerAction={<LoadComponentButton tag={selectedNode.tag} path={selectedComponentPath} onLoad={loadComponent} />}
+        headerAction={
+          <>
+            {selectedNode.tag === 'Panel' && (
+              <button
+                className='mr-1 flex h-5 w-5 items-center justify-center rounded-sm text-[#bdbdbd] hover:bg-[#3569a8] hover:text-white'
+                type='button'
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  const { left, bottom } = event.currentTarget.getBoundingClientRect();
+                  setComponentMenuPosition({ x: Math.max(8, Math.min(left, window.innerWidth - 216)), y: bottom + 4 });
+                }}
+                title='Change component type'
+                aria-label='Change component type'
+              >
+                <FiRepeat size={13} />
+              </button>
+            )}
+            <LoadComponentButton tag={selectedNode.tag} path={selectedComponentPath} onLoad={loadComponent} />
+          </>
+        }
       >
         {selectedNode.tag === 'Particle' ? (
           <ParticleSettings
@@ -920,6 +1018,11 @@ function NodeProps() {
                   if (nextSpriteFrame) updateProps({ [key]: nextSpriteFrame });
                   getFiles(rootFolder);
                 }}
+                resizeTo={['Sprite', 'ProgressBar'].includes(selectedNode.tag) ? {
+                  width: node.width ?? textureSize.width,
+                  height: node.height ?? textureSize.height,
+                } : undefined}
+                onTextureResized={() => updateNodeProps({ width: undefined, height: undefined })}
               />
             ) : selectedNode.tag === 'Panel' && key === 'color' ? (
               <ColorField
@@ -959,6 +1062,28 @@ function NodeProps() {
                 items={spineData.animations}
                 onChange={(nextValue) => updateProps({ [key]: nextValue })}
               />
+            ) : selectedNode.tag === 'Label' && key === 'font' ? (
+              <LabelSelectField
+                key={key}
+                label={key}
+                value={value}
+                items={['defaultFont', ...(assets?.fontAssets || []).map((font) => font.key)]}
+                onChange={(nextValue) => updateProps({ [key]: nextValue })}
+              />
+            ) : selectedNode.tag === 'UILayout' && key === 'direction' ? (
+              <LabelSelectField
+                key={key}
+                label={key}
+                value={value}
+                items={UI_LAYOUT_DIRECTIONS}
+                onChange={(nextValue) => updateProps({ [key]: nextValue })}
+              />
+            ) : selectedNode.tag === 'Label' && key === 'size' ? (
+              <LabelSizeField
+                key={key}
+                value={value}
+                onChange={(nextValue) => updateProps({ [key]: nextValue })}
+              />
             ) : (
               <Field
                 key={key}
@@ -969,6 +1094,14 @@ function NodeProps() {
             )
           )
         ))}
+        {selectedNode.tag === 'Panel' && !Object.prototype.hasOwnProperty.call(props, 'color') && (
+          <ColorField
+            value={undefined}
+            colors={colors}
+            onChange={(color) => updateProps({ color })}
+            onEdit={() => setIsColorEditorOpen(true)}
+          />
+        )}
         {supportsSpriteFrame(selectedNode) && !Object.prototype.hasOwnProperty.call(props, 'spriteFrame') && (
           <SpriteFrameField
             value={undefined}
@@ -1093,6 +1226,18 @@ function NodeProps() {
                 if (nextSpriteFrame) updateComponentProps(index, { [key]: nextSpriteFrame });
                 getFiles(rootFolder);
               }}
+              resizeTo={['Sprite', 'ProgressBar'].includes(component.tag) ? {
+                width: node.width ?? textureSize.width,
+                height: node.height ?? textureSize.height,
+              } : undefined}
+            />
+          ) : component.tag === 'Panel' && key === 'color' ? (
+            <ColorField
+              key={`${component.tag}-${index}-${key}`}
+              value={value}
+              colors={colors}
+              onChange={(nextValue) => updateComponentProps(index, { [key]: nextValue })}
+              onEdit={() => setIsColorEditorOpen(true)}
             />
           ) : (
             <Field
@@ -1103,6 +1248,14 @@ function NodeProps() {
             />
           )
         ))}
+        {component.tag === 'Panel' && !Object.prototype.hasOwnProperty.call(component.props || {}, 'color') && (
+          <ColorField
+            value={undefined}
+            colors={colors}
+            onChange={(color) => updateComponentProps(index, { color })}
+            onEdit={() => setIsColorEditorOpen(true)}
+          />
+        )}
         {supportsSpriteFrame(component) && !Object.prototype.hasOwnProperty.call(component.props || {}, 'spriteFrame') && (
           <SpriteFrameField
             value={undefined}
@@ -1138,9 +1291,9 @@ function NodeProps() {
         className='h-8 w-full rounded-sm bg-[#333] text-[11px] font-bold uppercase text-[#f3f3f3] shadow-inner hover:bg-[#3d3d3d]'
         type='button'
         onClick={(event) => {
-          if (availableComponentOptions.length === 0) return;
+          if (addComponentOptions.length === 0) return;
           const { left, top } = event.currentTarget.getBoundingClientRect();
-          setComponentMenuPosition({ x: left, y: top - availableComponentOptions.length * 30 - 8 });
+          setComponentMenuPosition({ x: left, y: top - addComponentOptions.length * 30 - 8 });
         }}
       >
         + Add Component
@@ -1152,12 +1305,16 @@ function NodeProps() {
       width={208}
       visible={Boolean(componentMenuPosition)}
       onClose={() => setComponentMenuPosition(null)}
-      actions={availableComponentOptions.map((option) => {
+      actions={(selectedNode.tag === 'Panel' ? PANEL_COMPONENT_OPTIONS : addComponentOptions).map((option) => {
         const Icon = option.icon;
         return {
           label: option.label,
-          icon: <Icon className='text-[#a8c7ff]' size={16} />,
-          onClick: () => addComponent(option),
+          icon: Icon && <Icon className='text-[#a8c7ff]' size={16} />,
+          onClick: () => selectedNode.tag === 'Panel'
+            ? changeNodeType(option.tag)
+            : option === LOOP_COMPONENT_OPTION
+              ? addLoopComponent()
+              : addComponent(option),
         };
       })}
     />

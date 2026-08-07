@@ -32,6 +32,12 @@ function spriteSheetTexturePath(data: any) {
   return data.path?.replace(/\.(json|plist)$/i, '.png');
 }
 
+function dicedSpriteTexturePath(data: any) {
+  const name = data.json?.meta?.name;
+  if (!name) return '';
+  return pathUtils.join(pathUtils.dirname(data.path), `${name}.png`).replace(/\\/g, '/');
+}
+
 function parseNumbers(value = '') {
   return String(value).match(/-?\d+(\.\d+)?/g)?.map(Number) || [];
 }
@@ -68,9 +74,47 @@ function getTextureIconSrc(data: any) {
   if (data.isDirectory) return '';
   if (data.type === 'spriteFrame') return imageUrl(data.value);
   if (data.type === 'frame') return imageUrl(spriteSheetTexturePath(data));
+  if (data.type === 'dicedSprite') return imageUrl(dicedSpriteTexturePath(data));
   const extension = data.extension || data.name?.match(/\.[^.]+$/)?.[0];
   if (textureExtensions.has(extension?.toLowerCase())) return imageUrl(data.value || data.path);
   return '';
+}
+
+function getDicedSpriteIcon(data: any, textureIconSrc: string) {
+  const meta = data.json?.meta;
+  const frame = data.json?.animations?.[0]?.frames?.[0];
+  if (!Array.isArray(frame) || !meta?.rawWidth || !meta?.rawHeight || !meta?.cellW || !meta?.cellH || !meta?.atlasCols) return null;
+
+  const scale = Math.min(16 / meta.rawWidth, 16 / meta.rawHeight);
+  const width = meta.rawWidth * scale;
+  const height = meta.rawHeight * scale;
+  const cellWidth = meta.cellW * scale;
+  const cellHeight = meta.cellH * scale;
+
+  return (
+    <span className="flex h-4 w-4 items-center justify-center overflow-hidden rounded-sm bg-[#181818]">
+      <span className="relative block overflow-hidden" style={{ width, height }}>
+        {frame.flatMap((row: number[], rowIndex: number) => row.map((cell, columnIndex) => {
+          if (cell < 0) return null;
+          const atlasColumn = cell % meta.atlasCols;
+          const atlasRow = Math.floor(cell / meta.atlasCols);
+          return <span
+            key={`${rowIndex}-${columnIndex}`}
+            className="absolute block bg-no-repeat"
+            style={{
+              left: columnIndex * cellWidth,
+              top: rowIndex * cellHeight,
+              width: cellWidth,
+              height: cellHeight,
+              backgroundImage: `url(${textureIconSrc})`,
+              backgroundPosition: `${-atlasColumn * cellWidth}px ${-atlasRow * cellHeight}px`,
+              backgroundSize: `${meta.atlasCols * cellWidth}px auto`,
+            }}
+          />;
+        }))}
+      </span>
+    </span>
+  );
 }
 
 function getFrameIcon(data: any, textureIconSrc: string) {
@@ -133,6 +177,10 @@ function renderIcon(data: any) {
   }
   const textureIconSrc = getTextureIconSrc(data);
   if (textureIconSrc) {
+    if (data.type === 'dicedSprite') {
+      const dicedSpriteIcon = getDicedSpriteIcon(data, textureIconSrc);
+      if (dicedSpriteIcon) return dicedSpriteIcon;
+    }
     if (data.type === 'frame') {
       const frameIcon = getFrameIcon(data, textureIconSrc);
       if (frameIcon) return frameIcon;

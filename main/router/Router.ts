@@ -1,6 +1,7 @@
 import { createAsset } from '@@/services/AssetCreateService';
-import { createSpriteImageAsset, generateSpriteImages, getAiImageSettings, replaceSpriteImage, saveAiImageSettings } from '@@/services/AiImageService';
+import { createSpriteImageAsset, createSpriteImageAssetFromClipboard, createSpriteImageAssetFromFile, generateSpriteImages, getAiImageSettings, replaceSpriteImage, replaceSpriteImageFromClipboard, replaceSpriteImageFromFile, saveAiImageSettings } from '@@/services/AiImageService';
 import { updateProjectColors } from '@@/services/ColorService';
+import { resizeSpriteImage } from '@@/services/ImageResizeService';
 import {
   createComponentFile, duplicateComponent,
   loadComponent, renameComponent, updateComponentTag,
@@ -19,6 +20,8 @@ import {
   CREATE_ASSET_REQUEST,
   CREATE_COMPONENT_FILE_REQUEST,
   CREATE_SPRITE_IMAGE_ASSET_REQUEST,
+  CREATE_SPRITE_IMAGE_ASSET_FILE_REQUEST,
+  CREATE_SPRITE_IMAGE_ASSET_CLIPBOARD_REQUEST,
   GENERATE_SPRITE_IMAGES_REQUEST,
   GET_AI_IMAGE_SETTINGS_REQUEST,
   CREATE_I18N,
@@ -31,6 +34,9 @@ import {
   LOAD_COMPONENT_REQUEST,
   RE_NAME_COMPONENT,
   REPLACE_SPRITE_IMAGE_REQUEST,
+  REPLACE_SPRITE_IMAGE_FILE_REQUEST,
+  REPLACE_SPRITE_IMAGE_CLIPBOARD_REQUEST,
+  RESIZE_SPRITE_IMAGE_REQUEST,
   SAVE_COLLIDER_SETTINGS_REQUEST,
   SAVE_AI_IMAGE_SETTINGS_REQUEST,
   SYNC_RES_REQUEST,
@@ -82,7 +88,12 @@ export default function Router() {
   addListener(CREATE_COMPONENT_FILE_REQUEST, createComponentFile);
   addListener(GENERATE_SPRITE_IMAGES_REQUEST, generateSpriteImages);
   addListener(REPLACE_SPRITE_IMAGE_REQUEST, replaceSpriteImage);
+  addListener(REPLACE_SPRITE_IMAGE_FILE_REQUEST, replaceSpriteImageFromFile);
+  addListener(REPLACE_SPRITE_IMAGE_CLIPBOARD_REQUEST, replaceSpriteImageFromClipboard);
   addListener(CREATE_SPRITE_IMAGE_ASSET_REQUEST, createSpriteImageAsset);
+  addListener(CREATE_SPRITE_IMAGE_ASSET_FILE_REQUEST, createSpriteImageAssetFromFile);
+  addListener(CREATE_SPRITE_IMAGE_ASSET_CLIPBOARD_REQUEST, createSpriteImageAssetFromClipboard);
+  addListener(RESIZE_SPRITE_IMAGE_REQUEST, resizeSpriteImage);
   addListener(GET_AI_IMAGE_SETTINGS_REQUEST, getAiImageSettings);
   addListener(SAVE_AI_IMAGE_SETTINGS_REQUEST, saveAiImageSettings);
   addListener(UPDATE_PROJECT_COLORS_REQUEST, updateProjectColors);

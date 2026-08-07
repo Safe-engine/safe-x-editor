@@ -13,6 +13,18 @@ export const SPINE_DEFAULT_PROPS = {
   loop: true,
 };
 
+export const UI_LAYOUT_DEFAULT_PROPS = {
+  direction: 'horizontal',
+  spaceX: 0,
+  spaceY: 0,
+  paddingTop: 0,
+  paddingRight: 0,
+  paddingBottom: 0,
+  paddingLeft: 0,
+};
+
+export const UI_LAYOUT_DIRECTIONS = ['none', 'horizontal', 'vertical', 'grid'];
+
 export const PARTICLE_DEFAULT_PROPS = {
   configFile: '',
   spriteFrame: '',

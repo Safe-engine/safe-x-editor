@@ -92,6 +92,16 @@ export function getAction(draft: AppState) {
         }
       })
     },
+    changeSelectedNodeType(tag: string) {
+      const tree = new Tree(draft.componentTree, 'id', 'children')
+      draft.selectedPaths.forEach((path, index) => {
+        const node = getNearestTreeNode(tree, path)
+        if (!node) return
+        node.tag = tag
+        node.props = node.props?.node ? { node: node.props.node } : {}
+        draft.selectedNodes[index] = node
+      })
+    },
   }
   return actions
 }

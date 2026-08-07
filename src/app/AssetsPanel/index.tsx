@@ -3,7 +3,7 @@ import { sendRequest } from 'app/app.ipc'
 import Input from 'base/Input'
 import Modal from 'base/Modal'
 import clsx from 'clsx'
-import { getLastLoadedFile, getLastRootFolder, setLastLoadedFile } from 'data/AppData'
+import { getLastLoadedFile, getLastRootFolder } from 'data/AppData'
 import { ipcMain } from 'helper/electronRemote'
 import { toFileUrl } from 'helper/fileUrl'
 import pathUtils from 'path-browserify'
@@ -56,6 +56,11 @@ function spriteSheetTexturePath(data: any) {
   return data.path?.replace(/\.(json|plist)$/i, '.png');
 }
 
+function dicedSpriteTexturePath(data: any) {
+  const name = data.json?.meta?.name;
+  return name ? pathUtils.join(pathUtils.dirname(data.path), `${name}.png`).replace(/\\/g, '/') : '';
+}
+
 function isTexture(data: any) {
   const extension = data.extension || data.name?.match(/\.[^.]+$/)?.[0];
   return !data.isDirectory && textureExtensions.has(extension?.toLowerCase());
@@ -78,6 +83,13 @@ function getPreviewAsset(data: any, rootFolder: string) {
     return {
       ...data,
       value: data.value,
+    };
+  }
+  if (data.type === 'dicedSprite') {
+    return {
+      ...data,
+      value: resourceFileUrl(data.value || data.path, rootFolder),
+      texture: resourceFileUrl(dicedSpriteTexturePath(data), rootFolder),
     };
   }
   if (!isTexture(data)) return null;
@@ -160,7 +172,7 @@ export default function AssetsPanel() {
 
   useEffect(() => {
     const lastFile = getLastLoadedFile()
-    if (treeData[1] && lastFile) {
+    if (treeData.length && lastFile) {
       console.log('treeData Files', lastFile)
       const node = treeRef.current.get(lastFile)
       // console.log('getLastLoadedFile node', node)
@@ -194,7 +206,6 @@ export default function AssetsPanel() {
         toggleFolder(key)
       }
     } else {
-      setLastLoadedFile(path)
       loadComponent(path);
     }
   }
@@ -263,7 +274,6 @@ export default function AssetsPanel() {
     setCreateFileKind(null);
     getFiles(rootFolder);
     loadComponent(response.path);
-    setLastLoadedFile(response.path);
   }
 
   return (
