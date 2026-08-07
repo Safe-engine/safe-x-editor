@@ -192,10 +192,11 @@ function renderIcon(data: any) {
 
 type AssetTreeNodeProps = NodeRendererProps<any> & {
   dragItem?: any;
+  getDragItems?: (node: any) => any[];
   onCreate?: (data: any) => void;
 };
 
-export function TreeNode({ node, style, dragItem, onCreate }: AssetTreeNodeProps) {
+export function TreeNode({ node, style, dragItem, getDragItems, onCreate }: AssetTreeNodeProps) {
   const [tempName, setTempName] = useState('');
   // console.log('style', style);
   // const { openMenu } = useContextMenuStore();
@@ -223,9 +224,11 @@ export function TreeNode({ node, style, dragItem, onCreate }: AssetTreeNodeProps
     onContextMenu={(e) => handleContextMenu(e, node.data)}
     onDragStart={(event) => {
       if (!dragItem) return;
+      const dragItems = getDragItems?.(node) || [dragItem];
+      const payload = dragItems.length === 1 ? dragItems[0] : { items: dragItems };
       event.dataTransfer.effectAllowed = 'copy';
-      event.dataTransfer.setData('application/x-safex-node', JSON.stringify(dragItem));
-      event.dataTransfer.setData('text/plain', dragItem.name || 'Node');
+      event.dataTransfer.setData('application/x-safex-node', JSON.stringify(payload));
+      event.dataTransfer.setData('text/plain', dragItems.length === 1 ? dragItem.name || 'Node' : `${dragItems.length} nodes`);
     }}
   >
     <Center>

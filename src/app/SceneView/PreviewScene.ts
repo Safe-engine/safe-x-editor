@@ -806,39 +806,45 @@ export class PreviewScene extends PreviewSceneSelection {
     }
     const parentNode = parentId ? findNode(this.editingComponent, parentId) : undefined
     const children = parentNode?.children ?? (sceneRoot.children ??= [])
-    const id = parentNode ? `${parentNode.id}-${children.length}` : `${sceneRoot.id}-${children.length}`
-    const asset = item.asset || {}
-    const assetKey = asset.key || asset.name
-    const node = item.kind === 'component'
-      ? {
-        id,
-        expanded: true,
-        tag: item.name,
-        props: item.name === 'UILayout'
-          ? { node: { width: 200, height: 200 } }
-          : ['Label', 'RichText'].includes(item.name) ? { string: '' } : {},
-        components: [],
-        children: [],
-      }
-      : asset.type === 'spine'
-        ? { id, expanded: true, tag: 'SpineSkeleton', props: { data: assetKey }, components: [], children: [] }
-      : asset.type === 'dragonBones'
-        ? { id, expanded: true, tag: 'DragonBones', props: { data: assetKey }, components: [], children: [] }
-      : asset.type === 'dicedSprite'
-        ? { id, expanded: true, tag: 'DicedSprite', props: { data: assetKey, animation: asset.json?.animations?.[0]?.name || '' }, components: [], children: [] }
-      : asset.type === 'tiledMap'
-        ? { id, expanded: true, tag: 'TiledMap', props: { mapFile: assetKey }, components: [], children: [] }
-      : asset.type === 'font'
-        ? { id, expanded: true, tag: 'Label', props: { string: '', font: assetKey }, components: [], children: [] }
-      : asset.type === 'spriteFrame' || asset.type === 'frame'
-        ? { id, expanded: true, tag: 'Sprite', props: { spriteFrame: assetKey }, components: [], children: [] }
-        : { id, expanded: true, tag: 'Node', props: {}, components: [], children: [] }
+    const items = Array.isArray(item.items) ? item.items : [item]
     const position = this.getScenePositionFromClient(clientX, clientY)
-    if (position) setNodePositionProps(node.props, position.x, position.y)
+    const nodes = items.filter(Boolean).map((droppedItem, index) => {
+      const childIndex = children.length + index
+      const id = parentNode ? `${parentNode.id}-${childIndex}` : `${sceneRoot.id}-${childIndex}`
+      const asset = droppedItem.asset || {}
+      const assetKey = asset.key || asset.name
+      const node = droppedItem.kind === 'component'
+        ? {
+          id,
+          expanded: true,
+          tag: droppedItem.name,
+          props: droppedItem.name === 'UILayout'
+            ? { node: { width: 200, height: 200 } }
+            : ['Label', 'RichText'].includes(droppedItem.name) ? { string: '' } : {},
+          components: [],
+          children: [],
+        }
+        : asset.type === 'spine'
+          ? { id, expanded: true, tag: 'SpineSkeleton', props: { data: assetKey }, components: [], children: [] }
+        : asset.type === 'dragonBones'
+          ? { id, expanded: true, tag: 'DragonBones', props: { data: assetKey }, components: [], children: [] }
+        : asset.type === 'dicedSprite'
+          ? { id, expanded: true, tag: 'DicedSprite', props: { data: assetKey, animation: asset.json?.animations?.[0]?.name || '' }, components: [], children: [] }
+        : asset.type === 'tiledMap'
+          ? { id, expanded: true, tag: 'TiledMap', props: { mapFile: assetKey }, components: [], children: [] }
+        : asset.type === 'font'
+          ? { id, expanded: true, tag: 'Label', props: { string: '', font: assetKey }, components: [], children: [] }
+        : asset.type === 'spriteFrame' || asset.type === 'frame'
+          ? { id, expanded: true, tag: 'Sprite', props: { spriteFrame: assetKey }, components: [], children: [] }
+          : { id, expanded: true, tag: 'Node', props: {}, components: [], children: [] }
+      if (position) setNodePositionProps(node.props, position.x, position.y)
+      return node
+    })
+    if (!nodes.length) return
 
     this.pushUndoHistory()
-    children.push(node)
-    this.editingPaths = [id]
+    children.push(...nodes)
+    this.editingPaths = nodes.map((node) => node.id)
     await this.reloadEditingComponent()
     window.postMessage({ type: 'previewRestoreComponentTree', treeData: this.editingComponent, selectPaths: this.editingPaths }, '*')
   }

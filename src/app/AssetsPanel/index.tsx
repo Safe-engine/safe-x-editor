@@ -373,6 +373,12 @@ export default function AssetsPanel() {
           {(props) => <TreeNode
             {...props}
             dragItem={getDragItem(props.node.data)}
+            getDragItems={(node) => {
+              const selectedNodes = node.isSelected ? node.tree.selectedNodes : [node];
+              return selectedNodes
+                .map((selectedNode) => getDragItem(selectedNode.data))
+                .filter(Boolean);
+            }}
             onCreate={(data) => {
               setCreateFileKind(data.createKind);
               setCreateDirectory(data.path);
