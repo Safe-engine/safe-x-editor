@@ -12,7 +12,7 @@ import CapInsetsField from './CapInsetsField';
 import { ColliderSettingsDialog } from './ColliderSettingsDialog';
 import ColorEditorDialog from './ColorEditorDialog';
 import NodeIdentityRow from './NodeIdentityRow';
-import { LABEL_DEFAULT_PROPS, PARTICLE_DEFAULT_PROPS, SPINE_DEFAULT_PROPS, WIDGET_DIRECTIONS } from './NodeProps.constants';
+import { LABEL_DEFAULT_PROPS, PARTICLE_DEFAULT_PROPS, SPINE_DEFAULT_PROPS, UI_LAYOUT_DEFAULT_PROPS, UI_LAYOUT_DIRECTIONS, WIDGET_DIRECTIONS } from './NodeProps.constants';
 import SpriteFrameField from './SpriteFrameField';
 import WidgetInsets from './WidgetInsets';
 
@@ -805,6 +805,8 @@ function NodeProps() {
     ? LABEL_DEFAULT_PROPS
     : selectedNode.tag === 'SpineSkeleton'
       ? SPINE_DEFAULT_PROPS
+      : selectedNode.tag === 'UILayout'
+        ? UI_LAYOUT_DEFAULT_PROPS
       : selectedNode.tag === 'Particle'
         ? PARTICLE_DEFAULT_PROPS
       : {};
@@ -1052,6 +1054,14 @@ function NodeProps() {
                 label={key}
                 value={value}
                 items={['defaultFont', ...(assets?.fontAssets || []).map((font) => font.key)]}
+                onChange={(nextValue) => updateProps({ [key]: nextValue })}
+              />
+            ) : selectedNode.tag === 'UILayout' && key === 'direction' ? (
+              <LabelSelectField
+                key={key}
+                label={key}
+                value={value}
+                items={UI_LAYOUT_DIRECTIONS}
                 onChange={(nextValue) => updateProps({ [key]: nextValue })}
               />
             ) : selectedNode.tag === 'Label' && key === 'size' ? (

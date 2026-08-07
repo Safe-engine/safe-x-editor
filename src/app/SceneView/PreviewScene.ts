@@ -1,4 +1,4 @@
-import { Label, loadAll, Node, SpineBonesControl, SpineSkeleton, Sprite, Touch } from '@safe-engine/sdl'
+import { Label, loadAll, Node, SpineBonesControl, SpineSkeleton, Sprite, Touch, UILayout } from '@safe-engine/sdl'
 import { getLastLoadedFile, getLastRootFolder, getLastSceneScale, getLastSceneX, getLastSceneY, setLastSceneScale, setLastSceneX, setLastSceneY } from 'data/AppData'
 import { GlobalState } from 'data/GloablState'
 import { normalizeNodeProps, parseBoolFromValue, parseFloatFromValue } from 'helper/node'
@@ -810,7 +810,16 @@ export class PreviewScene extends PreviewSceneSelection {
     const asset = item.asset || {}
     const assetKey = asset.key || asset.name
     const node = item.kind === 'component'
-      ? { id, expanded: true, tag: item.name, props: ['Label', 'RichText'].includes(item.name) ? { string: '' } : {}, components: [], children: [] }
+      ? {
+        id,
+        expanded: true,
+        tag: item.name,
+        props: item.name === 'UILayout'
+          ? { node: { width: 200, height: 200 } }
+          : ['Label', 'RichText'].includes(item.name) ? { string: '' } : {},
+        components: [],
+        children: [],
+      }
       : asset.type === 'spine'
         ? { id, expanded: true, tag: 'SpineSkeleton', props: { data: assetKey }, components: [], children: [] }
       : asset.type === 'dragonBones'
@@ -1063,6 +1072,7 @@ export class PreviewScene extends PreviewSceneSelection {
 
     if (didResizeWidth) currentNode.width = newWidth
     if (didResizeHeight) currentNode.height = newHeight
+    currentNode.getComponent(UILayout)?.layoutChildren()
 
     const editNode = this.getEditingNodeByPath(editingPath)
     if (!editNode) return false

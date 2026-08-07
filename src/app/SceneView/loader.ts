@@ -106,22 +106,25 @@ async function parseChildren(root, parentNode: Node, data: ProjectData, evalInit
   let renderNode = makeNode(tag)
   if (loop) {
     const { startIndex, startIndexSymbol, count, mapFrom, itemSymbol } = loop
-    parentNode.addChild(renderNode)
+    // A JSX loop produces sibling elements. Keep that relationship in the
+    // preview when its parent is a layout so UILayout can position each item.
+    const loopParent = parentNode.getComponent(UILayout) ? parentNode : renderNode
+    if (loopParent !== parentNode) parentNode.addChild(renderNode)
     if (!mapFrom?.includes('Array(')) {
       const arrayData = mapFrom?.includes('JsonCache')
         ? get(jsonCaches[mapFrom.split('.')[1]]?.json, mapFrom.split('.').slice(2).join('.'), [])
         : staticPropsMap[mapFrom]
       for (let index = 0; index < (arrayData?.length ?? 0); index++) {
         const loopInit = `const ${startIndexSymbol}=${index};const ${itemSymbol}=${JSON.stringify(arrayData[index])};${evalInit}`
-        await parseChildren({ tag, props, children, components }, renderNode, data, loopInit, baseProps)
+        await parseChildren({ tag, props, children, components }, loopParent, data, loopInit, baseProps)
       }
     } else {
       for (let index = 0; index < count; index++) {
         const loopInit = `const ${startIndexSymbol}=${index + startIndex};${evalInit}`
-        await parseChildren({ tag, props, children, components }, renderNode, data, loopInit, baseProps)
+        await parseChildren({ tag, props, children, components }, loopParent, data, loopInit, baseProps)
       }
     }
-    return renderNode
+    return loopParent
   }
 
   function tryGetValue(key: string) {
