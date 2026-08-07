@@ -324,10 +324,11 @@ async function parseChildren(root, parentNode: Node, data: ProjectData, evalInit
       await tiledMap.reload()
     }
   } else if (tag === 'UILayout') {
-    const { direction, gap, paddingBottom, paddingTop, paddingLeft, paddingRight } = props
+    const { direction, spaceX, spaceY, paddingBottom, paddingTop, paddingLeft, paddingRight } = props
     const layoutProps: Record<string, unknown> = {}
     if (direction !== undefined) layoutProps.direction = direction
-    if (gap !== undefined) layoutProps.gap = parseIntFromValue(gap)
+    if (spaceX !== undefined) layoutProps.spaceX = parseIntFromValue(spaceX)
+    if (spaceY !== undefined) layoutProps.spaceY = parseIntFromValue(spaceY)
     if (paddingTop !== undefined) layoutProps.paddingTop = parseIntFromValue(paddingTop)
     if (paddingRight !== undefined) layoutProps.paddingRight = parseIntFromValue(paddingRight)
     if (paddingBottom !== undefined) layoutProps.paddingBottom = parseIntFromValue(paddingBottom)

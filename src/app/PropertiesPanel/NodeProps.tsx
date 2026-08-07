@@ -112,6 +112,8 @@ const PANEL_COMPONENT_OPTIONS = [
   { tag: 'ProgressBar', label: 'Progress Bar' },
 ];
 
+const LOOP_COMPONENT_OPTION = { label: 'Loop Component', icon: FiRepeat };
+
 const SPINE_PROP_ORDER = ['data', 'atlas', 'skin', 'animation', 'timeScale', 'loop'];
 
 function Field({ label, value, onChange }) {
@@ -736,6 +738,12 @@ function NodeProps() {
     updatePreview('loop', updated);
   }
 
+  function addLoopComponent() {
+    if (selectedNode.loop) return;
+    updateLoop({ count: 9, mapFrom: 'Array(9)', startIndex: 0, startIndexSymbol: 'index', itemSymbol: '_' });
+    setComponentMenuPosition(null);
+  }
+
   function changeNodeType(tag) {
     changeSelectedNodeType(tag);
     window.postMessage({ type: 'changeSelectedNodeType', tag }, '*');
@@ -800,6 +808,9 @@ function NodeProps() {
     !components.some((component) => component.tag === option.tag)
     && (!option.requiresSpineSkeleton || selectedNode.tag === 'SpineSkeleton')
   ));
+  const addComponentOptions = selectedNode.loop
+    ? availableComponentOptions
+    : [...availableComponentOptions, LOOP_COMPONENT_OPTION];
   const spineData = assets?.spineAnimations?.[parseStringFromValue(props.data)];
   const defaultProps = selectedNode.tag === 'Label'
     ? LABEL_DEFAULT_PROPS
@@ -1280,9 +1291,9 @@ function NodeProps() {
         className='h-8 w-full rounded-sm bg-[#333] text-[11px] font-bold uppercase text-[#f3f3f3] shadow-inner hover:bg-[#3d3d3d]'
         type='button'
         onClick={(event) => {
-          if (availableComponentOptions.length === 0) return;
+          if (addComponentOptions.length === 0) return;
           const { left, top } = event.currentTarget.getBoundingClientRect();
-          setComponentMenuPosition({ x: left, y: top - availableComponentOptions.length * 30 - 8 });
+          setComponentMenuPosition({ x: left, y: top - addComponentOptions.length * 30 - 8 });
         }}
       >
         + Add Component
@@ -1294,12 +1305,16 @@ function NodeProps() {
       width={208}
       visible={Boolean(componentMenuPosition)}
       onClose={() => setComponentMenuPosition(null)}
-      actions={(selectedNode.tag === 'Panel' ? PANEL_COMPONENT_OPTIONS : availableComponentOptions).map((option) => {
+      actions={(selectedNode.tag === 'Panel' ? PANEL_COMPONENT_OPTIONS : addComponentOptions).map((option) => {
         const Icon = option.icon;
         return {
           label: option.label,
           icon: Icon && <Icon className='text-[#a8c7ff]' size={16} />,
-          onClick: () => selectedNode.tag === 'Panel' ? changeNodeType(option.tag) : addComponent(option),
+          onClick: () => selectedNode.tag === 'Panel'
+            ? changeNodeType(option.tag)
+            : option === LOOP_COMPONENT_OPTION
+              ? addLoopComponent()
+              : addComponent(option),
         };
       })}
     />

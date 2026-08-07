@@ -15,7 +15,8 @@ export const SPINE_DEFAULT_PROPS = {
 
 export const UI_LAYOUT_DEFAULT_PROPS = {
   direction: 'horizontal',
-  gap: 0,
+  spaceX: 0,
+  spaceY: 0,
   paddingTop: 0,
   paddingRight: 0,
   paddingBottom: 0,
