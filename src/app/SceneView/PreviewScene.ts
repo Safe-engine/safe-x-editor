@@ -412,6 +412,7 @@ export class PreviewScene extends PreviewSceneSelection {
     console.log('gen success', data)
     this.loadedComponentSnapshot = this.serializeEditingComponent()
     this.isEditing = false
+    this.notifyEditingState()
   }
 
   createSaveDialog() {
@@ -521,6 +522,7 @@ export class PreviewScene extends PreviewSceneSelection {
       this.loadedComponentSnapshot = this.serializeEditingComponent()
       this.hideSaveDialog()
       this.isEditing = false
+      this.notifyEditingState()
       this.updateArrowPosition()
     } finally {
       this.loadingPath = ''
@@ -546,6 +548,11 @@ export class PreviewScene extends PreviewSceneSelection {
 
   syncEditingFlag() {
     this.isEditing = this.serializeEditingComponent() !== this.loadedComponentSnapshot
+    this.notifyEditingState()
+  }
+
+  notifyEditingState() {
+    window.postMessage({ type: 'previewEditingState', isEditing: this.isEditing }, '*')
   }
 
   async restoreHistoryEntry(historyEntry: HistoryEntry) {

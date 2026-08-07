@@ -731,6 +731,11 @@ function NodeProps() {
     updatePreview('components', components);
   }
 
+  function updateLoop(updated) {
+    updateMultiNodes([{ component: 'loop', updated }]);
+    updatePreview('loop', updated);
+  }
+
   function changeNodeType(tag) {
     changeSelectedNodeType(tag);
     window.postMessage({ type: 'changeSelectedNodeType', tag }, '*');
@@ -785,6 +790,8 @@ function NodeProps() {
 
   const props = selectedNode.props || {};
   const node = props.node || {};
+  const loop = selectedNode.loop;
+  const { startIndex, startIndexSymbol, count, mapFrom, itemSymbol } = loop || {};
   const position = getNodePosition(node);
   const textureSize = getTextureSize(props.spriteFrame, assets);
   const components = selectedNode.components || [];
@@ -926,6 +933,15 @@ function NodeProps() {
           />
         ))}
     </InspectorSection>
+    {loop && (
+      <InspectorSection title='Loop Component'>
+        <Field label='startIndex' value={startIndex} onChange={(nextValue) => updateLoop({ startIndex: nextValue })} />
+        <Field label='startIndexSymbol' value={startIndexSymbol} onChange={(nextValue) => updateLoop({ startIndexSymbol: nextValue })} />
+        <Field label='count' value={count} onChange={(nextValue) => updateLoop({ count: nextValue })} />
+        <Field label='mapFrom' value={mapFrom} onChange={(nextValue) => updateLoop({ mapFrom: nextValue })} />
+        <Field label='itemSymbol' value={itemSymbol} onChange={(nextValue) => updateLoop({ itemSymbol: nextValue })} />
+      </InspectorSection>
+    )}
     {(propEntries.length > 0 || supportsSpriteFrame(selectedNode) || selectedNode.tag === 'Panel') && (
       <InspectorSection
         title={selectedNode.tag}

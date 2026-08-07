@@ -120,7 +120,8 @@ export function registerMessageHandler(scene: PreviewScene) {
       GlobalState.tempFilePath = message.filePath
       if (scene.isEditing) scene.showSaveDialog(GlobalState.tempFilePath)
       else void scene.loadComponent(GlobalState.tempFilePath)
-    } else if (message.type === 'changeSelectPath') scene.changeSelectPath(message.selectPaths, false)
+    } else if (message.type === 'saveProject') void scene.saveComponent()
+    else if (message.type === 'changeSelectPath') scene.changeSelectPath(message.selectPaths, false)
     else if (message.type === 'focusPreviewNode') scene.focusNode(message.path)
     else if (message.type === 'reloadProjectData') void scene.reloadProjectData()
     else if (message.type === 'updateSelectedNode') void scene.updateSelectedNode(message.component, message.updated)

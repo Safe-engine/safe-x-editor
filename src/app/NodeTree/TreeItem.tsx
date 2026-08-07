@@ -4,7 +4,7 @@ import { get } from "lodash-es";
 import { useState } from "react";
 import { NodeRendererProps } from "react-arborist";
 import { AiFillFolderOpen } from "react-icons/ai";
-import { FiChevronRight, FiEye, FiPlus } from "react-icons/fi";
+import { FiChevronRight, FiEye, FiPlus, FiRepeat } from "react-icons/fi";
 import { RiBox3Line } from "react-icons/ri";
 
 type TreeItemProps = NodeRendererProps<any> & {
@@ -22,6 +22,9 @@ const addNodeMenu = [
 function renderIcon(data: any) {
   if (data.isDirectory) {
     return <AiFillFolderOpen color="#d6d6d6" />;
+  }
+  if (data.loop) {
+    return <FiRepeat color="#9fb7ff" />;
   }
   return <RiBox3Line color="#9fb7ff" />;
 }

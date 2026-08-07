@@ -1,5 +1,11 @@
 export function parseEval(evalInit: string) {
-  return (v: string = '') => eval(evalInit + `${v}`.replace('this.props', 'baseProps'))
+  return (v: string = '') => {
+    try {
+      return eval(evalInit + `${v}`.replace('this.props', 'baseProps'))
+    } catch {
+      return v
+    }
+  }
 }
 
 export function parseVec2(position = 'Vec2(0,0)', evalInit = '') {
