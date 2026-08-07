@@ -3,6 +3,7 @@ import { getLastLoadedFile, getLastRootFolder, getLastSceneScale, getLastSceneX,
 import { GlobalState } from 'data/GloablState'
 import { normalizeNodeProps, parseBoolFromValue, parseFloatFromValue } from 'helper/node'
 import { cloneDeep, first, isNumber, parseInt, set } from 'lodash-es'
+import toast from 'react-hot-toast'
 import { sendRequest } from '../app.ipc'
 import { arrow } from './assets'
 import { CircleRender } from './CircleRender'
@@ -847,6 +848,31 @@ export class PreviewScene extends PreviewSceneSelection {
     this.editingPaths = nodes.map((node) => node.id)
     await this.reloadEditingComponent()
     window.postMessage({ type: 'previewRestoreComponentTree', treeData: this.editingComponent, selectPaths: this.editingPaths }, '*')
+  }
+
+  async importPngAsSprite(sourcePaths: string[], clientX?: number, clientY?: number) {
+    const rootFolder = getLastRootFolder()
+    if (!rootFolder || !sourcePaths?.length) return
+    const response: any = await sendRequest({
+      key: 'IMPORT_RESOURCES_REQUEST',
+      rootFolder,
+      resourcePath: 'Texture',
+      sourcePaths,
+    })
+    const assets = response?.assets || []
+    if (!response || response.error || !assets.length) {
+      toast.error(response?.message || 'Unable to import PNG as a Sprite')
+      return
+    }
+
+    await this.reloadProjectData()
+    await this.addDroppedNode({
+      items: assets
+        .filter((asset) => asset.key)
+        .map((asset) => ({ kind: 'asset', asset: { type: 'spriteFrame', key: asset.key, path: asset.path } })),
+    }, undefined, clientX, clientY)
+    window.postMessage({ type: 'resourcesImported', rootFolder }, '*')
+    toast.success(`Imported ${assets.length} PNG${assets.length === 1 ? '' : 's'} as Sprite${assets.length === 1 ? '' : 's'}`)
   }
 
   async moveHierarchyNodes(dragIds: string[], parentId: string | null, index: number | null) {

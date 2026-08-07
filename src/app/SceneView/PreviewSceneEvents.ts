@@ -128,6 +128,7 @@ export function registerMessageHandler(scene: PreviewScene) {
     else if (message.type === 'changeSelectedNodeType') void scene.changeSelectedNodeType(message.tag)
     else if (message.type === 'toggleBoxColliderEditor') scene.toggleBoxColliderEditor(message.componentIndex)
     else if (message.type === 'addDroppedNode') void scene.addDroppedNode(message.item, message.parentId, message.clientX, message.clientY)
+    else if (message.type === 'importPngAsSprite') void scene.importPngAsSprite(message.sourcePaths, message.clientX, message.clientY)
     else if (message.type === 'moveHierarchyNodes') void scene.moveHierarchyNodes(message.dragIds, message.parentId, message.index)
   })
 }

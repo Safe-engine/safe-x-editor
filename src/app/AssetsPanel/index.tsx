@@ -11,7 +11,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Tree, TreeApi } from 'react-arborist'
 import toast from 'react-hot-toast'
 import { FiRefreshCw, FiX } from 'react-icons/fi'
-import { CREATE_ASSET_REQUEST, CREATE_COMPONENT_FILE_REQUEST, GET_FOLDER_FILES, SYNC_RES_REQUEST } from 'shared/constant.message'
+import { CREATE_ASSET_REQUEST, CREATE_COMPONENT_FILE_REQUEST, GET_FOLDER_FILES, IMPORT_RESOURCES_REQUEST, RENAME_RESOURCE_REQUEST, SYNC_RES_REQUEST } from 'shared/constant.message'
 import { useActions, useSelector } from 'states/app.context'
 import { selectFilesData, selectPreviewAsset, selectResourceFilesData, selectRootFolder } from 'states/app.selectors'
 import { AssetTypeBlock } from '../../components/common'
@@ -171,6 +171,14 @@ export default function AssetsPanel() {
   }, [])
 
   useEffect(() => {
+    const refreshResources = (event: MessageEvent) => {
+      if (event.data?.type === 'resourcesImported' && event.data.rootFolder === rootFolder) getFiles(rootFolder);
+    };
+    window.addEventListener('message', refreshResources);
+    return () => window.removeEventListener('message', refreshResources);
+  }, [getFiles, rootFolder]);
+
+  useEffect(() => {
     const lastFile = getLastLoadedFile()
     if (treeData.length && lastFile) {
       console.log('treeData Files', lastFile)
@@ -255,6 +263,40 @@ export default function AssetsPanel() {
     toast.success('Asset created')
     getFiles(rootFolder)
     return true
+  }
+
+  async function renameResource({ node, name }: { node: any, name: string }) {
+    const data = node.data;
+    if (!rootFolder || data.isDirectory || data.type === 'frame') return;
+    const response: any = await sendRequest({
+      key: RENAME_RESOURCE_REQUEST,
+      rootFolder,
+      resourcePath: data.path,
+      resourceKey: data.key,
+      newName: name,
+    });
+    if (!response || response.error) {
+      toast.error(response?.message || 'Unable to rename resource');
+      return;
+    }
+    toast.success(response.oldKey === response.newKey ? 'Resource renamed' : `Resource renamed to ${response.newKey}`);
+    getFiles(rootFolder);
+  }
+
+  async function importResources(directory: any, sourcePaths: string[]) {
+    if (!rootFolder) return;
+    const response: any = await sendRequest({
+      key: IMPORT_RESOURCES_REQUEST,
+      rootFolder,
+      resourcePath: directory.path,
+      sourcePaths,
+    });
+    if (!response || response.error) {
+      toast.error(response?.message || 'Unable to import resources');
+      return;
+    }
+    toast.success(`Imported ${sourcePaths.length} resource${sourcePaths.length === 1 ? '' : 's'}`);
+    getFiles(rootFolder);
   }
 
   async function createFile() {
@@ -366,8 +408,9 @@ export default function AssetsPanel() {
               onItemClick(nodes[0])
           }}
           onRename={(node) => {
-            console.log('onRename', node);
+            if (selectedTab === 'res') return renameResource(node);
           }}
+          disableEdit={(data) => selectedTab !== 'res' || data.isDirectory || data.type === 'frame'}
           openByDefault
         >
           {(props) => <TreeNode
@@ -384,6 +427,8 @@ export default function AssetsPanel() {
               setCreateDirectory(data.path);
               setCreateClassName('');
             }}
+            canRename={selectedTab === 'res'}
+            onImport={selectedTab === 'res' ? importResources : undefined}
           />}
         </Tree>
         {selectedTab === 'res' && <AssetPreview />}

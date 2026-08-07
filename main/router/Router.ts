@@ -2,6 +2,8 @@ import { createAsset } from '@@/services/AssetCreateService';
 import { createSpriteImageAsset, createSpriteImageAssetFromClipboard, createSpriteImageAssetFromFile, generateSpriteImages, getAiImageSettings, replaceSpriteImage, replaceSpriteImageFromClipboard, replaceSpriteImageFromFile, saveAiImageSettings } from '@@/services/AiImageService';
 import { updateProjectColors } from '@@/services/ColorService';
 import { resizeSpriteImage } from '@@/services/ImageResizeService';
+import { renameResource } from '@@/services/ResourceRenameService';
+import { importResources } from '@@/services/ResourceImportService';
 import {
   createComponentFile, duplicateComponent,
   loadComponent, renameComponent, updateComponentTag,
@@ -36,6 +38,8 @@ import {
   REPLACE_SPRITE_IMAGE_REQUEST,
   REPLACE_SPRITE_IMAGE_FILE_REQUEST,
   REPLACE_SPRITE_IMAGE_CLIPBOARD_REQUEST,
+  RENAME_RESOURCE_REQUEST,
+  IMPORT_RESOURCES_REQUEST,
   RESIZE_SPRITE_IMAGE_REQUEST,
   SAVE_COLLIDER_SETTINGS_REQUEST,
   SAVE_AI_IMAGE_SETTINGS_REQUEST,
@@ -103,4 +107,6 @@ export default function Router() {
     syncResConst(rootFolder);
     return { success: true };
   });
+  addListener(RENAME_RESOURCE_REQUEST, renameResource);
+  addListener(IMPORT_RESOURCES_REQUEST, importResources);
 }

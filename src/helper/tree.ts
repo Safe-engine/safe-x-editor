@@ -57,12 +57,13 @@ function getId(name: string, isDirectory: boolean, data, type: string) {
   return data.value
 }
 
-function createNode(path: string[], tree: TreeNode[], data, type: string) {
+function createNode(path: string[], tree: TreeNode[], data, type: string, directoryPath = '') {
   const name = path.shift()
   const idx = tree.findIndex((e: TreeNode) => {
     return e.id == name
   })
   const isDirectory = path.length > 0
+  const nodePath = normalizeResourcePath(`${directoryPath}/${name}`)
   // console.log('createNode', name, idx, path, isDirectory, type, getId(name, isDirectory, data, type));
   if (idx < 0) {
     const element = {
@@ -70,15 +71,16 @@ function createNode(path: string[], tree: TreeNode[], data, type: string) {
       name,
       type,
       ...data,
+      path: isDirectory ? nodePath : data.path,
       isDirectory,
       children: [],
     }
     tree.push(element)
     if (path.length !== 0) {
-      createNode(path, tree[tree.length - 1].children, data, type)
+      createNode(path, tree[tree.length - 1].children, data, type, nodePath)
     }
   } else {
-    createNode(path, tree[idx].children, data, type)
+    createNode(path, tree[idx].children, data, type, nodePath)
   }
 }
 

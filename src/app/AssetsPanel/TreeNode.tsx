@@ -3,7 +3,7 @@ import clsx from "clsx";
 import { getLastRootFolder } from "data/AppData";
 import { toFileUrl } from 'helper/fileUrl';
 import pathUtils from 'path-browserify';
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { NodeRendererProps } from "react-arborist";
 import { AiFillFolderOpen } from "react-icons/ai";
 import { CiImageOn } from 'react-icons/ci';
@@ -15,6 +15,11 @@ import { FiPlus } from 'react-icons/fi';
 import { SiSpine } from 'react-icons/si';
 
 const textureExtensions = new Set(['.png', '.jpg', '.jpeg', '.webp', '.gif', '.bmp', '.svg']);
+
+function getDroppedFilePath(file: File) {
+  const electronRequire = (globalThis as any).require;
+  return electronRequire?.('electron')?.webUtils?.getPathForFile(file) || (file as any).path || '';
+}
 
 function imageUrl(path?: string) {
   if (!path) return '';
@@ -194,10 +199,23 @@ type AssetTreeNodeProps = NodeRendererProps<any> & {
   dragItem?: any;
   getDragItems?: (node: any) => any[];
   onCreate?: (data: any) => void;
+  canRename?: boolean;
+  onImport?: (data: any, sourcePaths: string[]) => void;
 };
 
-export function TreeNode({ node, style, dragItem, getDragItems, onCreate }: AssetTreeNodeProps) {
-  const [tempName, setTempName] = useState('');
+export function TreeNode({ node, style, dragItem, getDragItems, onCreate, canRename, onImport }: AssetTreeNodeProps) {
+  const renameInput = useRef<HTMLInputElement>(null);
+  const [isFileDropTarget, setIsFileDropTarget] = useState(false);
+  const isRenamable = canRename && !node.data.isDirectory && node.data.type !== 'frame';
+  useEffect(() => {
+    if (node.isEditing) {
+      renameInput.current?.focus();
+      renameInput.current?.select();
+    }
+  }, [node.isEditing]);
+  const getDroppedPaths = (event: React.DragEvent) => Array.from(event.dataTransfer.files)
+    .map(getDroppedFilePath)
+    .filter(Boolean);
   // console.log('style', style);
   // const { openMenu } = useContextMenuStore();
 
@@ -214,12 +232,12 @@ export function TreeNode({ node, style, dragItem, getDragItems, onCreate }: Asse
     draggable={Boolean(dragItem)}
     className={clsx(
       'h-full w-full items-center justify-between rounded-sm px-1 text-[12px] text-[#d6d6d6] hover:cursor-pointer hover:bg-[#303846]',
-      node.isSelected && 'bg-[#304766] text-[#f0f0f0]'
+      node.isSelected && 'bg-[#304766] text-[#f0f0f0]',
+      isFileDropTarget && 'bg-[#49637f] text-white ring-1 ring-inset ring-[#74a8dc]'
     )}
 
     onDoubleClick={() => {
-      // setTempName(node.data.name)
-      // node.edit()
+      if (isRenamable) node.edit()
     }}
     onContextMenu={(e) => handleContextMenu(e, node.data)}
     onDragStart={(event) => {
@@ -230,10 +248,42 @@ export function TreeNode({ node, style, dragItem, getDragItems, onCreate }: Asse
       event.dataTransfer.setData('application/x-safex-node', JSON.stringify(payload));
       event.dataTransfer.setData('text/plain', dragItems.length === 1 ? dragItem.name || 'Node' : `${dragItems.length} nodes`);
     }}
+    onDragOver={(event) => {
+      if (!node.data.isDirectory || !event.dataTransfer.types.includes('Files')) return;
+      event.preventDefault();
+      event.stopPropagation();
+      event.dataTransfer.dropEffect = 'copy';
+    }}
+    onDragEnter={(event) => {
+      if (!node.data.isDirectory || !event.dataTransfer.types.includes('Files')) return;
+      event.preventDefault();
+      setIsFileDropTarget(true);
+    }}
+    onDragLeave={(event) => {
+      if (!event.currentTarget.contains(event.relatedTarget as Node)) setIsFileDropTarget(false);
+    }}
+    onDrop={(event) => {
+      const sourcePaths = getDroppedPaths(event);
+      if (!node.data.isDirectory || !sourcePaths.length) return;
+      event.preventDefault();
+      event.stopPropagation();
+      setIsFileDropTarget(false);
+      onImport?.(node.data, sourcePaths);
+    }}
   >
     <Center>
       <Box className="m-auto w-4 shrink-0">{renderIcon(node.data)}</Box>
-      <Box className={clsx('truncate', node.isSelected ? 'text-[#ffffff]' : 'text-[#d6d6d6]')}>{node.data.name}</Box>
+      {node.isEditing ? <input
+        ref={renameInput}
+        className="h-5 min-w-0 rounded-sm border border-[#4a90e2] bg-[#151515] px-1 text-[12px] text-[#e2e2e2] outline-none"
+        defaultValue={node.data.name}
+        onBlur={() => node.reset()}
+        onClick={(event) => event.stopPropagation()}
+        onKeyDown={(event) => {
+          if (event.key === 'Escape') node.reset()
+          if (event.key === 'Enter') node.submit(renameInput.current?.value || '')
+        }}
+      /> : <Box className={clsx('truncate', node.isSelected ? 'text-[#ffffff]' : 'text-[#d6d6d6]')}>{node.data.name}</Box>}
     </Center>
     {node.data.createKind && <button
       type="button"
