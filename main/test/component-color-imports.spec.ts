@@ -72,7 +72,7 @@ export class Example extends ComponentX {
     });
 
     const saved = readFileSync(componentPath, 'utf8');
-    expect(saved).toContain("import { sf_Hero } from '../assets/TextureAssets';");
+    expect(saved).toContain("import { sf_Hero } from '../assets';");
     expect(saved).toContain('<Sprite spriteFrame={sf_Hero} />');
   });
 
