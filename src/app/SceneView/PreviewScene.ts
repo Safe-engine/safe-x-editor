@@ -774,6 +774,11 @@ export class PreviewScene extends PreviewSceneSelection {
         return node
       })
     this.editingComponent = removeSelectedNodes(this.editingComponent)
+    const assignIds = (nodes: any[], prefix = '') => nodes.forEach((node, nodeIndex) => {
+      node.id = prefix ? `${prefix}-${nodeIndex}` : `${nodeIndex}`
+      assignIds(node.children || [], node.id)
+    })
+    assignIds(this.editingComponent)
     window.postMessage({ type: 'previewRestoreComponentTree', treeData: this.editingComponent, selectPaths: [] }, '*')
     this.changeSelectPath([])
     await this.reloadEditingComponent()
