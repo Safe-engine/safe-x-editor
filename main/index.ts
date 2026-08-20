@@ -1,11 +1,12 @@
 import Router from '@@/router/Router';
 import { enable, initialize } from '@electron/remote/main';
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, nativeImage } from 'electron';
 import path from 'path';
 import { installDevtoolExtensions } from './installExtensions';
 import MenuBuilder from './menu';
 
 const isDev = !!process.env.ELECTRON_RENDERER_URL;
+const iconPath = path.resolve(__dirname, '../../resources/icons/512x512.png');
 
 let mainWindow: BrowserWindow;
 initialize();
@@ -15,10 +16,13 @@ function createWindow() {
     installDevtoolExtensions();
   }
   Router();
+  if (process.platform === 'darwin') {
+    app.dock.setIcon(nativeImage.createFromPath(iconPath));
+  }
   mainWindow = new BrowserWindow({
     width: 1366,
     height: 768,
-    icon: path.resolve(__dirname, '../../resources/icons/512x512.png'),
+    icon: iconPath,
     webPreferences: {
       // preload: path.join(__dirname, 'preload.js'),
       contextIsolation: false,
