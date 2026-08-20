@@ -58,13 +58,25 @@ export function registerMouseHandler(scene: PreviewScene) {
     scene.setRootScale(event.deltaY > 0 ? -0.05 : 0.05)
     event.preventDefault()
   }, { passive: false })
+  canvas?.addEventListener('contextmenu', (event) => {
+    event.preventDefault()
+  })
   canvas?.addEventListener('pointerdown', (event) => {
     scene.isMiddleMouse = event.button === 1
-    if (scene.isMiddleMouse) scene.middleMouseSelectionPaths = [...scene.editingPaths]
+    scene.isRightMouse = event.button === 2
+    scene.isPanMouse = event.button === 1 || event.button === 2
+    if (scene.isPanMouse) {
+      scene.panSelectionPaths = [...scene.editingPaths]
+      scene.middleMouseSelectionPaths = [...scene.editingPaths]
+    }
     scene.updateInputModifiers(event)
   }, true)
   canvas?.addEventListener('pointermove', (event) => {
     scene.updateInputModifiers(event)
+    if (scene.isPanMouse || scene.isMiddleMouse || scene.isRightMouse) {
+      canvas.style.cursor = 'move'
+      return
+    }
     const bounds = canvas.getBoundingClientRect()
     const x = (event.clientX - bounds.left) * scene.logicalCanvasWidth / bounds.width
     const y = (event.clientY - bounds.top) * scene.logicalCanvasWidth / bounds.width
@@ -100,7 +112,10 @@ export function registerMouseHandler(scene: PreviewScene) {
     if (scene.spineBoneTooltipNode) scene.spineBoneTooltipNode.style.display = 'none'
   })
   const resetPointerState = () => {
+    scene.isPanMouse = false
     scene.isMiddleMouse = false
+    scene.isRightMouse = false
+    scene.panSelectionPaths = undefined
     scene.middleMouseSelectionPaths = undefined
     scene.isShiftPressed = false
     scene.isMultiSelectModifierPressed = false

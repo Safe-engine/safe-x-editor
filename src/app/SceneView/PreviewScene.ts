@@ -53,6 +53,8 @@ export class PreviewScene extends PreviewSceneSelection {
   borderNode: Node
   isEditing = false
   isMiddleMouse = false
+  isRightMouse = false
+  isPanMouse = false
   isShiftPressed = false
   isMultiSelectModifierPressed = false
   lockX = false
@@ -69,6 +71,7 @@ export class PreviewScene extends PreviewSceneSelection {
   didCaptureDragHistory = false
   logicalCanvasWidth = window.innerWidth
   lastTouch?: { x: number; y: number }
+  panSelectionPaths?: string[]
   middleMouseSelectionPaths?: string[]
   activeArrowAxis?: 'x' | 'y' | 'move' | 'anchor'
   activeResizeEdge?: ResizeHandle
@@ -1239,7 +1242,8 @@ export class PreviewScene extends PreviewSceneSelection {
     this.lastTouch = { x, y }
     this.didCaptureDragHistory = false
     this.marqueeSelection = undefined
-    if (this.isMiddleMouse) {
+    const isPanMode = this.isPanMouse || this.isMiddleMouse || this.isRightMouse
+    if (isPanMode) {
       this.activeArrowAxis = undefined
       this.activeResizeEdge = undefined
       this.isRotating = false
@@ -1250,7 +1254,7 @@ export class PreviewScene extends PreviewSceneSelection {
       this.updateArrowOpacity()
       return
     }
-    const isModifierSelecting = this.isMultiSelectModifierPressed && !this.isMiddleMouse
+    const isModifierSelecting = this.isMultiSelectModifierPressed && !isPanMode
     this.activeSpineBonePoint = isModifierSelecting || this.isShiftPressed ? undefined : this.getActiveSpineBonePoint(x, y)
     this.activeBoxColliderResizeEdge = isModifierSelecting || this.isShiftPressed ? undefined : this.getActiveBoxColliderResizeEdge(x, y)
     this.activeBoxColliderOffset = this.activeBoxColliderResizeEdge || isModifierSelecting || this.isShiftPressed
@@ -1299,7 +1303,7 @@ export class PreviewScene extends PreviewSceneSelection {
       ? undefined
       : this.getActiveResizeEdge(x, y)
     if (!this.activeArrowAxis && !this.activeResizeEdge) this.activeArrowAxis = activeArrowAxis
-    if (this.isShiftPressed && !this.isMiddleMouse) {
+    if (this.isShiftPressed && !isPanMode) {
       this.activeArrowAxis = undefined
       this.activeResizeEdge = undefined
       this.isRotating = false
@@ -1309,7 +1313,7 @@ export class PreviewScene extends PreviewSceneSelection {
       this.updateArrowOpacity()
       return
     }
-    if (!this.isRotating && !this.activeResizeEdge && !this.activeArrowAxis && !this.isMiddleMouse) {
+    if (!this.isRotating && !this.activeResizeEdge && !this.activeArrowAxis && !isPanMode) {
       const selectedPath = this.findSelectionPath(x, y)
       if (isModifierSelecting) {
         this.toggleSelectPath(selectedPath)
@@ -1323,8 +1327,10 @@ export class PreviewScene extends PreviewSceneSelection {
   onTouchMove(event: Touch) {
     if (this.isSaveDialogVisible()) return
     const { x, y } = event
-    if (this.isMiddleMouse && this.middleMouseSelectionPaths && this.editingPaths.join(',') !== this.middleMouseSelectionPaths.join(',')) {
-      this.changeSelectPath(this.middleMouseSelectionPaths)
+    const isPanMode = this.isPanMouse || this.isMiddleMouse || this.isRightMouse
+    const savedSelectionPaths = this.panSelectionPaths ?? this.middleMouseSelectionPaths
+    if (isPanMode && savedSelectionPaths && this.editingPaths.join(',') !== savedSelectionPaths.join(',')) {
+      this.changeSelectPath(savedSelectionPaths)
     }
     const last = this.lastTouch ?? { x, y }
     const dx = x - last.x
@@ -1365,7 +1371,7 @@ export class PreviewScene extends PreviewSceneSelection {
       this.resizeBoxCollider(this.activeBoxColliderResizeEdge, dx, dy)
       return
     }
-    if (!this.editingPaths[0] || this.isMiddleMouse) {
+    if (!this.editingPaths[0] || isPanMode) {
       this.drawNode.x += dx
       this.drawNode.y += dy
       this.borderNode.x = this.drawNode.x
