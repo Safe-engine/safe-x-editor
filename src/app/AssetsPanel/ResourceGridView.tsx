@@ -1,8 +1,7 @@
 import clsx from 'clsx';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { AiFillFolderOpen } from 'react-icons/ai';
 import { FiChevronLeft, FiChevronRight, FiCornerLeftUp, FiFolder } from 'react-icons/fi';
-import { getDroppedFilePath, renderResourceIcon } from './resourceUtils';
+import { getDroppedPaths, renderResourceIcon } from './resourceUtils';
 
 type ResourceGridViewProps = {
   data: any[];
@@ -11,6 +10,7 @@ type ResourceGridViewProps = {
   onClearFilter?: () => void;
   onRename?: (params: { node: { data: any }; name: string }) => void;
   onImport?: (directory: any, sourcePaths: string[]) => void;
+  onDeleteRequest?: (items: any[]) => void;
   getDragItem: (data: any) => any;
   height?: number | string;
 };
@@ -49,6 +49,7 @@ export default function ResourceGridView({
   onClearFilter,
   onRename,
   onImport,
+  onDeleteRequest,
   getDragItem,
   height,
 }: ResourceGridViewProps) {
@@ -92,10 +93,26 @@ export default function ResourceGridView({
     }
   }, [editingKey]);
 
-  const getDroppedPaths = (event: React.DragEvent) =>
-    Array.from(event.dataTransfer.files)
-      .map(getDroppedFilePath)
-      .filter(Boolean);
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if (editingKey) return;
+      const target = event.target as HTMLElement;
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable || target.tagName === 'SELECT')) {
+        return;
+      }
+      if (event.key === 'Delete' || event.key === 'Backspace') {
+        if (!selectedKey) return;
+        const selectedItem = displayedItems.find((item) => (item.key || item.path || item.name) === selectedKey);
+        if (selectedItem && selectedItem.type !== 'frame') {
+          event.preventDefault();
+          event.stopPropagation();
+          onDeleteRequest?.([selectedItem]);
+        }
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [editingKey, selectedKey, displayedItems, onDeleteRequest]);
 
   function handleNavigateUp() {
     if (currentPath.length > 0) {

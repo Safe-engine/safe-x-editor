@@ -10,7 +10,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Tree, TreeApi } from 'react-arborist'
 import toast from 'react-hot-toast'
 import { FiGrid, FiList, FiRefreshCw, FiX } from 'react-icons/fi'
-import { CREATE_ASSET_REQUEST, CREATE_COMPONENT_FILE_REQUEST, GET_FOLDER_FILES, IMPORT_RESOURCES_REQUEST, RENAME_RESOURCE_REQUEST, SYNC_RES_REQUEST } from 'shared/constant.message'
+import { CREATE_ASSET_REQUEST, CREATE_COMPONENT_FILE_REQUEST, DELETE_COMPONENT, GET_FOLDER_FILES, IMPORT_RESOURCES_REQUEST, RENAME_RESOURCE_REQUEST, SYNC_RES_REQUEST } from 'shared/constant.message'
 import { useActions, useSelector } from 'states/app.context'
 import { selectFilesData, selectResourceFilesData, selectRootFolder } from 'states/app.selectors'
 import { AssetTypeBlock } from '../../components/common'
@@ -18,11 +18,17 @@ import CreateAnimationAssetDialog from './CreateAnimationAssetDialog'
 import CreateAudioAssetDialog from './CreateAudioAssetDialog'
 import CreateImageAssetDialog from './CreateImageAssetDialog'
 import ResourceGridView from './ResourceGridView'
+import { getDroppedPaths } from './resourceUtils'
 
 const PANEL_HEADER_HEIGHT = 32;
 const FILTER_HEIGHT = 40;
 type CreateAssetDialogType = 'image' | 'audio' | 'animation' | null;
 type CreateFileKind = 'component' | 'scene';
+type DeleteItem = {
+  name: string;
+  path: string;
+  isDirectory?: boolean;
+};
 
 function addCreateButtons(items: any[]): any[] {
   return items.map((item) => {
@@ -73,6 +79,74 @@ export default function AssetsPanel() {
   const [resourceFilter, setResourceFilter] = useState('');
   const [componentFilter, setComponentFilter] = useState('');
   const [createAssetDialog, setCreateAssetDialog] = useState<CreateAssetDialogType>(null);
+  const [isTreeDropTarget, setIsTreeDropTarget] = useState(false);
+  const [deleteConfirmItems, setDeleteConfirmItems] = useState<DeleteItem[] | null>(null);
+
+  function resolveItemFullPath(data: any): string | null {
+    if (!data || data.type === 'frame') return null;
+    let fullPath = data.path;
+    if (!fullPath) return null;
+    if (selectedTab === 'res' && !pathUtils.isAbsolute(fullPath)) {
+      const cleanPath = String(fullPath || '').replace(/^res\//, '');
+      fullPath = pathUtils.join(rootFolder, 'res', cleanPath);
+    }
+    return fullPath;
+  }
+
+  function handleDeleteFromGrid(items: any[]) {
+    if (!rootFolder || !items.length) return;
+    const itemsToDelete: DeleteItem[] = [];
+    for (const item of items) {
+      const fullPath = resolveItemFullPath(item);
+      if (fullPath) {
+        itemsToDelete.push({
+          name: item.name || pathUtils.basename(fullPath),
+          path: fullPath,
+          isDirectory: Boolean(item.isDirectory),
+        });
+      }
+    }
+    if (itemsToDelete.length > 0) {
+      setDeleteConfirmItems(itemsToDelete);
+    }
+  }
+
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if (createFileKind || createAssetDialog || deleteConfirmItems) return;
+      const target = event.target as HTMLElement;
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable || target.tagName === 'SELECT')) {
+        return;
+      }
+      if (event.key === 'Delete' || event.key === 'Backspace') {
+        if (selectedTab === 'components' || resourceViewMode === 'tree') {
+          const selectedNodes = treeRef.current?.selectedNodes || [];
+          if (!selectedNodes.length) return;
+
+          const itemsToDelete: DeleteItem[] = [];
+          for (const node of selectedNodes) {
+            const data = node.data;
+            const fullPath = resolveItemFullPath(data);
+            if (fullPath) {
+              itemsToDelete.push({
+                name: data.name || pathUtils.basename(fullPath),
+                path: fullPath,
+                isDirectory: Boolean(data.isDirectory),
+              });
+            }
+          }
+
+          if (itemsToDelete.length > 0) {
+            event.preventDefault();
+            event.stopPropagation();
+            setDeleteConfirmItems(itemsToDelete);
+          }
+        }
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [createFileKind, createAssetDialog, deleteConfirmItems, selectedTab, resourceViewMode, rootFolder]);
   const filteredResourceTreeData = useMemo(
     () => filterResourceTreeData(resourceTreeData, resourceFilter),
     [resourceTreeData, resourceFilter]
@@ -143,6 +217,7 @@ export default function AssetsPanel() {
         node.toggle()
       } else {
         toggleFolder(key)
+        node.toggle()
       }
     } else {
       loadComponent(path);
@@ -215,11 +290,11 @@ export default function AssetsPanel() {
   }
 
   async function importResources(directory: any, sourcePaths: string[]) {
-    if (!rootFolder) return;
+    if (!rootFolder || !sourcePaths?.length) return;
     const response: any = await sendRequest({
       key: IMPORT_RESOURCES_REQUEST,
       rootFolder,
-      resourcePath: directory.path,
+      resourcePath: typeof directory === 'string' ? directory : directory?.path || '',
       sourcePaths,
     });
     if (!response || response.error) {
@@ -247,6 +322,35 @@ export default function AssetsPanel() {
     setCreateFileKind(null);
     getFiles(rootFolder);
     loadComponent(response.path);
+  }
+
+  async function confirmDelete() {
+    if (!deleteConfirmItems || !deleteConfirmItems.length || !rootFolder) {
+      setDeleteConfirmItems(null);
+      return;
+    }
+
+    const paths = deleteConfirmItems.map((item) => item.path);
+    const count = deleteConfirmItems.length;
+    setDeleteConfirmItems(null);
+
+    const response: any = await sendRequest({
+      key: DELETE_COMPONENT,
+      rootFolder,
+      paths,
+    });
+
+    if (response && response.error) {
+      toast.error(response?.message || 'Unable to delete items');
+      return;
+    }
+
+    toast.success(`Deleted ${count} item${count === 1 ? '' : 's'}`);
+    getFiles(rootFolder);
+    if (selectedTab === 'res') {
+      await sendRequest({ key: SYNC_RES_REQUEST, rootFolder });
+      getFiles(rootFolder);
+    }
   }
 
   return (
@@ -354,40 +458,70 @@ export default function AssetsPanel() {
           </div>
         )}
         {selectedTab === 'components' || resourceViewMode === 'tree' ? (
-          <Tree
-            className='px-1 py-1'
-            ref={treeRef}
-            data={selectedTreeData}
-            height={treeHeight}
-            width="100%"
-            onSelect={(nodes) => {
-              if (nodes[0])
-                onItemClick(nodes[0])
+          <div
+            className={clsx(
+              'h-full w-full transition-colors',
+              selectedTab === 'res' && isTreeDropTarget && 'bg-[#2b3a4a] ring-2 ring-inset ring-[#4a90e2]'
+            )}
+            onDragOver={(event) => {
+              if (selectedTab !== 'res' || !event.dataTransfer.types.includes('Files')) return;
+              event.preventDefault();
+              event.dataTransfer.dropEffect = 'copy';
             }}
-            onRename={(node) => {
-              if (selectedTab === 'res') return renameResource(node);
+            onDragEnter={(event) => {
+              if (selectedTab !== 'res' || !event.dataTransfer.types.includes('Files')) return;
+              event.preventDefault();
+              setIsTreeDropTarget(true);
             }}
-            disableEdit={(data) => selectedTab !== 'res' || data.isDirectory || data.type === 'frame'}
-            openByDefault
+            onDragLeave={(event) => {
+              if (!event.currentTarget.contains(event.relatedTarget as Node)) {
+                setIsTreeDropTarget(false);
+              }
+            }}
+            onDrop={(event) => {
+              if (selectedTab !== 'res') return;
+              const sourcePaths = getDroppedPaths(event);
+              if (!sourcePaths.length) return;
+              event.preventDefault();
+              setIsTreeDropTarget(false);
+              importResources({ path: '' }, sourcePaths);
+            }}
           >
-            {(props) => <TreeNode
-              {...props}
-              dragItem={getDragItem(props.node.data)}
-              getDragItems={(node) => {
-                const selectedNodes = node.isSelected ? node.tree.selectedNodes : [node];
-                return selectedNodes
-                  .map((selectedNode) => getDragItem(selectedNode.data))
-                  .filter(Boolean);
+            <Tree
+              className='px-1 py-1'
+              ref={treeRef}
+              data={selectedTreeData}
+              height={treeHeight}
+              width="100%"
+              onSelect={(nodes) => {
+                if (nodes[0])
+                  onItemClick(nodes[0])
               }}
-              onCreate={(data) => {
-                setCreateFileKind(data.createKind);
-                setCreateDirectory(data.path);
-                setCreateClassName('');
+              onRename={(node) => {
+                if (selectedTab === 'res') return renameResource(node);
               }}
-              canRename={selectedTab === 'res'}
-              onImport={selectedTab === 'res' ? importResources : undefined}
-            />}
-          </Tree>
+              disableEdit={(data) => selectedTab !== 'res' || data.isDirectory || data.type === 'frame'}
+              openByDefault
+            >
+              {(props) => <TreeNode
+                {...props}
+                dragItem={getDragItem(props.node.data)}
+                getDragItems={(node) => {
+                  const selectedNodes = node.isSelected ? node.tree.selectedNodes : [node];
+                  return selectedNodes
+                    .map((selectedNode) => getDragItem(selectedNode.data))
+                    .filter(Boolean);
+                }}
+                onCreate={(data) => {
+                  setCreateFileKind(data.createKind);
+                  setCreateDirectory(data.path);
+                  setCreateClassName('');
+                }}
+                canRename={selectedTab === 'res'}
+                onImport={selectedTab === 'res' ? importResources : undefined}
+              />}
+            </Tree>
+          </div>
         ) : (
           <ResourceGridView
             data={filteredResourceTreeData}
@@ -396,6 +530,7 @@ export default function AssetsPanel() {
             onClearFilter={() => setResourceFilter('')}
             onRename={renameResource}
             onImport={importResources}
+            onDeleteRequest={handleDeleteFromGrid}
             getDragItem={getDragItem}
             height={treeHeight}
           />
@@ -433,6 +568,55 @@ export default function AssetsPanel() {
           <div className='mt-2 flex justify-end gap-2'>
             <button type='button' className='rounded-sm bg-[#3a3a3a] px-3 py-1.5 hover:bg-[#4a4a4a]' onClick={() => setCreateFileKind(null)}>Cancel</button>
             <button type='button' className='rounded-sm bg-[#3b82f6] px-3 py-1.5 text-white disabled:opacity-50' onClick={createFile} disabled={!createClassName.trim()}>Create</button>
+          </div>
+        </div>
+      </Modal>
+      <Modal
+        isOpen={Boolean(deleteConfirmItems && deleteConfirmItems.length > 0)}
+        onClose={() => setDeleteConfirmItems(null)}
+        title="Confirm Delete"
+      >
+        <div className='mt-4 flex w-[380px] flex-col gap-4 text-[12px]'>
+          <p className='text-[#dcdcdc] leading-relaxed'>
+            {deleteConfirmItems?.length === 1 ? (
+              <>
+                Are you sure you want to delete <span className='font-semibold text-white'>"{deleteConfirmItems[0].name}"</span>?
+                {deleteConfirmItems[0].isDirectory && ' All contents inside this folder will also be deleted.'}
+              </>
+            ) : (
+              <>
+                Are you sure you want to delete <span className='font-semibold text-white'>{deleteConfirmItems?.length} selected items</span>?
+              </>
+            )}
+          </p>
+          {deleteConfirmItems && deleteConfirmItems.length > 1 && (
+            <div className='max-h-36 overflow-y-auto rounded border border-[#1a1a1a] bg-[#1a1a1a] p-2 text-[11px] text-[#a0a0a0]'>
+              <ul className='list-disc pl-4 space-y-1'>
+                {deleteConfirmItems.map((item, index) => (
+                  <li key={index} className='truncate text-[#d0d0d0]'>
+                    {item.name} {item.isDirectory ? '(Folder)' : ''}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          <p className='text-[11px] text-[#ff6b6b]'>This action cannot be undone.</p>
+          <div className='mt-2 flex justify-end gap-2'>
+            <button
+              type='button'
+              className='rounded-sm bg-[#3a3a3a] px-3 py-1.5 text-[#dcdcdc] hover:bg-[#4a4a4a] transition-colors'
+              onClick={() => setDeleteConfirmItems(null)}
+            >
+              Cancel
+            </button>
+            <button
+              type='button'
+              className='rounded-sm bg-[#dc2626] px-3 py-1.5 font-medium text-white hover:bg-[#ef4444] transition-colors'
+              onClick={confirmDelete}
+              autoFocus
+            >
+              Delete
+            </button>
           </div>
         </div>
       </Modal>

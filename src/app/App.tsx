@@ -45,7 +45,7 @@ export function App() {
             <Allotment.Pane minSize={480}>
               <SceneView />
             </Allotment.Pane>
-            {width > height &&
+            {width >= height &&
               <Allotment.Pane snap minSize={200} maxSize={300}>
                 <NodeTree />
               </Allotment.Pane>

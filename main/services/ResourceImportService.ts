@@ -4,12 +4,15 @@ import { parseAssetsSrcFile } from './assets';
 import { syncResConst } from './TerminalService';
 
 function normalizeResourcePath(value = '') {
-  return String(value).replace(/\\/g, '/').replace(/^res\//, '').replace(/^\/+|\/+$/g, '');
+  return String(value).replace(/\\/g, '/').replace(/^res\//, '').replace(/^res$/, '').replace(/^\/+|\/+$/g, '');
 }
 
 function resolveResourceFolder(rootFolder: string, resourcePath = '') {
   const resourcesFolder = path.resolve(rootFolder, 'res');
-  const targetFolder = path.resolve(resourcesFolder, normalizeResourcePath(resourcePath));
+  let targetFolder = path.resolve(resourcesFolder, normalizeResourcePath(resourcePath));
+  if (fs.existsSync(targetFolder) && fs.statSync(targetFolder).isFile()) {
+    targetFolder = path.dirname(targetFolder);
+  }
   if (targetFolder !== resourcesFolder && !targetFolder.startsWith(`${resourcesFolder}${path.sep}`)) {
     throw Error('Invalid destination folder.');
   }

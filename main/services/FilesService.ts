@@ -107,7 +107,12 @@ export const getFilesInFolder = async ({ src }) => {
 
 export const checkFileExist = async ({ folderPath }) => existsSync(folderPath);
 
-export const deleteFolder = async ({ path, folderPath }) => {
-  rmSync(path || folderPath, { recursive: true, force: true });
+export const deleteFolder = async ({ path, folderPath, paths, rootFolder }: { path?: string; folderPath?: string; paths?: string[]; rootFolder?: string } = {}) => {
+  const pathsToDelete = Array.isArray(paths) ? paths : [path || folderPath].filter(Boolean);
+  for (const p of pathsToDelete) {
+    if (p && typeof p === 'string' && existsSync(p)) {
+      rmSync(p, { recursive: true, force: true });
+    }
+  }
   return true;
 };

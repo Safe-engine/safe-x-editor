@@ -1,8 +1,7 @@
 import { toFileUrl } from 'helper/fileUrl';
 import { getLastRootFolder } from 'data/AppData';
 import pathUtils from 'path-browserify';
-import React from 'react';
-import { AiFillFolderOpen } from 'react-icons/ai';
+import { AiFillFolder, AiFillFolderOpen } from 'react-icons/ai';
 import { CiImageOn } from 'react-icons/ci';
 import { FaMusic } from 'react-icons/fa';
 import { FaFont } from 'react-icons/fa6';
@@ -15,6 +14,32 @@ export const textureExtensions = new Set(['.png', '.jpg', '.jpeg', '.webp', '.gi
 export function getDroppedFilePath(file: File) {
   const electronRequire = (globalThis as any).require;
   return electronRequire?.('electron')?.webUtils?.getPathForFile(file) || (file as any).path || '';
+}
+
+export function getDroppedPaths(event: React.DragEvent): string[] {
+  const electronRequire = (globalThis as any).require;
+  const getPath = (file: File) => electronRequire?.('electron')?.webUtils?.getPathForFile(file) || (file as any).path || '';
+
+  const paths: string[] = [];
+  if (event.dataTransfer?.files && event.dataTransfer.files.length > 0) {
+    for (let i = 0; i < event.dataTransfer.files.length; i++) {
+      const p = getPath(event.dataTransfer.files[i]);
+      if (p) paths.push(p);
+    }
+  }
+  if (paths.length === 0 && event.dataTransfer?.items && event.dataTransfer.items.length > 0) {
+    for (let i = 0; i < event.dataTransfer.items.length; i++) {
+      const item = event.dataTransfer.items[i];
+      if (item.kind === 'file') {
+        const file = item.getAsFile();
+        if (file) {
+          const p = getPath(file);
+          if (p) paths.push(p);
+        }
+      }
+    }
+  }
+  return Array.from(new Set(paths));
 }
 
 export function imageUrl(path?: string, rootFolder = getLastRootFolder()) {
@@ -164,12 +189,16 @@ export function getFrameIcon(data: any, textureIconSrc: string, iconSize = 16) {
   );
 }
 
-export function renderResourceIcon(data: any, rootFolder?: string, size = 16, fillContainer = false) {
+export function renderResourceIcon(data: any, rootFolder?: string, size = 16, fillContainer = false, isOpen = false) {
   const isLarge = size >= 32;
   const vectorIconSize = isLarge ? Math.min(size, 46) : size;
 
   if (data.isDirectory) {
-    return <AiFillFolderOpen size={vectorIconSize} color="#d6d6d6" />;
+    return isOpen ? (
+      <AiFillFolderOpen size={vectorIconSize} color="#d6d6d6" />
+    ) : (
+      <AiFillFolder size={vectorIconSize} color="#d6d6d6" />
+    );
   }
   if (data.type === 'component') {
     return <IoMdCube size={vectorIconSize} color="cyan" />;

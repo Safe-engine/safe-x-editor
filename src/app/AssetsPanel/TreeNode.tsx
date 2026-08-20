@@ -3,7 +3,8 @@ import clsx from "clsx";
 import { useEffect, useRef, useState } from "react";
 import { NodeRendererProps } from "react-arborist";
 import { FiPlus } from 'react-icons/fi';
-import { getDroppedFilePath, renderResourceIcon } from "./resourceUtils";
+import pathUtils from 'path-browserify';
+import { getDroppedPaths, renderResourceIcon } from "./resourceUtils";
 
 type AssetTreeNodeProps = NodeRendererProps<any> & {
   dragItem?: any;
@@ -17,15 +18,14 @@ export function TreeNode({ node, style, dragItem, getDragItems, onCreate, canRen
   const renameInput = useRef<HTMLInputElement>(null);
   const [isFileDropTarget, setIsFileDropTarget] = useState(false);
   const isRenamable = canRename && !node.data.isDirectory && node.data.type !== 'frame';
+  const canReceiveFileDrop = Boolean(onImport);
+
   useEffect(() => {
     if (node.isEditing) {
       renameInput.current?.focus();
       renameInput.current?.select();
     }
   }, [node.isEditing]);
-  const getDroppedPaths = (event: React.DragEvent) => Array.from(event.dataTransfer.files)
-    .map(getDroppedFilePath)
-    .filter(Boolean);
   // console.log('style', style);
   // const { openMenu } = useContextMenuStore();
 
@@ -59,13 +59,13 @@ export function TreeNode({ node, style, dragItem, getDragItems, onCreate, canRen
       event.dataTransfer.setData('text/plain', dragItems.length === 1 ? dragItem.name || 'Node' : `${dragItems.length} nodes`);
     }}
     onDragOver={(event) => {
-      if (!node.data.isDirectory || !event.dataTransfer.types.includes('Files')) return;
+      if (!canReceiveFileDrop || !event.dataTransfer.types.includes('Files')) return;
       event.preventDefault();
       event.stopPropagation();
       event.dataTransfer.dropEffect = 'copy';
     }}
     onDragEnter={(event) => {
-      if (!node.data.isDirectory || !event.dataTransfer.types.includes('Files')) return;
+      if (!canReceiveFileDrop || !event.dataTransfer.types.includes('Files')) return;
       event.preventDefault();
       setIsFileDropTarget(true);
     }}
@@ -73,16 +73,28 @@ export function TreeNode({ node, style, dragItem, getDragItems, onCreate, canRen
       if (!event.currentTarget.contains(event.relatedTarget as Node)) setIsFileDropTarget(false);
     }}
     onDrop={(event) => {
+      if (!canReceiveFileDrop) return;
       const sourcePaths = getDroppedPaths(event);
-      if (!node.data.isDirectory || !sourcePaths.length) return;
+      if (!sourcePaths.length) return;
       event.preventDefault();
       event.stopPropagation();
       setIsFileDropTarget(false);
-      onImport?.(node.data, sourcePaths);
+      const targetData = node.data.isDirectory ? node.data : { path: pathUtils.dirname(node.data.path || '') };
+      onImport?.(targetData, sourcePaths);
     }}
   >
     <Center>
-      <Box className="m-auto w-4 shrink-0">{renderResourceIcon(node.data)}</Box>
+      <Box
+        className="m-auto w-4 shrink-0"
+        onClick={(e) => {
+          if (node.isInternal || node.data.isDirectory) {
+            e.stopPropagation();
+            node.toggle();
+          }
+        }}
+      >
+        {renderResourceIcon(node.data, undefined, 16, false, node.isOpen)}
+      </Box>
       {node.isEditing ? <input
         ref={renameInput}
         className="h-5 min-w-0 rounded-sm border border-[#4a90e2] bg-[#151515] px-1 text-[12px] text-[#e2e2e2] outline-none"

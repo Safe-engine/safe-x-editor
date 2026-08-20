@@ -3,7 +3,7 @@ import clsx from "clsx";
 import { get } from "lodash-es";
 import { useState } from "react";
 import { NodeRendererProps } from "react-arborist";
-import { AiFillFolderOpen } from "react-icons/ai";
+import { AiFillFolder, AiFillFolderOpen } from "react-icons/ai";
 import { FiChevronRight, FiEye, FiPlus, FiRepeat } from "react-icons/fi";
 import { RiBox3Line } from "react-icons/ri";
 
@@ -19,9 +19,9 @@ const addNodeMenu = [
   { label: 'UI', items: ['ProgressBar', 'CircleProgress', 'Slider', 'Button', 'RichText', 'Label'] },
 ];
 
-function renderIcon(data: any) {
+function renderIcon(data: any, isOpen = false) {
   if (data.isDirectory) {
-    return <AiFillFolderOpen color="#d6d6d6" />;
+    return isOpen ? <AiFillFolderOpen color="#d6d6d6" /> : <AiFillFolder color="#d6d6d6" />;
   }
   if (data.loop) {
     return <FiRepeat color="#9fb7ff" />;
@@ -99,7 +99,17 @@ export function TreeItem({ node, style, dragHandle, onAddNode, onFocusNode, onDr
     }}
   >
     <Center>
-      <Box className="m-auto w-4 shrink-0">{renderIcon(node.data)}</Box>
+      <Box
+        className="m-auto w-4 shrink-0"
+        onClick={(e) => {
+          if (node.isInternal || node.data.isDirectory) {
+            e.stopPropagation();
+            node.toggle();
+          }
+        }}
+      >
+        {renderIcon(node.data, node.isOpen)}
+      </Box>
       <Box className={clsx('truncate font-semibold', node.isSelected ? 'text-[#ffffff]' : 'text-[#d6d6d6]')}>{node.data.tag}</Box>
       {renderName(node)}
     </Center>
