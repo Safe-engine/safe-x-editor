@@ -5,25 +5,22 @@ import Modal from 'base/Modal'
 import clsx from 'clsx'
 import { getLastLoadedFile, getLastRootFolder } from 'data/AppData'
 import { ipcMain } from 'helper/electronRemote'
-import { toFileUrl } from 'helper/fileUrl'
 import pathUtils from 'path-browserify'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Tree, TreeApi } from 'react-arborist'
 import toast from 'react-hot-toast'
-import { FiRefreshCw, FiX } from 'react-icons/fi'
+import { FiGrid, FiList, FiRefreshCw, FiX } from 'react-icons/fi'
 import { CREATE_ASSET_REQUEST, CREATE_COMPONENT_FILE_REQUEST, GET_FOLDER_FILES, IMPORT_RESOURCES_REQUEST, RENAME_RESOURCE_REQUEST, SYNC_RES_REQUEST } from 'shared/constant.message'
 import { useActions, useSelector } from 'states/app.context'
-import { selectFilesData, selectPreviewAsset, selectResourceFilesData, selectRootFolder } from 'states/app.selectors'
+import { selectFilesData, selectResourceFilesData, selectRootFolder } from 'states/app.selectors'
 import { AssetTypeBlock } from '../../components/common'
-import AssetPreview from './AssetPreview'
 import CreateAnimationAssetDialog from './CreateAnimationAssetDialog'
 import CreateAudioAssetDialog from './CreateAudioAssetDialog'
 import CreateImageAssetDialog from './CreateImageAssetDialog'
+import ResourceGridView from './ResourceGridView'
 
-const textureExtensions = new Set(['.png', '.jpg', '.jpeg', '.webp', '.gif', '.bmp', '.svg']);
 const PANEL_HEADER_HEIGHT = 32;
 const FILTER_HEIGHT = 40;
-const ASSET_PREVIEW_HEIGHT = 320;
 type CreateAssetDialogType = 'image' | 'audio' | 'animation' | null;
 type CreateFileKind = 'component' | 'scene';
 
@@ -39,66 +36,6 @@ function addCreateButtons(items: any[]): any[] {
       children,
     } : { ...item, children };
   });
-}
-
-function resourceFileUrl(path = '', rootFolder = getLastRootFolder()) {
-  if (!path) return '';
-  if (/^[a-z][a-z0-9+.-]*:/i.test(path)) return path;
-  if (path.startsWith('/')) return toFileUrl(path);
-  const normalized = path.replace(/\\/g, '/').replace(/^res\//, '');
-  return toFileUrl(rootFolder ? `${rootFolder}/res/${normalized}` : normalized);
-}
-
-function spriteSheetTexturePath(data: any) {
-  if (data.texture) return data.texture;
-  const image = data.json?.meta?.image;
-  if (image) return pathUtils.join(pathUtils.dirname(data.path), image).replace(/\\/g, '/');
-  return data.path?.replace(/\.(json|plist)$/i, '.png');
-}
-
-function dicedSpriteTexturePath(data: any) {
-  const name = data.json?.meta?.name;
-  return name ? pathUtils.join(pathUtils.dirname(data.path), `${name}.png`).replace(/\\/g, '/') : '';
-}
-
-function isTexture(data: any) {
-  const extension = data.extension || data.name?.match(/\.[^.]+$/)?.[0];
-  return !data.isDirectory && textureExtensions.has(extension?.toLowerCase());
-}
-
-function getPreviewAsset(data: any, rootFolder: string) {
-  if (data.type === 'spriteFrame') {
-    return {
-      ...data,
-      value: resourceFileUrl(data.value || data.path, rootFolder),
-    };
-  }
-  if (data.type === 'frame') {
-    return {
-      ...data,
-      texture: resourceFileUrl(spriteSheetTexturePath(data), rootFolder),
-    };
-  }
-  if (data.type === 'spine' || data.type === 'dragonBones') {
-    return {
-      ...data,
-      value: data.value,
-    };
-  }
-  if (data.type === 'dicedSprite') {
-    return {
-      ...data,
-      value: resourceFileUrl(data.value || data.path, rootFolder),
-      texture: resourceFileUrl(dicedSpriteTexturePath(data), rootFolder),
-    };
-  }
-  if (!isTexture(data)) return null;
-  return {
-    key: data.path,
-    name: data.name,
-    type: 'texture',
-    value: resourceFileUrl(data.value || data.path, rootFolder),
-  };
 }
 
 function filterResourceTreeData(items: any[], query: string): any[] {
@@ -123,7 +60,7 @@ function filterResourceTreeData(items: any[], query: string): any[] {
 }
 
 export default function AssetsPanel() {
-  const { getFiles, loadComponent, setPreviewAsset, toggleFolder } = useActions();
+  const { getFiles, loadComponent, toggleFolder } = useActions();
   const treeRef = useRef<TreeApi<any>>(null)
   const treeData = useSelector(selectFilesData);
   const resourceTreeData = useSelector(selectResourceFilesData);
@@ -132,6 +69,7 @@ export default function AssetsPanel() {
   const [createDirectory, setCreateDirectory] = useState('');
   const [createClassName, setCreateClassName] = useState('');
   const [selectedTab, setSelectedTab] = useState('components');
+  const [resourceViewMode, setResourceViewMode] = useState<'tree' | 'grid'>('tree');
   const [resourceFilter, setResourceFilter] = useState('');
   const [componentFilter, setComponentFilter] = useState('');
   const [createAssetDialog, setCreateAssetDialog] = useState<CreateAssetDialogType>(null);
@@ -147,13 +85,8 @@ export default function AssetsPanel() {
     () => selectedTab === 'res' ? filteredResourceTreeData : addCreateButtons(filteredComponentTreeData),
     [selectedTab, filteredResourceTreeData, filteredComponentTreeData]
   );
-  const previewAsset = useSelector(selectPreviewAsset);
-  const showPreview = selectedTab === 'res' && Boolean(previewAsset?.type);
   const [panelHeight, setPanelHeight] = useState(() => Math.max(0, window.innerHeight - PANEL_HEADER_HEIGHT));
-  const treeHeight = Math.max(
-    0,
-    panelHeight - FILTER_HEIGHT - (showPreview ? ASSET_PREVIEW_HEIGHT : 0)
-  );
+  const treeHeight = Math.max(0, panelHeight - FILTER_HEIGHT);
 
   useEffect(() => {
     function getFilesCB(data) {
@@ -202,8 +135,6 @@ export default function AssetsPanel() {
     if (selectedTab === 'res') {
       if (isDirectory) {
         node.toggle()
-      } else {
-        setPreviewAsset(getPreviewAsset(node.data, rootFolder))
       }
       return
     }
@@ -367,6 +298,32 @@ export default function AssetsPanel() {
               placeholder='Filter resources'
               aria-label='Filter resources'
             />
+            <div className='flex items-center rounded-sm border border-[#111] bg-[#2a2a2a] p-0.5'>
+              <button
+                type='button'
+                className={clsx(
+                  'flex h-6 w-6 items-center justify-center rounded-sm text-[13px] transition-colors',
+                  resourceViewMode === 'tree' ? 'bg-[#3b82f6] text-white shadow-sm' : 'text-[#8f8f8f] hover:text-[#dcdcdc]'
+                )}
+                onClick={() => setResourceViewMode('tree')}
+                aria-label='Tree view'
+                title='Tree view'
+              >
+                <FiList size={14} />
+              </button>
+              <button
+                type='button'
+                className={clsx(
+                  'flex h-6 w-6 items-center justify-center rounded-sm text-[13px] transition-colors',
+                  resourceViewMode === 'grid' ? 'bg-[#3b82f6] text-white shadow-sm' : 'text-[#8f8f8f] hover:text-[#dcdcdc]'
+                )}
+                onClick={() => setResourceViewMode('grid')}
+                aria-label='Grid view'
+                title='Grid view'
+              >
+                <FiGrid size={14} />
+              </button>
+            </div>
             <button
               type='button'
               className='flex h-7 w-7 items-center justify-center rounded-sm border border-[#111] bg-[#2a2a2a] text-[#dcdcdc] hover:bg-[#343434]'
@@ -396,42 +353,53 @@ export default function AssetsPanel() {
             )}
           </div>
         )}
-        <Tree
-          className='px-1 py-1'
-          ref={treeRef}
-          data={selectedTreeData}
-          height={treeHeight}
-          width="100%"
-          onSelect={(nodes) => {
-            // console.log('nodes', nodes);
-            if (nodes[0])
-              onItemClick(nodes[0])
-          }}
-          onRename={(node) => {
-            if (selectedTab === 'res') return renameResource(node);
-          }}
-          disableEdit={(data) => selectedTab !== 'res' || data.isDirectory || data.type === 'frame'}
-          openByDefault
-        >
-          {(props) => <TreeNode
-            {...props}
-            dragItem={getDragItem(props.node.data)}
-            getDragItems={(node) => {
-              const selectedNodes = node.isSelected ? node.tree.selectedNodes : [node];
-              return selectedNodes
-                .map((selectedNode) => getDragItem(selectedNode.data))
-                .filter(Boolean);
+        {selectedTab === 'components' || resourceViewMode === 'tree' ? (
+          <Tree
+            className='px-1 py-1'
+            ref={treeRef}
+            data={selectedTreeData}
+            height={treeHeight}
+            width="100%"
+            onSelect={(nodes) => {
+              if (nodes[0])
+                onItemClick(nodes[0])
             }}
-            onCreate={(data) => {
-              setCreateFileKind(data.createKind);
-              setCreateDirectory(data.path);
-              setCreateClassName('');
+            onRename={(node) => {
+              if (selectedTab === 'res') return renameResource(node);
             }}
-            canRename={selectedTab === 'res'}
-            onImport={selectedTab === 'res' ? importResources : undefined}
-          />}
-        </Tree>
-        {selectedTab === 'res' && <AssetPreview />}
+            disableEdit={(data) => selectedTab !== 'res' || data.isDirectory || data.type === 'frame'}
+            openByDefault
+          >
+            {(props) => <TreeNode
+              {...props}
+              dragItem={getDragItem(props.node.data)}
+              getDragItems={(node) => {
+                const selectedNodes = node.isSelected ? node.tree.selectedNodes : [node];
+                return selectedNodes
+                  .map((selectedNode) => getDragItem(selectedNode.data))
+                  .filter(Boolean);
+              }}
+              onCreate={(data) => {
+                setCreateFileKind(data.createKind);
+                setCreateDirectory(data.path);
+                setCreateClassName('');
+              }}
+              canRename={selectedTab === 'res'}
+              onImport={selectedTab === 'res' ? importResources : undefined}
+            />}
+          </Tree>
+        ) : (
+          <ResourceGridView
+            data={filteredResourceTreeData}
+            rootFolder={rootFolder}
+            resourceFilter={resourceFilter}
+            onClearFilter={() => setResourceFilter('')}
+            onRename={renameResource}
+            onImport={importResources}
+            getDragItem={getDragItem}
+            height={treeHeight}
+          />
+        )}
       </div>
       <CreateImageAssetDialog
         isOpen={createAssetDialog === 'image'}

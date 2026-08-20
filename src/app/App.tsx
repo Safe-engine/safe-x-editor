@@ -5,8 +5,8 @@ import { Toaster } from 'react-hot-toast'
 import { useSelector } from 'states/app.context'
 import { selectDesignResolution, selectRootFolder, selectSelectedEditingPath } from 'states/app.selectors'
 import AssetsPanel from './AssetsPanel'
-import NodeTree from './NodeTree'
 import NewProjectDialog from './NewProjectDialog'
+import NodeTree from './NodeTree'
 import PropertiesPanel from './PropertiesPanel'
 import SceneView from './SceneView'
 import SettingsDialog from './SettingsDialog'
@@ -32,7 +32,7 @@ export function App() {
       <NewProjectDialog />
       <SettingsDialog />
       <Allotment>
-        <Allotment.Pane snap minSize={200} maxSize={250}>
+        <Allotment.Pane snap minSize={250} maxSize={350}>
           <AssetsPanel />
         </Allotment.Pane>
         {width < height &&
