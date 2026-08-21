@@ -1,9 +1,9 @@
 import { Allotment } from 'allotment'
-import { useEffect, useMemo } from 'react'
+import { useEffect } from 'react'
 import { Toaster } from 'react-hot-toast'
 
 import { useSelector } from 'states/app.context'
-import { selectDesignResolution, selectRootFolder, selectSelectedEditingPath } from 'states/app.selectors'
+import { selectRootFolder, selectSelectedEditingPath } from 'states/app.selectors'
 import AssetsPanel from './AssetsPanel'
 import NewProjectDialog from './NewProjectDialog'
 import NodeTree from './NodeTree'
@@ -13,7 +13,6 @@ import SettingsDialog from './SettingsDialog'
 import './globals.css'
 
 export function App() {
-  const designResolution = useSelector(selectDesignResolution);
   const rootFolder = useSelector(selectRootFolder);
   const componentName = useSelector(selectSelectedEditingPath);
   useEffect(() => {
@@ -21,38 +20,22 @@ export function App() {
     document.title = [projectName, componentName].filter(Boolean).join(' - ') || 'Safe Engine X Editor'
   }, [rootFolder, componentName])
 
-  // if (!designResolution) return
-  // const { width, height } = designResolution
-  const width = useMemo(() => designResolution.width, [designResolution])
-  const height = useMemo(() => designResolution.height, [designResolution])
-
   return (
     <main className="h-screen bg-[#1e1e1e] text-[#dcdcdc]">
       <Toaster position="top-center" />
       <NewProjectDialog />
       <SettingsDialog />
       <Allotment>
-        <Allotment.Pane snap minSize={250} maxSize={350}>
+        <Allotment.Pane snap minSize={220} maxSize={350}>
           <AssetsPanel />
         </Allotment.Pane>
-        {width < height &&
-          <Allotment.Pane minSize={250} maxSize={280}>
-            <NodeTree />
-          </Allotment.Pane>
-        }
-        <Allotment.Pane>
-          <Allotment vertical={true}>
-            <Allotment.Pane minSize={480}>
-              <SceneView />
-            </Allotment.Pane>
-            {width >= height &&
-              <Allotment.Pane snap minSize={200} maxSize={300}>
-                <NodeTree />
-              </Allotment.Pane>
-            }
-          </Allotment>
+        <Allotment.Pane snap minSize={200} maxSize={320}>
+          <NodeTree />
         </Allotment.Pane>
-        <Allotment.Pane snap minSize={200} maxSize={300}>
+        <Allotment.Pane minSize={400}>
+          <SceneView />
+        </Allotment.Pane>
+        <Allotment.Pane snap minSize={220} maxSize={350}>
           <PropertiesPanel />
         </Allotment.Pane>
       </Allotment>

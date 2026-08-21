@@ -11,14 +11,14 @@ import { TreeItem } from './TreeItem';
 
 export default function NodeTree() {
   const { loadComponent, selectEditingTagNode, selectEditMultiNodes } = useActions();
-  const treeData = useSelector(selectComponentTree);
+  const treeData = useSelector(selectComponentTree) || [];
   const filePath = useSelector(selectSelectedFilePath);
   const selectedPaths = useSelector(selectSelectedPaths);
   const treeRef = useRef<TreeApi<any> | undefined>(undefined);
   const treeContainerRef = useRef<HTMLDivElement>(null);
   const isApplyingPreviewSelection = useRef(false);
   const [selectedTreeItem, setSelectedTreeItem] = useState<any>({});
-  const [treeHeight, setTreeHeight] = useState(0);
+  const [treeHeight, setTreeHeight] = useState(() => Math.max(0, typeof window !== 'undefined' ? window.innerHeight - 32 : 500));
 
   useEffect(() => {
     if (treeData && treeData[0]) {
@@ -44,7 +44,11 @@ export default function NodeTree() {
     const container = treeContainerRef.current;
     if (!container) return;
 
-    const updateTreeHeight = () => setTreeHeight(container.clientHeight);
+    const updateTreeHeight = () => {
+      if (container.clientHeight > 0) {
+        setTreeHeight(container.clientHeight);
+      }
+    };
     updateTreeHeight();
 
     const observer = new ResizeObserver(updateTreeHeight);
@@ -189,7 +193,7 @@ export default function NodeTree() {
         <Tree
           ref={treeRef}
           className='px-1 py-1'
-          data={treeData[0]?.tag === 'SceneComponent' ? treeData[0].children : treeData}
+          data={treeData[0]?.tag === 'SceneComponent' ? (treeData[0].children || []) : treeData}
           height={treeHeight}
           width="100%"
           onSelect={
