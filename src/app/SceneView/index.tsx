@@ -1,6 +1,5 @@
 import { Engine, loadScene } from '@safe-engine/sdl'
-import { useEffect, useRef, useState } from 'react'
-import { FiSave } from 'react-icons/fi'
+import { useEffect, useRef } from 'react'
 import { useActions, useSelector } from 'states/app.context'
 import { selectSelectedFilePath, selectSelectedPaths } from 'states/app.selectors'
 import { PreviewScene } from './PreviewScene'
@@ -15,7 +14,6 @@ export default function SceneView() {
   const selectedFilePath = useSelector(selectSelectedFilePath)
   const selectedPaths = useSelector(selectSelectedPaths)
   const didStartEngine = useRef(false)
-  const [isProjectDirty, setIsProjectDirty] = useState(false)
 
   useEffect(() => {
     if (didStartEngine.current) return
@@ -34,8 +32,6 @@ export default function SceneView() {
       } else if (message.type === 'previewUpdateSelectedNodes') {
         selectEditMultiNodes(message.selectPaths)
         updateMultiNodes(message.nodes)
-      } else if (message.type === 'previewEditingState') {
-        setIsProjectDirty(message.isEditing)
       }
     }
     window.addEventListener('message', listener)
@@ -91,15 +87,6 @@ export default function SceneView() {
         }
       }}
     >
-      <button
-        className={`absolute right-2 top-2 z-10 flex h-7 w-7 items-center justify-center rounded-sm border border-[#111] bg-[#2a2a2a] hover:bg-[#343434] ${isProjectDirty ? 'text-[#ff5c5c] hover:text-[#ff7777]' : 'text-[#bdbdbd] hover:text-white'}`}
-        type='button'
-        onClick={() => window.postMessage({ type: 'saveProject' }, '*')}
-        title='Save Project (Ctrl/Cmd+S)'
-        aria-label='Save Project'
-      >
-        <FiSave size={14} />
-      </button>
       <canvas id="sdl-canvas" className='block bg-[#1e1e1e]'></canvas>
     </div>
   )

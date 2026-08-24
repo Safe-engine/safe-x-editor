@@ -15,6 +15,7 @@ import {
 } from '@@/services/FilesService';
 import { createI18n } from '@@/services/LanguageService';
 import { installDependencies, syncResConst } from '@@/services/TerminalService';
+import { runDevServer } from '@@/services/DevServerService';
 import { initProject } from '@@/services/project';
 import { getSettings, saveSettings } from '@@/services/settings.service';
 import {
@@ -34,6 +35,7 @@ import {
   GET_COLLIDER_SETTINGS_REQUEST,
   GET_FOLDER_FILES,
   LOAD_COMPONENT_REQUEST,
+  RUN_DEV_SERVER_REQUEST,
   RE_NAME_COMPONENT,
   REPLACE_SPRITE_IMAGE_REQUEST,
   REPLACE_SPRITE_IMAGE_FILE_REQUEST,
@@ -74,6 +76,7 @@ export default function Router() {
   addListener(CHECK_FILE_EXIST, checkFileExist);
   addListener(GET_FOLDER_FILES, getFilesInFolder);
   addListener(LOAD_COMPONENT_REQUEST, loadComponent);
+  addListener(RUN_DEV_SERVER_REQUEST, ({ rootFolder }) => runDevServer(rootFolder));
   addListener(RE_NAME_COMPONENT, renameComponent);
   addListener(DUPLICATE_COMPONENT, duplicateComponent);
   addListener(DELETE_COMPONENT, deleteFolder);
