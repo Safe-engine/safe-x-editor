@@ -1,5 +1,11 @@
 export function parseEval(evalInit: string) {
-  return (v: string = '') => eval(evalInit + `${v}`.replace('this.props', 'baseProps'))
+  return (v: string = '') => {
+    try {
+      return eval(evalInit + `${v}`.replace('this.props', 'baseProps'))
+    } catch {
+      return v
+    }
+  }
 }
 
 export function parseVec2(position = 'Vec2(0,0)', evalInit = '') {
@@ -47,6 +53,16 @@ export function parseIntFromValue(value) {
 export function parseFloatFromValue(value) {
   if(!value) return
   return parseFloat(parseStringFromValue(value))
+}
+
+export function removeTextureMatchingNodeSize(node, textureSize) {
+  const width = Number(parseStringFromValue(node?.width))
+  const height = Number(parseStringFromValue(node?.height))
+  if (!textureSize?.width || !textureSize?.height || width !== textureSize.width || height !== textureSize.height) {
+    return node
+  }
+  const { width: _width, height: _height, ...nodeWithoutSize } = node
+  return nodeWithoutSize
 }
 
 export function parseBoolFromValue(value) {

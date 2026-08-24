@@ -1,5 +1,5 @@
 import { sendRequest } from 'app/app.ipc'
-import { setLastLoadedFile, setLastRootFolder } from 'data/AppData'
+import { getLastLoadedFile, setLastLoadedFile, setLastRootFolder } from 'data/AppData'
 import { Dispatch } from 'react'
 import toast from 'react-hot-toast'
 import { GET_FOLDER_FILES, LOAD_COMPONENT_REQUEST } from 'shared/constant.message'
@@ -9,6 +9,14 @@ function findFirstComponentFile(nodes: any[]): string | undefined {
   for (const node of nodes) {
     if (!node.isDirectory) return node.path
     const found = findFirstComponentFile(node.children || [])
+    if (found) return found
+  }
+}
+
+function findComponentFile(nodes: any[], path: string): string | undefined {
+  for (const node of nodes) {
+    if (node.path === path && !node.isDirectory) return node.path
+    const found = findComponentFile(node.children || [], path)
     if (found) return found
   }
 }
@@ -27,15 +35,18 @@ export function createMiddleware(dispatch: Dispatch<any>, appDispatch?: (action:
       }
       setLastRootFolder(src)
       const firstFile = findFirstComponentFile(data.componentsTree)
-      if (firstFile) setLastLoadedFile(firstFile)
+      const lastFile = getLastLoadedFile()
+      const fileToLoad = findComponentFile(data.componentsTree, lastFile) || firstFile
+      if (fileToLoad) setLastLoadedFile(fileToLoad)
       getFilesSuccess(data)
       window.postMessage({ type: 'reloadProjectData' }, '*')
 
-      if (firstFile && appDispatch) {
-        appDispatch({ type: 'loadComponent', data: [firstFile] })
+      if (fileToLoad && appDispatch) {
+        appDispatch({ type: 'loadComponent', data: [fileToLoad] })
       }
     },
     async loadComponent(path: string) {
+      setLastLoadedFile(path)
       const data: any = await sendRequest({
         key: LOAD_COMPONENT_REQUEST,
         path,

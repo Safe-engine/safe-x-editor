@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'bun:test';
 import { parse } from '@typescript-eslint/typescript-estree';
 import { convertComponentData, genReactComponentString } from '../utils/ParseData';
+import { removeTextureMatchingNodeSize } from '../../src/helper/node';
+import { removeTextureMatchingNodeSizes } from '../utils/NodeSize';
 
 const source = `const view = (
   <Container>
@@ -37,6 +39,29 @@ describe('JSX comments', () => {
   });
 });
 
+describe('__view JSX blocks', () => {
+  for (const [name, view] of [
+    ['bare block', '<Container><Sprite /></Container>'],
+    ['returned block', 'return <Container><Sprite /></Container>'],
+    ['parenthesized returned block', 'return (<Container><Sprite /></Container>)'],
+  ]) {
+    it(`parses a ${name}`, async () => {
+      const source = `export class Example extends ComponentX {
+  __view() {
+    ${view}
+  }
+}`;
+      const parsed = parse(source, { jsx: true, range: true });
+      const { treeData } = await convertComponentData(parsed, 'Example.tsx', source);
+
+      expect(treeData).toEqual(expect.objectContaining({
+        tag: 'Container',
+        children: [expect.objectContaining({ tag: 'Sprite' })],
+      }));
+    });
+  }
+});
+
 describe('SpineBonesControl', () => {
   it('round-trips static bones arrays as a TSX expression', async () => {
     const source = `const view = (
@@ -52,5 +77,50 @@ describe('SpineBonesControl', () => {
     expect(component).toContain(`bones={[['1', -14, 73], ['2', -35, 42], ['3', 7, 11], ['4', 2, -27], ['5', 40, -62]]}`);
 
     expect(() => parse(`const view = (${component});`, { jsx: true, range: true })).not.toThrow();
+  });
+});
+
+describe('Sprite', () => {
+  it('writes spriteFrame asset names as JSX expressions', () => {
+    const { component } = genReactComponentString({ tag: 'Sprite', props: { spriteFrame: 'sf_char_progress' } });
+
+    expect(component).toBe('<Sprite spriteFrame={sf_char_progress} />');
+  });
+
+  it('writes an empty spriteFrame as an empty JSX expression', () => {
+    const { component } = genReactComponentString({ tag: 'Sprite', props: { spriteFrame: '' } });
+
+    expect(component).toBe('<Sprite spriteFrame={} />');
+  });
+});
+
+describe('DicedSprite', () => {
+  it('writes diced sprite data asset names as JSX expressions', () => {
+    const { component } = genReactComponentString({ tag: 'DicedSprite', props: { data: 'pet_choang_coc_json', animation: 'idle' } });
+
+    expect(component).toBe('<DicedSprite data={pet_choang_coc_json} animation="idle" />');
+  });
+});
+
+describe('node texture size', () => {
+  it('removes explicit dimensions that match the texture size', () => {
+    expect(removeTextureMatchingNodeSize({ width: 64, height: 32, x: 10 }, { width: 64, height: 32 }))
+      .toEqual({ x: 10 });
+  });
+
+  it('keeps dimensions when they differ from the texture size', () => {
+    expect(removeTextureMatchingNodeSize({ width: 64, height: 24 }, { width: 64, height: 32 }))
+      .toEqual({ width: 64, height: 24 });
+  });
+
+  it('removes matching Sprite and ProgressBar dimensions before saving', () => {
+    const nodes = [
+      { tag: 'Sprite', props: { spriteFrame: '{sf_icon}', node: { width: 64, height: 32 } } },
+      { tag: 'ProgressBar', props: { spriteFrame: '{sf_icon}', node: { width: 64, height: 32 } } },
+    ];
+
+    removeTextureMatchingNodeSizes(nodes, [{ key: 'sf_icon', size: { width: 64, height: 32 } }]);
+
+    expect(nodes.map((node) => node.props.node)).toEqual([{}, {}]);
   });
 });

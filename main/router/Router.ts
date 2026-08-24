@@ -1,6 +1,9 @@
 import { createAsset } from '@@/services/AssetCreateService';
-import { createSpriteImageAsset, generateSpriteImages, getAiImageSettings, replaceSpriteImage, saveAiImageSettings } from '@@/services/AiImageService';
+import { createSpriteImageAsset, createSpriteImageAssetFromClipboard, createSpriteImageAssetFromFile, generateSpriteImages, getAiImageSettings, replaceSpriteImage, replaceSpriteImageFromClipboard, replaceSpriteImageFromFile, saveAiImageSettings } from '@@/services/AiImageService';
 import { updateProjectColors } from '@@/services/ColorService';
+import { resizeSpriteImage } from '@@/services/ImageResizeService';
+import { renameResource } from '@@/services/ResourceRenameService';
+import { importResources } from '@@/services/ResourceImportService';
 import {
   createComponentFile, duplicateComponent,
   loadComponent, renameComponent, updateComponentTag,
@@ -12,6 +15,7 @@ import {
 } from '@@/services/FilesService';
 import { createI18n } from '@@/services/LanguageService';
 import { installDependencies, syncResConst } from '@@/services/TerminalService';
+import { runDevServer } from '@@/services/DevServerService';
 import { initProject } from '@@/services/project';
 import { getSettings, saveSettings } from '@@/services/settings.service';
 import {
@@ -19,6 +23,8 @@ import {
   CREATE_ASSET_REQUEST,
   CREATE_COMPONENT_FILE_REQUEST,
   CREATE_SPRITE_IMAGE_ASSET_REQUEST,
+  CREATE_SPRITE_IMAGE_ASSET_FILE_REQUEST,
+  CREATE_SPRITE_IMAGE_ASSET_CLIPBOARD_REQUEST,
   GENERATE_SPRITE_IMAGES_REQUEST,
   GET_AI_IMAGE_SETTINGS_REQUEST,
   CREATE_I18N,
@@ -29,8 +35,14 @@ import {
   GET_COLLIDER_SETTINGS_REQUEST,
   GET_FOLDER_FILES,
   LOAD_COMPONENT_REQUEST,
+  RUN_DEV_SERVER_REQUEST,
   RE_NAME_COMPONENT,
   REPLACE_SPRITE_IMAGE_REQUEST,
+  REPLACE_SPRITE_IMAGE_FILE_REQUEST,
+  REPLACE_SPRITE_IMAGE_CLIPBOARD_REQUEST,
+  RENAME_RESOURCE_REQUEST,
+  IMPORT_RESOURCES_REQUEST,
+  RESIZE_SPRITE_IMAGE_REQUEST,
   SAVE_COLLIDER_SETTINGS_REQUEST,
   SAVE_AI_IMAGE_SETTINGS_REQUEST,
   SYNC_RES_REQUEST,
@@ -64,6 +76,7 @@ export default function Router() {
   addListener(CHECK_FILE_EXIST, checkFileExist);
   addListener(GET_FOLDER_FILES, getFilesInFolder);
   addListener(LOAD_COMPONENT_REQUEST, loadComponent);
+  addListener(RUN_DEV_SERVER_REQUEST, ({ rootFolder }) => runDevServer(rootFolder));
   addListener(RE_NAME_COMPONENT, renameComponent);
   addListener(DUPLICATE_COMPONENT, duplicateComponent);
   addListener(DELETE_COMPONENT, deleteFolder);
@@ -82,7 +95,12 @@ export default function Router() {
   addListener(CREATE_COMPONENT_FILE_REQUEST, createComponentFile);
   addListener(GENERATE_SPRITE_IMAGES_REQUEST, generateSpriteImages);
   addListener(REPLACE_SPRITE_IMAGE_REQUEST, replaceSpriteImage);
+  addListener(REPLACE_SPRITE_IMAGE_FILE_REQUEST, replaceSpriteImageFromFile);
+  addListener(REPLACE_SPRITE_IMAGE_CLIPBOARD_REQUEST, replaceSpriteImageFromClipboard);
   addListener(CREATE_SPRITE_IMAGE_ASSET_REQUEST, createSpriteImageAsset);
+  addListener(CREATE_SPRITE_IMAGE_ASSET_FILE_REQUEST, createSpriteImageAssetFromFile);
+  addListener(CREATE_SPRITE_IMAGE_ASSET_CLIPBOARD_REQUEST, createSpriteImageAssetFromClipboard);
+  addListener(RESIZE_SPRITE_IMAGE_REQUEST, resizeSpriteImage);
   addListener(GET_AI_IMAGE_SETTINGS_REQUEST, getAiImageSettings);
   addListener(SAVE_AI_IMAGE_SETTINGS_REQUEST, saveAiImageSettings);
   addListener(UPDATE_PROJECT_COLORS_REQUEST, updateProjectColors);
@@ -92,4 +110,6 @@ export default function Router() {
     syncResConst(rootFolder);
     return { success: true };
   });
+  addListener(RENAME_RESOURCE_REQUEST, renameResource);
+  addListener(IMPORT_RESOURCES_REQUEST, importResources);
 }

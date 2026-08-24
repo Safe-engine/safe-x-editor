@@ -4,6 +4,11 @@ import { useActions, useSelector } from 'states/app.context'
 import { selectSelectedFilePath, selectSelectedPaths } from 'states/app.selectors'
 import { PreviewScene } from './PreviewScene'
 
+function getDroppedFilePath(file: File) {
+  const electronRequire = (globalThis as any).require
+  return electronRequire?.('electron')?.webUtils?.getPathForFile(file) || (file as any).path || ''
+}
+
 export default function SceneView() {
   const { replaceComponentTree, selectEditMultiNodes, updateMultiNodes } = useActions()
   const selectedFilePath = useSelector(selectSelectedFilePath)
@@ -46,15 +51,19 @@ export default function SceneView() {
     }
   }
 
+  const getDroppedPngPaths = (event: React.DragEvent) => Array.from(event.dataTransfer.files)
+    .map(getDroppedFilePath)
+    .filter((path) => /\.png$/i.test(path));
+
   useEffect(() => {
     window.postMessage({ type: 'changeSelectPath', selectPaths: selectedPaths }, '*')
   }, [selectedPaths])
 
   return (
     <div
-      className='h-full w-full bg-[#1e1e1e]'
+      className='relative h-full w-full bg-[#1e1e1e]'
       onDragOver={(event) => {
-        if (!event.dataTransfer.types.includes('application/x-safex-node')) return
+        if (!event.dataTransfer.types.includes('application/x-safex-node') && !event.dataTransfer.types.includes('Files')) return
         event.preventDefault()
         event.dataTransfer.dropEffect = 'copy'
       }}
@@ -67,6 +76,15 @@ export default function SceneView() {
           clientX: event.clientX,
           clientY: event.clientY,
         }, '*')
+        else {
+          const sourcePaths = getDroppedPngPaths(event)
+          if (sourcePaths.length) window.postMessage({
+            type: 'importPngAsSprite',
+            sourcePaths,
+            clientX: event.clientX,
+            clientY: event.clientY,
+          }, '*')
+        }
       }}
     >
       <canvas id="sdl-canvas" className='block bg-[#1e1e1e]'></canvas>

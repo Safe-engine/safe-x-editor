@@ -3,22 +3,42 @@ import { ipcMain } from 'helper/electronRemote';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Tree, TreeApi } from 'react-arborist';
 import toast from 'react-hot-toast';
-import { FiRefreshCw } from 'react-icons/fi';
-import { GEN_COMPONENT_REQUEST } from 'shared/constant.message';
+import { GEN_COMPONENT_REQUEST, RUN_DEV_SERVER_REQUEST } from 'shared/constant.message';
 import { useActions, useSelector } from 'states/app.context';
-import { selectComponentTree, selectSelectedFilePath, selectSelectedPaths } from 'states/app.selectors';
+import { selectComponentTree, selectRootFolder, selectSelectedFilePath, selectSelectedPaths } from 'states/app.selectors';
 import { TreeItem } from './TreeItem';
+import QRCode from 'qrcode';
+import { FiLoader, FiPlay, FiRefreshCw, FiSave } from 'react-icons/fi';
+import { LuQrCode } from 'react-icons/lu';
 
 export default function NodeTree() {
   const { loadComponent, selectEditingTagNode, selectEditMultiNodes } = useActions();
-  const treeData = useSelector(selectComponentTree);
+  const treeData = useSelector(selectComponentTree) || [];
   const filePath = useSelector(selectSelectedFilePath);
+  const rootFolder = useSelector(selectRootFolder);
   const selectedPaths = useSelector(selectSelectedPaths);
   const treeRef = useRef<TreeApi<any> | undefined>(undefined);
   const treeContainerRef = useRef<HTMLDivElement>(null);
   const isApplyingPreviewSelection = useRef(false);
   const [selectedTreeItem, setSelectedTreeItem] = useState<any>({});
-  const [treeHeight, setTreeHeight] = useState(0);
+  const [treeHeight, setTreeHeight] = useState(() => Math.max(0, typeof window !== 'undefined' ? window.innerHeight - 32 : 500));
+  const [isProjectDirty, setIsProjectDirty] = useState(false);
+  const [isStartingDevServer, setIsStartingDevServer] = useState(false);
+  const [devPageUrl, setDevPageUrl] = useState('');
+  const [qrCodeUrl, setQrCodeUrl] = useState('');
+
+  useEffect(() => {
+    if (!devPageUrl) return;
+    void QRCode.toDataURL(devPageUrl, { margin: 1, width: 200 }).then(setQrCodeUrl);
+  }, [devPageUrl]);
+
+  useEffect(() => {
+    const listener = (event: MessageEvent) => {
+      if (event.data?.type === 'previewEditingState') setIsProjectDirty(event.data.isEditing);
+    };
+    window.addEventListener('message', listener);
+    return () => window.removeEventListener('message', listener);
+  }, []);
 
   useEffect(() => {
     if (treeData && treeData[0]) {
@@ -44,7 +64,11 @@ export default function NodeTree() {
     const container = treeContainerRef.current;
     if (!container) return;
 
-    const updateTreeHeight = () => setTreeHeight(container.clientHeight);
+    const updateTreeHeight = () => {
+      if (container.clientHeight > 0) {
+        setTreeHeight(container.clientHeight);
+      }
+    };
     updateTreeHeight();
 
     const observer = new ResizeObserver(updateTreeHeight);
@@ -76,6 +100,8 @@ export default function NodeTree() {
         anchor: nextSelection[0] || null,
         mostRecent: nextSelection[nextSelection.length - 1] || null,
       });
+      const mostRecentPath = nextSelection[nextSelection.length - 1];
+      if (mostRecentPath) void tree.scrollTo(mostRecentPath);
     } finally {
       isApplyingPreviewSelection.current = false;
     }
@@ -153,6 +179,21 @@ export default function NodeTree() {
     window.postMessage({ type: 'addDroppedNode', item }, '*');
   }
 
+  async function runDevServer() {
+    if (!rootFolder) return;
+    setIsStartingDevServer(true);
+    try {
+      const response: any = await sendRequest({ key: RUN_DEV_SERVER_REQUEST, rootFolder });
+      if (response?.error) throw Error(response.message);
+      setDevPageUrl(response.url);
+      toast.success('Dev page is running in your browser.');
+    } catch (error: any) {
+      toast.error(error?.message || 'Unable to start the dev server.');
+    } finally {
+      setIsStartingDevServer(false);
+    }
+  }
+
   return (
     <div className='flex h-full flex-col bg-[#252525] text-[#dcdcdc]' >
       <div className='flex h-8 shrink-0 items-center border-b border-[#151515] bg-[#202020] px-2'>
@@ -161,7 +202,16 @@ export default function NodeTree() {
         </div>
         <button
           type='button'
-          className='ml-auto flex h-6 w-6 items-center justify-center rounded-sm text-[#aeb8c5] hover:bg-[#303846] hover:text-white disabled:cursor-not-allowed disabled:opacity-40'
+          className={`ml-auto flex h-6 w-6 items-center justify-center rounded-sm ${isProjectDirty ? 'text-[#ff5c5c] hover:bg-[#303846] hover:text-[#ff7777]' : 'text-[#aeb8c5] hover:bg-[#303846] hover:text-white'}`}
+          onClick={() => window.postMessage({ type: 'saveProject' }, '*')}
+          title='Save Project (Ctrl/Cmd+S)'
+          aria-label='Save Project'
+        >
+          <FiSave size={14} />
+        </button>
+        <button
+          type='button'
+          className='flex h-6 w-6 items-center justify-center rounded-sm text-[#aeb8c5] hover:bg-[#303846] hover:text-white disabled:cursor-not-allowed disabled:opacity-40'
           onClick={() => {
             loadComponent(filePath)
             window.postMessage({ type: 'reLoad' }, '*')
@@ -172,6 +222,33 @@ export default function NodeTree() {
         >
           <FiRefreshCw size={14} />
         </button>
+        {devPageUrl ? (
+          <div className='group relative'>
+            <button
+              type='button'
+              className='flex h-6 w-6 items-center justify-center rounded-sm text-[#aeb8c5] hover:bg-[#303846] hover:text-white'
+              aria-label='Show dev page QR code'
+              title='Show dev page QR code'
+            >
+              <LuQrCode size={15} />
+            </button>
+            <div className='pointer-events-none absolute right-0 top-7 z-50 hidden w-56 rounded-md border border-[#3d4654] bg-[#202020] p-3 text-center shadow-xl group-hover:block'>
+              {qrCodeUrl && <img className='mx-auto h-48 w-48 rounded bg-white p-1' src={qrCodeUrl} alt={`QR code for ${devPageUrl}`} />}
+              <div className='mt-2 break-all text-[10px] text-[#aeb8c5]'>{devPageUrl}</div>
+            </div>
+          </div>
+        ) : (
+          <button
+            type='button'
+            className='flex h-6 w-6 items-center justify-center rounded-sm text-[#aeb8c5] hover:bg-[#303846] hover:text-white disabled:cursor-not-allowed disabled:opacity-40'
+            onClick={() => void runDevServer()}
+            disabled={!rootFolder || isStartingDevServer}
+            aria-label='Run dev server'
+            title='Run dev server'
+          >
+            {isStartingDevServer ? <FiLoader className='animate-spin' size={14} /> : <FiPlay size={14} />}
+          </button>
+        )}
       </div>
       <div
         ref={treeContainerRef}
@@ -187,7 +264,7 @@ export default function NodeTree() {
         <Tree
           ref={treeRef}
           className='px-1 py-1'
-          data={treeData[0]?.tag === 'SceneComponent' ? treeData[0].children : treeData}
+          data={treeData[0]?.tag === 'SceneComponent' ? (treeData[0].children || []) : treeData}
           height={treeHeight}
           width="100%"
           onSelect={

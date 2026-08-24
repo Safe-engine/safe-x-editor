@@ -45,7 +45,7 @@ export const getFilesInFolder = async ({ src }) => {
   const spineAssets = parseAssetsSrcFile(spineAssetsFile, panel);
   const spineSourceAssets = parseAssetsSrcFile(spineAssetsFile);
   const spriteFramesAssets = parseAssetsSrcFile(join(assetsTSFolder, 'SpriteFrames.ts'));
-  const colors = parseAssetsSrcFile(join(src, 'src', 'helper', 'constant.ts'), panel, true);
+  const colors = parseAssetsSrcFile(join(src, 'src', 'helper', 'colors.ts'), panel, true);
   const jsonCaches = parseJsonCache(join(src, 'src', 'data', 'JsonCache.ts'), jsonAssets);
   const enumsList = parseEnums(join(src, 'src', 'helper', 'constant.ts'), jsonAssets);
   const designedResolution = getResolutionSettings(src);
@@ -107,7 +107,12 @@ export const getFilesInFolder = async ({ src }) => {
 
 export const checkFileExist = async ({ folderPath }) => existsSync(folderPath);
 
-export const deleteFolder = async ({ path, folderPath }) => {
-  rmSync(path || folderPath, { recursive: true, force: true });
+export const deleteFolder = async ({ path, folderPath, paths, rootFolder }: { path?: string; folderPath?: string; paths?: string[]; rootFolder?: string } = {}) => {
+  const pathsToDelete = Array.isArray(paths) ? paths : [path || folderPath].filter(Boolean);
+  for (const p of pathsToDelete) {
+    if (p && typeof p === 'string' && existsSync(p)) {
+      rmSync(p, { recursive: true, force: true });
+    }
+  }
   return true;
 };

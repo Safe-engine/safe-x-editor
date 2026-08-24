@@ -39,8 +39,8 @@ export function getAction(draft: AppState) {
     },
     loadComponentSuccess(data) {
       const { treeData, name } = data
-      draft.componentTree = [treeData]
-      draft.componentPropTypes = draft.componentTree[0].props
+      draft.componentTree = Array.isArray(treeData) ? treeData : (treeData ? [treeData] : [])
+      draft.componentPropTypes = draft.componentTree[0]?.props || {}
       draft.editingClassNamePath = ''
       // draft.selectedNode = {}
       draft.editingPath = name
@@ -74,10 +74,10 @@ export function getAction(draft: AppState) {
       draft.selectedNodes = paths.map((path) => getNearestTreeNode(tree, path))
     },
     replaceComponentTree(treeData: any[], paths: string[]) {
-      draft.componentTree = treeData
-      draft.selectedPaths = paths
+      draft.componentTree = Array.isArray(treeData) ? treeData : (treeData ? [treeData] : [])
+      draft.selectedPaths = paths || []
       const tree = new Tree(draft.componentTree, 'id', 'children')
-      draft.selectedNodes = paths.map((path) => getNearestTreeNode(tree, path))
+      draft.selectedNodes = (paths || []).map((path) => getNearestTreeNode(tree, path)).filter(Boolean)
     },
     updateMultiNodes(params: Array<{ component?: string; updated?: any }>) {
       const tree = new Tree(draft.componentTree, 'id', 'children')
@@ -90,6 +90,16 @@ export function getAction(draft: AppState) {
           node[component] = Array.isArray(updated) ? updated : { ...node[component], ...updated }
           draft.selectedNodes[index] = node
         }
+      })
+    },
+    changeSelectedNodeType(tag: string) {
+      const tree = new Tree(draft.componentTree, 'id', 'children')
+      draft.selectedPaths.forEach((path, index) => {
+        const node = getNearestTreeNode(tree, path)
+        if (!node) return
+        node.tag = tag
+        node.props = node.props?.node ? { node: node.props.node } : {}
+        draft.selectedNodes[index] = node
       })
     },
   }

@@ -77,6 +77,55 @@ function isRotatedFrame(value: any) {
   return value === true || value === 'true'
 }
 
+function DicedSpritePreview({ texture, json, animation }: { texture: string; json: any; animation: string }) {
+  const currentAnimation = json?.animations?.find((item) => item.name === animation) ?? json?.animations?.[0]
+  const [frameIndex, setFrameIndex] = useState(0)
+  const frames = currentAnimation?.frames ?? []
+  const meta = json?.meta
+
+  useEffect(() => {
+    setFrameIndex(0)
+    if (!currentAnimation || frames.length < 2 || !currentAnimation.fps) return
+    const timer = window.setInterval(() => setFrameIndex((index) => (index + 1) % frames.length), 1000 / currentAnimation.fps)
+    return () => window.clearInterval(timer)
+  }, [animation, currentAnimation?.fps, frames.length])
+
+  if (!texture || !meta?.rawWidth || !meta?.rawHeight || !meta?.cellW || !meta?.cellH || !meta?.atlasCols) return null
+
+  const frame = frames[frameIndex]
+  if (!Array.isArray(frame)) return null
+  const scale = Math.min(1, (PREVIEW_SIZE - 48) / meta.rawWidth, (PREVIEW_SIZE - 48) / meta.rawHeight)
+  const width = meta.rawWidth * scale
+  const height = meta.rawHeight * scale
+  const cellWidth = meta.cellW * scale
+  const cellHeight = meta.cellH * scale
+
+  return <div className="flex justify-center overflow-hidden">
+    <div className="flex h-[300px] w-[300px] items-center justify-center">
+      <div className="relative overflow-hidden" style={{ width, height }}>
+        {frame.flatMap((row: number[], rowIndex: number) => row.map((cell, columnIndex) => {
+          if (cell < 0) return null
+          const atlasColumn = cell % meta.atlasCols
+          const atlasRow = Math.floor(cell / meta.atlasCols)
+          return <span
+            key={`${rowIndex}-${columnIndex}`}
+            className="absolute block bg-no-repeat"
+            style={{
+              left: columnIndex * cellWidth,
+              top: rowIndex * cellHeight,
+              width: cellWidth,
+              height: cellHeight,
+              backgroundImage: `url(${texture})`,
+              backgroundPosition: `${-atlasColumn * cellWidth}px ${-atlasRow * cellHeight}px`,
+              backgroundSize: `${meta.atlasCols * cellWidth}px auto`,
+            }}
+          />
+        }))}
+      </div>
+    </div>
+  </div>
+}
+
 class CanvasSpineTexture extends Texture {
   setFilters() { }
   setWraps() { }
@@ -644,6 +693,7 @@ function AssetPreview() {
 
   const { key, name, texture, type = '', value, size = {}, json } = data
   const isAnimationType = isAnimationPreviewType(type)
+  const isDicedSpritePreview = type === 'dicedSprite'
   const isImagePreviewType = type === 'texture' || type === 'spriteFrame' || type === 'frame'
   const { width, height } = size
   const frameEntry = json?.frames?.[name]
@@ -682,6 +732,14 @@ function AssetPreview() {
 
   useEffect(() => {
     if (!canvasRef.current) return
+    if (type === 'dicedSprite') {
+      const animations = json?.animations?.map((item) => item.name).filter(Boolean) ?? []
+      setAnimations(animations)
+      setSkins([])
+      setSelectedAnimation(animations[0] ?? '')
+      setSelectedSkin('')
+      return
+    }
     if (type === 'spine') {
       if (!spinePreviewRef.current) spinePreviewRef.current = new CanvasSpinePreview(canvasRef.current)
 
@@ -712,7 +770,7 @@ function AssetPreview() {
       }
     }
 
-    if (type !== 'dragonBones') return
+    if (type !== 'dragonBones' && type !== 'dicedSprite') return
 
     if (!sceneRef.current) {
       sceneRef.current = ensurePreviewScene()
@@ -745,7 +803,7 @@ function AssetPreview() {
     return () => {
       cancelled = true
     }
-  }, [key, type, value, canvasRef.current, sdlReady])
+  }, [key, type, value, json, canvasRef.current, sdlReady])
 
   useEffect(() => {
     if (!isImagePreviewType) return
@@ -912,6 +970,7 @@ function AssetPreview() {
 
   function onSelectAnimation(name: string) {
     setSelectedAnimation(name)
+    if (isDicedSpritePreview) return
     if (type === 'spine') {
       spinePreviewRef.current?.playAnimation(name)
       setCanvasZoomPercent(round((spinePreviewRef.current?.getZoomScale() || 1) * 100, 1))
@@ -961,6 +1020,15 @@ function AssetPreview() {
           </div>
         </div>
       </div>
+      {isDicedSpritePreview && (
+        <div>
+          <div className="flex flex-nowrap items-center gap-1">
+            <div className="text-blue-100 my-auto text-sm">Anim</div>
+            <SelectBox items={animationsList} selected={selectedAnimation} setSelected={onSelectAnimation} />
+          </div>
+          <DicedSpritePreview texture={texture} json={json} animation={selectedAnimation} />
+        </div>
+      )}
       {isImagePreviewType && (
         <div className="flex w-full justify-center">
           <div
