@@ -1,4 +1,4 @@
-import { AssetManager, ComponentX, DicedSprite, Label, Node, Panel, ScrollView, SpineSkeleton, Sprite, TextInput, TiledMap, UILayout } from '@safe-engine/sdl'
+import { AssetManager, ComponentX, DicedSprite, Label, Node, Panel, Particles, ScrollView, SpineSkeleton, Sprite, TextInput, TiledMap, UILayout } from '@safe-engine/sdl'
 import { DragonBones } from '@safe-engine/sdl/lib/dragonbones'
 import { globalCommandBuffer } from '@safe-engine/sdl/lib/render/RenderCommandBuffer'
 import { getLastRootFolder } from 'data/AppData'
@@ -9,6 +9,7 @@ import {
   parseBoolFromValue,
   parseDirection,
   parseEval,
+  parseFloatFromValue,
   parseIntFromValue,
   parseOutline,
   parseSize,
@@ -55,6 +56,25 @@ export class RectRender extends ComponentX<{ fillColor?: SdlColor; strokeColor?:
       globalCommandBuffer.pushRect(x, y, line, height, color.r, color.g, color.b, color.a ?? 255)
       globalCommandBuffer.pushRect(x + width - line, y, line, height, color.r, color.g, color.b, color.a ?? 255)
     }
+  }
+}
+
+class ParticlePreviewEmitter extends ComponentX<{ particles: Particles }> {
+  elapsed = 0
+
+  onAwake() {
+    this.emit()
+  }
+
+  onUpdate(dt: number) {
+    this.elapsed += dt
+    if (this.elapsed < 0.35) return
+    this.elapsed = 0
+    this.emit()
+  }
+
+  private emit() {
+    this.props.particles.emit(0, 0)
   }
 }
 
@@ -313,6 +333,32 @@ async function parseChildren(root, parentNode: Node, data: ProjectData, evalInit
       }))
       await dicedSprite.reload()
     }
+  } else if (tag === 'Particle') {
+    const configKey = parseStringFromValue(props.configFile)
+    const configAsset = data.jsonAssets?.find((item) => item.key === configKey)
+    const colors = typeof props.colors === 'string'
+      ? JSON.parse(parseStringFromValue(props.colors))
+      : props.colors
+    const particles = renderNode.addComponent(new Particles({
+      configFile: configAsset?.value ?? (configKey ? projectAssetUrl(configKey) : undefined),
+      spriteFrame: await getTexture(props.spriteFrame),
+      additive: parseBoolFromValue(props.additive),
+      count: parseIntFromValue(props.count),
+      duration: parseFloatFromValue(props.duration),
+      speed: parseFloatFromValue(props.speed),
+      gravity: parseFloatFromValue(props.gravity),
+      radius: parseFloatFromValue(props.radius),
+      width: parseFloatFromValue(props.width),
+      height: parseFloatFromValue(props.height),
+      angle: parseFloatFromValue(props.angle),
+      angleSpread: parseFloatFromValue(props.angleSpread),
+      rotation: parseFloatFromValue(props.rotation),
+      rotationFollowVelocity: parseBoolFromValue(props.rotationFollowVelocity),
+      colors,
+      emitOnTouch: parseBoolFromValue(props.emitOnTouch),
+    }))
+    await particles.reload()
+    renderNode.addComponent(new ParticlePreviewEmitter({ particles }))
   } else if (tag === 'TiledMap') {
     const { mapFile } = props
     const key = parseStringFromValue(mapFile)
