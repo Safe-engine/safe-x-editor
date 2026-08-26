@@ -1,9 +1,11 @@
 import { Engine, loadScene } from '@safe-engine/sdl'
 import ScenePanelTitle from 'app/ScenePanelTitle'
 import { useEffect, useRef } from 'react'
+import { TOGGLE_SNAP } from 'shared/constant.message'
 import { useActions, useSelector } from 'states/app.context'
 import { selectSelectedFilePath, selectSelectedPaths } from 'states/app.selectors'
 import { PreviewScene } from './PreviewScene'
+import { SnapRulers } from './SnapRulers'
 
 function getDroppedFilePath(file: File) {
   const electronRequire = (globalThis as any).require
@@ -38,6 +40,13 @@ export default function SceneView() {
     window.addEventListener('message', listener)
     return () => window.removeEventListener('message', listener)
   }, [replaceComponentTree, selectEditMultiNodes, updateMultiNodes])
+
+  useEffect(() => {
+    const ipcRenderer = (globalThis as any).require?.('electron')?.ipcRenderer
+    const onToggleSnap = (_event: unknown, enabled: boolean) => window.postMessage({ type: 'setSnapEnabled', enabled }, '*')
+    ipcRenderer?.on(TOGGLE_SNAP, onToggleSnap)
+    return () => ipcRenderer?.removeListener(TOGGLE_SNAP, onToggleSnap)
+  }, [])
 
   useEffect(() => {
     if (!selectedFilePath) return
@@ -90,6 +99,7 @@ export default function SceneView() {
     >
       <ScenePanelTitle />
       <canvas id="sdl-canvas" className='block bg-[#1e1e1e]'></canvas>
+      <SnapRulers />
     </div>
   )
 }

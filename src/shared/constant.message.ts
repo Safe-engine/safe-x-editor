@@ -21,6 +21,7 @@ export const GET_OPEN_WITH_APPS_REQUEST = 'Get Open With Apps';
 export const ADD_OPEN_WITH_APP_REQUEST = 'Add Open With App';
 export const REMOVE_OPEN_WITH_APP_REQUEST = 'Remove Open With App';
 export const CONFIGURE_SETTINGS = 'Configure Settings';
+export const TOGGLE_SNAP = 'Toggle Snap';
 export const GET_AI_IMAGE_SETTINGS_REQUEST = 'Get AI Image Settings';
 export const SAVE_AI_IMAGE_SETTINGS_REQUEST = 'Save AI Image Settings';
 

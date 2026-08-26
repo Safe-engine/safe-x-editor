@@ -59,6 +59,9 @@ export class PreviewScene extends PreviewSceneSelection {
   isMultiSelectModifierPressed = false
   lockX = false
   lockY = false
+  snapEnabled = true
+  verticalSnapGuides: number[] = []
+  horizontalSnapGuides: number[] = []
   editingPaths: any[] = []
   editingComponent: any[] = []
   editingComponentName = ''
@@ -114,6 +117,28 @@ export class PreviewScene extends PreviewSceneSelection {
   updateInputModifiers(modifiers: { shiftKey?: boolean; ctrlKey?: boolean; metaKey?: boolean }) {
     this.isShiftPressed = Boolean(modifiers.shiftKey)
     this.isMultiSelectModifierPressed = Boolean(modifiers.ctrlKey || modifiers.metaKey)
+  }
+
+  syncSnapOverlay() {
+    window.postMessage({
+      type: 'snapOverlayTransform',
+      transform: {
+        x: this.drawNode.x,
+        y: this.drawNode.y,
+        scaleX: this.drawNode.scaleX || 1,
+        scaleY: this.drawNode.scaleY || 1,
+        logicalWidth: this.logicalCanvasWidth,
+      },
+    }, '*')
+  }
+
+  setSnapEnabled(enabled: boolean) {
+    this.snapEnabled = Boolean(enabled)
+  }
+
+  setSnapGuides(verticalGuides: unknown, horizontalGuides: unknown) {
+    this.verticalSnapGuides = Array.isArray(verticalGuides) ? verticalGuides.filter(isNumber) : []
+    this.horizontalSnapGuides = Array.isArray(horizontalGuides) ? horizontalGuides.filter(isNumber) : []
   }
 
   toggleSelectPath(path?: string) {
@@ -196,6 +221,7 @@ export class PreviewScene extends PreviewSceneSelection {
     this.borderNode.scale = value
     this.drawNode.scale = value
     this.updateArrowPosition()
+    this.syncSnapOverlay()
   }
 
   createBorder() {
@@ -219,6 +245,7 @@ export class PreviewScene extends PreviewSceneSelection {
     this.drawNode.x = this.borderNode.x = getLastSceneX()
     this.drawNode.y = this.borderNode.y = getLastSceneY()
     this.drawNode.scale = this.borderNode.scale = getLastSceneScale()
+    this.syncSnapOverlay()
   }
 
   createArrows() {
@@ -1027,8 +1054,37 @@ export class PreviewScene extends PreviewSceneSelection {
         if (editNode.children[index - componentChildrenNum]) editNode = editNode.children[index - componentChildrenNum]
       })
       const widgetProps = editNode?.components?.find((component) => component.tag === 'Widget')?.props || {}
-      const nodeMoveX = parseBoolFromValue(widgetProps.centerHorizon) ? 0 : moveX
-      const nodeMoveY = parseBoolFromValue(widgetProps.centerVertical) ? 0 : moveY
+      let nodeMoveX = parseBoolFromValue(widgetProps.centerHorizon) ? 0 : moveX
+      let nodeMoveY = parseBoolFromValue(widgetProps.centerVertical) ? 0 : moveY
+      if (this.snapEnabled) {
+        const parent = currentNode.parent ?? this.drawNode
+        const parentScaleX = parent.worldScaleX || 1
+        const parentScaleY = parent.worldScaleY || 1
+        const bounds = this.getNodeBounds(currentNode)
+        const findSnapOffset = (guides: number[], positions: number[], offset: number, scale: number) => guides
+          .map((guide) => offset + guide * scale)
+          .flatMap((guide) => positions.map((position) => ({ guide, offset: guide - position })))
+          .filter(({ offset }) => Math.abs(offset) <= 8)
+          .sort((left, right) => Math.abs(left.offset) - Math.abs(right.offset))[0]?.offset
+        const snapX = findSnapOffset(
+          this.verticalSnapGuides,
+          bounds
+            ? [bounds.left, (bounds.left + bounds.right) / 2, bounds.right].map((position) => position + nodeMoveX * parentScaleX)
+            : [currentNode.worldX + nodeMoveX * parentScaleX],
+          this.drawNode.x,
+          this.drawNode.worldScaleX || 1,
+        )
+        const snapY = findSnapOffset(
+          this.horizontalSnapGuides,
+          bounds
+            ? [bounds.top, (bounds.top + bounds.bottom) / 2, bounds.bottom].map((position) => position + nodeMoveY * parentScaleY)
+            : [currentNode.worldY + nodeMoveY * parentScaleY],
+          this.drawNode.y,
+          this.drawNode.worldScaleY || 1,
+        )
+        if (snapX !== undefined) nodeMoveX += snapX / parentScaleX
+        if (snapY !== undefined) nodeMoveY += snapY / parentScaleY
+      }
       currentNode.x = (isNumber(currentNode.x) ? currentNode.x : 0) + nodeMoveX
       currentNode.y = (isNumber(currentNode.y) ? currentNode.y : 0) + nodeMoveY
       const nx = Math.round(currentNode.x)
@@ -1287,6 +1343,7 @@ export class PreviewScene extends PreviewSceneSelection {
     setLastSceneX(this.drawNode.x)
     setLastSceneY(this.drawNode.y)
     this.updateArrowPosition()
+    this.syncSnapOverlay()
   }
 
   onTouchStart(event: Touch) {
@@ -1441,6 +1498,7 @@ export class PreviewScene extends PreviewSceneSelection {
       this.borderNode.y = this.drawNode.y
       setLastSceneX(this.drawNode.x)
       setLastSceneY(this.drawNode.y)
+      this.syncSnapOverlay()
     } else {
       if (!this.editingPaths[0]) return
       const selectedNode = getCurrentNode(this.drawNode, this.getChildrenIndex(this.editingPaths[0]))
