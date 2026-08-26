@@ -1,5 +1,7 @@
 import { sendRequest } from 'app/app.ipc';
+import Modal from 'base/Modal';
 import { getLastSceneScale } from 'data/AppData';
+import { shell } from 'helper/electronRemote';
 import QRCode from 'qrcode';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
@@ -17,6 +19,7 @@ export default function ScenePanelTitle() {
   const [isStartingDevServer, setIsStartingDevServer] = useState(false);
   const [devPageUrl, setDevPageUrl] = useState('');
   const [qrCodeUrl, setQrCodeUrl] = useState('');
+  const [isQrCodeDialogOpen, setIsQrCodeDialogOpen] = useState(false);
   const [zoomPercent, setZoomPercent] = useState(() => Math.round(getLastSceneScale() * 100));
 
   useEffect(() => {
@@ -76,20 +79,15 @@ export default function ScenePanelTitle() {
           <FiRefreshCw size={14} />
         </button>
         {devPageUrl ? (
-          <span className='group relative'>
           <button
             type='button'
             className='flex h-6 w-6 items-center justify-center rounded-sm text-[#aeb8c5] hover:bg-[#303846] hover:text-white'
+            onClick={() => setIsQrCodeDialogOpen(true)}
             aria-label='Show dev page QR code'
             title='Show dev page QR code'
           >
             <LuQrCode size={15} />
           </button>
-          <span className='pointer-events-none absolute right-0 top-7 z-50 hidden w-56 rounded-md border border-[#3d4654] bg-[#202020] p-3 text-center shadow-xl group-hover:block'>
-            {qrCodeUrl && <img className='mx-auto h-48 w-48 rounded bg-white p-1' src={qrCodeUrl} alt={`QR code for ${devPageUrl}`} />}
-            <span className='mt-2 block break-all text-[10px] text-[#aeb8c5]'>{devPageUrl}</span>
-          </span>
-          </span>
         ) : (
           <button
             type='button'
@@ -120,6 +118,34 @@ export default function ScenePanelTitle() {
         />
         <span className='w-9 text-right'>{zoomPercent}%</span>
       </label>
+      <Modal isOpen={isQrCodeDialogOpen} onClose={() => setIsQrCodeDialogOpen(false)} title='Dev Page QR Code'>
+        <div className='w-56 pt-3 text-center'>
+          {qrCodeUrl && (
+            <img
+              className='mx-auto h-48 w-48 rounded bg-white p-1 cursor-pointer transition-opacity hover:opacity-90'
+              src={qrCodeUrl}
+              alt={`QR code for ${devPageUrl}`}
+              title='Open in browser'
+              onClick={() => {
+                if (devPageUrl) shell.openExternal(devPageUrl);
+              }}
+            />
+          )}
+          <a
+            href={devPageUrl}
+            target='_blank'
+            rel='noreferrer'
+            onClick={(event) => {
+              event.preventDefault();
+              if (devPageUrl) shell.openExternal(devPageUrl);
+            }}
+            className='mt-2 block break-all text-[11px] text-[#4a90e2] underline hover:text-[#70a7eb] cursor-pointer'
+            title='Open in browser'
+          >
+            {devPageUrl}
+          </a>
+        </div>
+      </Modal>
     </div>
   );
 }
