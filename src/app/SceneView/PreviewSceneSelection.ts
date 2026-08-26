@@ -62,6 +62,7 @@ export abstract class PreviewSceneSelection extends Scene {
       this.selectionBorderNode.anchorY = 0.5
       this.selectionBorderNode.scaleX = 1
       this.selectionBorderNode.scaleY = 1
+      this.positionArrowGizmos(combinedBounds)
       return
     }
     const currentNode = getCurrentNode(this.drawNode, this.getChildrenIndex(this.editingPaths[0]))
@@ -76,6 +77,7 @@ export abstract class PreviewSceneSelection extends Scene {
     this.selectionBorderNode.scaleY = currentNode.worldScaleY ?? 1
     const bounds = this.getNodeBounds(currentNode)
     if (!bounds) return
+    this.positionArrowGizmos(bounds)
     this.rotationHandleNode.active = true
     this.rotationHandleNode.x = (bounds.left + bounds.right) / 2 - this.arrowContainerNode.x
     this.rotationHandleNode.y = bounds.top - this.arrowContainerNode.y - PreviewSceneSelection.ROTATION_HANDLE_OFFSET
@@ -90,6 +92,15 @@ export abstract class PreviewSceneSelection extends Scene {
       corner.x = cornerPositions[index][0] - this.arrowContainerNode.x
       corner.y = cornerPositions[index][1] - this.arrowContainerNode.y
     })
+  }
+
+  positionArrowGizmos(bounds: SelectionBounds) {
+    const centerY = (bounds.top + bounds.bottom) / 2
+    const centerX = (bounds.left + bounds.right) / 2
+    this.arrowSpriteHorizonNode.x = bounds.right - this.arrowContainerNode.x
+    this.arrowSpriteHorizonNode.y = centerY - this.arrowContainerNode.y
+    this.arrowSpriteVerticalNode.x = centerX - this.arrowContainerNode.x
+    this.arrowSpriteVerticalNode.y = bounds.bottom - this.arrowContainerNode.y
   }
 
   getSelectionBounds(x1: number, y1: number, x2: number, y2: number): SelectionBounds {
@@ -216,13 +227,26 @@ export abstract class PreviewSceneSelection extends Scene {
     if (Math.abs(x - (this.arrowContainerNode.x + this.arrowSpriteVerticalNode.x)) <= radius && Math.abs(y - (this.arrowContainerNode.y + this.arrowSpriteVerticalNode.y)) <= radius) return 'y' as const
   }
 
-  getActiveResizeEdge(x: number, y: number) {
+  isPointInsideSelectedNode(x: number, y: number) {
+    if (this.editingPaths.length !== 1) return false
+    const node = getCurrentNode(this.drawNode, this.getChildrenIndex(this.editingPaths[0]))
+    return this.isPointInsideNode(node, x, y)
+  }
+
+  getActiveScaleCorner(x: number, y: number) {
     if (this.editingPaths.length !== 1) return undefined
     const bounds = this.getNodeBounds(getCurrentNode(this.drawNode, this.getChildrenIndex(this.editingPaths[0])))
     if (!bounds) return undefined
     const hitSize = PreviewSceneSelection.RESIZE_EDGE_HIT_SIZE
     if (Math.abs(x - bounds.left) <= hitSize && Math.abs(y - bounds.top) <= hitSize) return 'top-left' as const
     if (Math.abs(x - bounds.right) <= hitSize && Math.abs(y - bounds.top) <= hitSize) return 'top-right' as const
+  }
+
+  getActiveResizeEdge(x: number, y: number) {
+    if (this.editingPaths.length !== 1) return undefined
+    const bounds = this.getNodeBounds(getCurrentNode(this.drawNode, this.getChildrenIndex(this.editingPaths[0])))
+    if (!bounds) return undefined
+    const hitSize = PreviewSceneSelection.RESIZE_EDGE_HIT_SIZE
     if (Math.abs(x - bounds.left) <= hitSize && Math.abs(y - bounds.bottom) <= hitSize) return 'bottom-left' as const
     if (Math.abs(x - bounds.right) <= hitSize && Math.abs(y - bounds.bottom) <= hitSize) return 'bottom-right' as const
     if (y >= bounds.top - hitSize && y <= bounds.bottom + hitSize) {

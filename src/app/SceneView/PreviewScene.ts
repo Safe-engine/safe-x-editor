@@ -74,6 +74,7 @@ export class PreviewScene extends PreviewSceneSelection {
   panSelectionPaths?: string[]
   middleMouseSelectionPaths?: string[]
   activeArrowAxis?: 'x' | 'y' | 'move' | 'anchor'
+  activeScaleCorner?: 'top-left' | 'top-right'
   activeResizeEdge?: ResizeHandle
   isRotating = false
   activeSpineBonePoint?: { componentIndex: number; pointIndex: number }
@@ -178,11 +179,19 @@ export class PreviewScene extends PreviewSceneSelection {
     }
   }
 
-  setRootScale(offset: number) {
+  setRootScale(offset: number, focus?: { x: number; y: number }) {
     const scale = getLastSceneScale()
     let value = scale + offset
     if (value < 0.1) value = 0.1
     if (value > 2) value = 2
+    if (focus && value !== scale) {
+      const x = focus.x - (focus.x - this.drawNode.x) * value / scale
+      const y = focus.y - (focus.y - this.drawNode.y) * value / scale
+      this.drawNode.x = this.borderNode.x = x
+      this.drawNode.y = this.borderNode.y = y
+      setLastSceneX(x)
+      setLastSceneY(y)
+    }
     setLastSceneScale(value)
     this.borderNode.scale = value
     this.drawNode.scale = value
@@ -234,7 +243,7 @@ export class PreviewScene extends PreviewSceneSelection {
         lineWidth: 2,
       }),
     )
-    selectionCorners.forEach((corner) => {
+    selectionCorners.forEach((corner, index) => {
       corner.width = PreviewScene.RESIZE_CORNER_SIZE
       corner.height = PreviewScene.RESIZE_CORNER_SIZE
       corner.anchorX = 0.5
@@ -242,8 +251,8 @@ export class PreviewScene extends PreviewSceneSelection {
       corner.zIndex = -1
       corner.addComponent(
         new RectRender({
-          fillColor: { r: 255, g: 255, b: 255, a: 255 },
-          strokeColor: { r: 34, g: 197, b: 94, a: 255 },
+          fillColor: index < 2 ? { r: 219, g: 234, b: 254, a: 255 } : { r: 254, g: 243, b: 199, a: 255 },
+          strokeColor: index < 2 ? { r: 37, g: 99, b: 235, a: 255 } : { r: 217, g: 119, b: 6, a: 255 },
           lineWidth: 2,
         }),
       )
@@ -261,8 +270,10 @@ export class PreviewScene extends PreviewSceneSelection {
     this.selectionAnchorNode = selectionAnchor
     this.selectionCornerNodes = selectionCorners
     this.rotationHandleNode = rotationHandle
+    arrowSpriteVertical.anchorY = 1
     arrowSpriteVertical.y = 48
     arrowSpriteVertical.color = { r: 255, g: 0, b: 0, a: 255 }
+    arrowSpriteHorizon.anchorY = 1
     arrowSpriteHorizon.x = 48
     arrowSpriteHorizon.rotation = 90
     arrowSpriteVertical.rotation = 180
@@ -1138,6 +1149,48 @@ export class PreviewScene extends PreviewSceneSelection {
     return true
   }
 
+  scaleSelectedNode(corner: 'top-left' | 'top-right', dx: number) {
+    if (this.editingPaths.length !== 1) return false
+    const editingPath = this.editingPaths[0]
+    const currentNode = getCurrentNode(this.drawNode, this.getChildrenIndex(editingPath))
+    const parent = currentNode.parent ?? this.drawNode
+    const parentScaleX = Math.abs(parent.worldScaleX || this.drawNode.scaleX || 1)
+    const width = Math.max(1, currentNode.width * parentScaleX)
+    const scaleDelta = (corner === 'top-left' ? -dx : dx) / width
+    const scaleX = currentNode.scaleX || 1
+    const scaleY = currentNode.scaleY || 1
+    const scaleFactor = Math.max(0.1 / Math.max(Math.abs(scaleX), 0.001), 1 + scaleDelta / Math.max(Math.abs(scaleX), 0.001))
+    const nextScaleX = this.lockX ? scaleX : Number((scaleX * scaleFactor).toFixed(3))
+    const nextScaleY = this.lockY ? scaleY : Number((scaleY * scaleFactor).toFixed(3))
+    if (nextScaleX === scaleX && nextScaleY === scaleY) return false
+
+    currentNode.scaleX = nextScaleX
+    currentNode.scaleY = nextScaleY
+    const editNode = this.getEditingNodeByPath(editingPath)
+    if (!editNode) return false
+    editNode.props ??= {}
+    editNode.props.node ??= {}
+    editNode.props.node.scale = undefined
+    editNode.props.node.scaleX = nextScaleX
+    editNode.props.node.scaleY = nextScaleY
+    normalizeNodeProps(editNode.props)
+    const didUpdateWidget = this.syncWidgetInsets(editNode, currentNode)
+    this.syncEditingFlag()
+    window.postMessage({
+      type: 'previewUpdateSelectedNodes',
+      selectPaths: this.editingPaths,
+      nodes: [{ component: 'props', updated: editNode.props }],
+    }, '*')
+    if (didUpdateWidget) {
+      window.postMessage({
+        type: 'previewUpdateSelectedNodes',
+        selectPaths: [editingPath],
+        nodes: [{ component: 'components', updated: editNode.components }],
+      }, '*')
+    }
+    return true
+  }
+
   getRotationAngle(node: Node, x: number, y: number) {
     return Math.atan2(y - node.worldY, x - node.worldX) * 180 / Math.PI
   }
@@ -1241,10 +1294,12 @@ export class PreviewScene extends PreviewSceneSelection {
     const { x, y } = event
     this.lastTouch = { x, y }
     this.didCaptureDragHistory = false
+    this.activeScaleCorner = undefined
     this.marqueeSelection = undefined
-    const isPanMode = this.isPanMouse || this.isMiddleMouse || this.isRightMouse
+    const isPanMode = this.isPanMouse || this.isRightMouse
     if (isPanMode) {
       this.activeArrowAxis = undefined
+      this.activeScaleCorner = undefined
       this.activeResizeEdge = undefined
       this.isRotating = false
       this.activeSpineBonePoint = undefined
@@ -1254,6 +1309,7 @@ export class PreviewScene extends PreviewSceneSelection {
       this.updateArrowOpacity()
       return
     }
+    if (this.isMiddleMouse) return
     const isModifierSelecting = this.isMultiSelectModifierPressed && !isPanMode
     this.activeSpineBonePoint = isModifierSelecting || this.isShiftPressed ? undefined : this.getActiveSpineBonePoint(x, y)
     this.activeBoxColliderResizeEdge = isModifierSelecting || this.isShiftPressed ? undefined : this.getActiveBoxColliderResizeEdge(x, y)
@@ -1299,11 +1355,17 @@ export class PreviewScene extends PreviewSceneSelection {
       ? undefined
       : this.getActiveArrowAxis(x, y)
     this.activeArrowAxis = activeArrowAxis === 'anchor' ? activeArrowAxis : undefined
-    this.activeResizeEdge = this.isRotating || isModifierSelecting || this.activeArrowAxis
+    this.activeScaleCorner = this.isRotating || isModifierSelecting || this.activeArrowAxis
+      ? undefined
+      : this.getActiveScaleCorner(x, y)
+    this.activeResizeEdge = this.isRotating || isModifierSelecting || this.activeArrowAxis || this.activeScaleCorner
       ? undefined
       : this.getActiveResizeEdge(x, y)
-    if (!this.activeArrowAxis && !this.activeResizeEdge) this.activeArrowAxis = activeArrowAxis
-    if (this.isShiftPressed && !isPanMode) {
+    if (!this.activeArrowAxis && !this.activeScaleCorner && !this.activeResizeEdge) this.activeArrowAxis = activeArrowAxis
+    if (!this.isRotating && !this.activeScaleCorner && !this.activeResizeEdge && !this.activeArrowAxis && !isModifierSelecting && this.isPointInsideSelectedNode(x, y)) {
+      this.activeArrowAxis = 'move'
+    }
+    if (!this.isRotating && !this.activeScaleCorner && !this.activeResizeEdge && !this.activeArrowAxis && !isModifierSelecting && !isPanMode) {
       this.activeArrowAxis = undefined
       this.activeResizeEdge = undefined
       this.isRotating = false
@@ -1313,7 +1375,7 @@ export class PreviewScene extends PreviewSceneSelection {
       this.updateArrowOpacity()
       return
     }
-    if (!this.isRotating && !this.activeResizeEdge && !this.activeArrowAxis && !isPanMode) {
+    if (!this.isRotating && !this.activeScaleCorner && !this.activeResizeEdge && !this.activeArrowAxis && !isPanMode) {
       const selectedPath = this.findSelectionPath(x, y)
       if (isModifierSelecting) {
         this.toggleSelectPath(selectedPath)
@@ -1327,7 +1389,8 @@ export class PreviewScene extends PreviewSceneSelection {
   onTouchMove(event: Touch) {
     if (this.isSaveDialogVisible()) return
     const { x, y } = event
-    const isPanMode = this.isPanMouse || this.isMiddleMouse || this.isRightMouse
+    const isPanMode = this.isPanMouse || this.isRightMouse
+    if (this.isMiddleMouse) return
     const savedSelectionPaths = this.panSelectionPaths ?? this.middleMouseSelectionPaths
     if (isPanMode && savedSelectionPaths && this.editingPaths.join(',') !== savedSelectionPaths.join(',')) {
       this.changeSelectPath(savedSelectionPaths)
@@ -1371,7 +1434,7 @@ export class PreviewScene extends PreviewSceneSelection {
       this.resizeBoxCollider(this.activeBoxColliderResizeEdge, dx, dy)
       return
     }
-    if (!this.editingPaths[0] || isPanMode) {
+    if (isPanMode) {
       this.drawNode.x += dx
       this.drawNode.y += dy
       this.borderNode.x = this.drawNode.x
@@ -1379,6 +1442,7 @@ export class PreviewScene extends PreviewSceneSelection {
       setLastSceneX(this.drawNode.x)
       setLastSceneY(this.drawNode.y)
     } else {
+      if (!this.editingPaths[0]) return
       const selectedNode = getCurrentNode(this.drawNode, this.getChildrenIndex(this.editingPaths[0]))
       if (this.isRotating) {
         if (!this.didCaptureDragHistory) {
@@ -1386,6 +1450,15 @@ export class PreviewScene extends PreviewSceneSelection {
           this.didCaptureDragHistory = true
         }
         this.rotateSelectedNode(x, y)
+        this.updateArrowPosition()
+        return
+      }
+      if (this.activeScaleCorner) {
+        if (!this.didCaptureDragHistory) {
+          this.pushUndoHistory()
+          this.didCaptureDragHistory = true
+        }
+        this.scaleSelectedNode(this.activeScaleCorner, dx)
         this.updateArrowPosition()
         return
       }
@@ -1433,6 +1506,7 @@ export class PreviewScene extends PreviewSceneSelection {
     }
     this.lastTouch = undefined
     this.activeArrowAxis = undefined
+    this.activeScaleCorner = undefined
     this.activeResizeEdge = undefined
     this.isRotating = false
     this.activeSpineBonePoint = undefined
