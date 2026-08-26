@@ -46,6 +46,8 @@ function getNodePosition(node = {}) {
 }
 
 function buildPositionUpdate(node, x, y) {
+  x = Math.round(x);
+  y = Math.round(y);
   if (node.position !== undefined) return { position: `Vec2(${x},${y})`, x: undefined, y: undefined, xy: undefined };
   if (node.x !== undefined || node.y !== undefined) return { x, y, position: undefined, xy: undefined };
   return { xy: [x, y], position: undefined, x: undefined, y: undefined };
@@ -900,7 +902,7 @@ function NodeProps() {
       <Field
         label='Rotation'
         value={node.rotation ?? 0}
-        onChange={(rotation) => updateNodeProps({ rotation })}
+        onChange={(rotation) => updateNodeProps({ rotation: typeof rotation === 'number' ? Math.round(rotation) : rotation })}
       />
       <AxisRow
         label='Scale'

@@ -1,7 +1,7 @@
 import { Engine, loadScene } from '@safe-engine/sdl'
 import ScenePanelTitle from 'app/ScenePanelTitle'
-import { useEffect, useRef } from 'react'
-import { TOGGLE_SNAP } from 'shared/constant.message'
+import { useEffect, useRef, useState } from 'react'
+import { TOGGLE_RULER, TOGGLE_SNAP } from 'shared/constant.message'
 import { useActions, useSelector } from 'states/app.context'
 import { selectSelectedFilePath, selectSelectedPaths } from 'states/app.selectors'
 import { PreviewScene } from './PreviewScene'
@@ -17,6 +17,7 @@ export default function SceneView() {
   const selectedFilePath = useSelector(selectSelectedFilePath)
   const selectedPaths = useSelector(selectSelectedPaths)
   const didStartEngine = useRef(false)
+  const [isRulerVisible, setIsRulerVisible] = useState(true)
 
   useEffect(() => {
     if (didStartEngine.current) return
@@ -46,6 +47,13 @@ export default function SceneView() {
     const onToggleSnap = (_event: unknown, enabled: boolean) => window.postMessage({ type: 'setSnapEnabled', enabled }, '*')
     ipcRenderer?.on(TOGGLE_SNAP, onToggleSnap)
     return () => ipcRenderer?.removeListener(TOGGLE_SNAP, onToggleSnap)
+  }, [])
+
+  useEffect(() => {
+    const ipcRenderer = (globalThis as any).require?.('electron')?.ipcRenderer
+    const onToggleRuler = (_event: unknown, visible: boolean) => setIsRulerVisible(visible)
+    ipcRenderer?.on(TOGGLE_RULER, onToggleRuler)
+    return () => ipcRenderer?.removeListener(TOGGLE_RULER, onToggleRuler)
   }, [])
 
   useEffect(() => {
@@ -99,7 +107,7 @@ export default function SceneView() {
     >
       <ScenePanelTitle />
       <canvas id="sdl-canvas" className='block bg-[#1e1e1e]'></canvas>
-      <SnapRulers />
+      <SnapRulers visible={isRulerVisible} />
     </div>
   )
 }

@@ -7,7 +7,7 @@ type GuideSelection = { axis: Axis; index: number }
 const RULER_SIZE = 18
 const initialTransform: Transform = { x: 100, y: 10, scaleX: 1, scaleY: 1, logicalWidth: window.innerWidth }
 
-export function SnapRulers() {
+export function SnapRulers({ visible = true }: { visible?: boolean }) {
   const rootRef = useRef<HTMLDivElement>(null)
   const draggingGuide = useRef<{ axis: Axis; index?: number }>()
   const draftGuideRef = useRef<{ axis: Axis; value: number }>()
@@ -176,6 +176,8 @@ export function SnapRulers() {
   const guideValues = (axis: Axis) => axis === 'vertical' ? verticalGuides : horizontalGuides
   const displayedGuides = (axis: Axis) => draftGuide?.axis === axis ? [...guideValues(axis), draftGuide.value] : guideValues(axis)
   const rulerBounds = getRulerBounds()
+
+  if (!visible) return null
 
   return (
     <div ref={rootRef} className='pointer-events-none absolute inset-0 z-20 overflow-hidden'>

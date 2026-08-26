@@ -940,6 +940,11 @@ export class PreviewScene extends PreviewSceneSelection {
 
     if (!draggedNodes.length || !targetChildren || draggedNodes.some((node) => node.tag === 'SceneComponent' || containsNode(node, parentNode))) return
 
+    const worldPositions = new Map<any, { x: number; y: number }>()
+    draggedNodes.forEach((node) => {
+      const runtimeNode = getCurrentNode(this.drawNode, this.getChildrenIndex(node.id))
+      if (runtimeNode) worldPositions.set(node, { x: runtimeNode.worldX, y: runtimeNode.worldY })
+    })
     this.pushUndoHistory()
     const movedIds = new Set(draggedNodes.map((node) => node.id))
     const targetIndex = Math.max(0, Math.min(index ?? targetChildren.length, targetChildren.length))
@@ -965,6 +970,20 @@ export class PreviewScene extends PreviewSceneSelection {
     assignIds(this.editingComponent)
     this.editingPaths = draggedNodes.map((node) => node.id)
     await this.reloadEditingComponent()
+    draggedNodes.forEach((node) => {
+      const worldPosition = worldPositions.get(node)
+      const runtimeNode = getCurrentNode(this.drawNode, this.getChildrenIndex(node.id))
+      if (!worldPosition || !runtimeNode) return
+
+      const position = (runtimeNode.parent ?? this.drawNode).convertToNodeSpace(worldPosition)
+      runtimeNode.x = position.x
+      runtimeNode.y = position.y
+      node.props ??= {}
+      setNodePositionProps(node.props, position.x, position.y)
+      normalizeNodeProps(node.props)
+    })
+    this.syncEditingFlag()
+    this.updateArrowPosition()
     window.postMessage({ type: 'previewRestoreComponentTree', treeData: this.editingComponent, selectPaths: this.editingPaths }, '*')
   }
 
