@@ -1,4 +1,5 @@
 import { Engine, loadScene } from '@safe-engine/sdl'
+import ScenePanelTitle from 'app/ScenePanelTitle'
 import { useEffect, useRef } from 'react'
 import { useActions, useSelector } from 'states/app.context'
 import { selectSelectedFilePath, selectSelectedPaths } from 'states/app.selectors'
@@ -87,6 +88,7 @@ export default function SceneView() {
         }
       }}
     >
+      <ScenePanelTitle />
       <canvas id="sdl-canvas" className='block bg-[#1e1e1e]'></canvas>
     </div>
   )

@@ -28,3 +28,24 @@ body {
 .sash.active {
   background: #4a90e2;
 }
+
+.scene-panel-title {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+  padding: 2px 6px 2px 8px;
+}
+
+.scene-panel-title__label {
+  padding: 0 8px 0 2px;
+}
+
+.dockable-root div:has(> [role='button'] > span[title='Scene']) {
+  display: none;
+}
+
+/* Keep internal panel gaps while letting the right-hand Hierarchy column reach the window edge. */
+.dockable-root > div {
+  padding-right: 0;
+}

@@ -13,14 +13,12 @@ import { FiGrid, FiList, FiRefreshCw, FiX } from 'react-icons/fi'
 import { CREATE_ASSET_REQUEST, CREATE_COMPONENT_FILE_REQUEST, DELETE_COMPONENT, GET_FOLDER_FILES, IMPORT_RESOURCES_REQUEST, RENAME_RESOURCE_REQUEST, SYNC_RES_REQUEST } from 'shared/constant.message'
 import { useActions, useSelector } from 'states/app.context'
 import { selectFilesData, selectResourceFilesData, selectRootFolder } from 'states/app.selectors'
-import { AssetTypeBlock } from '../../components/common'
 import CreateAnimationAssetDialog from './CreateAnimationAssetDialog'
 import CreateAudioAssetDialog from './CreateAudioAssetDialog'
 import CreateImageAssetDialog from './CreateImageAssetDialog'
 import ResourceGridView from './ResourceGridView'
 import { getDroppedPaths } from './resourceUtils'
 
-const PANEL_HEADER_HEIGHT = 32;
 const FILTER_HEIGHT = 40;
 type CreateAssetDialogType = 'image' | 'audio' | 'animation' | null;
 type CreateFileKind = 'component' | 'scene';
@@ -65,7 +63,7 @@ function filterResourceTreeData(items: any[], query: string): any[] {
   }, []);
 }
 
-export default function AssetsPanel() {
+export default function AssetsPanel({ tab, loadProject = false }: { tab: 'components' | 'res'; loadProject?: boolean }) {
   const { getFiles, loadComponent, toggleFolder } = useActions();
   const treeRef = useRef<TreeApi<any>>(null)
   const treeData = useSelector(selectFilesData);
@@ -74,7 +72,7 @@ export default function AssetsPanel() {
   const [createFileKind, setCreateFileKind] = useState<CreateFileKind | null>(null);
   const [createDirectory, setCreateDirectory] = useState('');
   const [createClassName, setCreateClassName] = useState('');
-  const [selectedTab, setSelectedTab] = useState('components');
+  const selectedTab = tab;
   const [resourceViewMode, setResourceViewMode] = useState<'tree' | 'grid'>('tree');
   const [resourceFilter, setResourceFilter] = useState('');
   const [componentFilter, setComponentFilter] = useState('');
@@ -159,10 +157,12 @@ export default function AssetsPanel() {
     () => selectedTab === 'res' ? filteredResourceTreeData : addCreateButtons(filteredComponentTreeData),
     [selectedTab, filteredResourceTreeData, filteredComponentTreeData]
   );
-  const [panelHeight, setPanelHeight] = useState(() => Math.max(0, window.innerHeight - PANEL_HEADER_HEIGHT));
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [panelHeight, setPanelHeight] = useState(0);
   const treeHeight = Math.max(0, panelHeight - FILTER_HEIGHT);
 
   useEffect(() => {
+    if (!loadProject) return;
     function getFilesCB(data) {
       console.log('GET_FOLDER_FILES', data)
       getFiles(data);
@@ -175,7 +175,7 @@ export default function AssetsPanel() {
     return () => {
       ipcMain.removeListener(GET_FOLDER_FILES, getFilesCB)
     }
-  }, [])
+  }, [loadProject])
 
   useEffect(() => {
     const refreshResources = (event: MessageEvent) => {
@@ -187,20 +187,22 @@ export default function AssetsPanel() {
 
   useEffect(() => {
     const lastFile = getLastLoadedFile()
-    if (treeData.length && lastFile) {
+    if (selectedTab === 'components' && treeData.length && lastFile) {
       console.log('treeData Files', lastFile)
       const node = treeRef.current.get(lastFile)
       // console.log('getLastLoadedFile node', node)
       treeRef.current.select(node)
     }
-  }, [treeData])
+  }, [selectedTab, treeData])
 
   useEffect(() => {
-    function updatePanelHeight() {
-      setPanelHeight(Math.max(0, window.innerHeight - PANEL_HEADER_HEIGHT));
-    }
-    window.addEventListener('resize', updatePanelHeight);
-    return () => window.removeEventListener('resize', updatePanelHeight);
+    const content = contentRef.current;
+    if (!content) return;
+    const updatePanelHeight = () => setPanelHeight(content.clientHeight);
+    updatePanelHeight();
+    const observer = new ResizeObserver(updatePanelHeight);
+    observer.observe(content);
+    return () => observer.disconnect();
   }, []);
 
   function onItemClick(node) {
@@ -240,12 +242,6 @@ export default function AssetsPanel() {
       return { kind: 'component', name: getComponentName(data.path) };
     }
     return { kind: 'asset', asset: data, name: data.name };
-  }
-
-  function changeSelected(tab) {
-    return function () {
-      setSelectedTab(tab)
-    }
   }
 
   async function handleCreateAsset(type: string, data: any) {
@@ -354,16 +350,8 @@ export default function AssetsPanel() {
   }
 
   return (
-    <div className='h-screen w-full min-w-0 bg-[#252525] text-[#dcdcdc]'>
-      <div className='flex h-8 border-b border-[#151515] bg-[#202020]'>
-        <AssetTypeBlock onClick={changeSelected('components')}
-          className={clsx({ 'bg-[#303846] text-[#f0f0f0] border-b-[#4a90e2]': selectedTab === 'components' })}
-        >Components</AssetTypeBlock>
-        <AssetTypeBlock onClick={changeSelected('res')}
-          className={clsx({ 'bg-[#303846] text-[#f0f0f0] border-b-[#4a90e2]': selectedTab === 'res' })}
-        >Resources</AssetTypeBlock>
-      </div>
-      <div className='h-[calc(100vh-2rem)] overflow-hidden'>
+    <div className='flex h-full w-full min-w-0 flex-col bg-[#252525] text-[#dcdcdc]'>
+      <div ref={contentRef} className='min-h-0 flex-1 overflow-hidden'>
         {selectedTab === 'components' && (
           <div className='flex h-10 items-center gap-2 border-b border-[#151515] bg-[#202020] px-2'>
             <Input

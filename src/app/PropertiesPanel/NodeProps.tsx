@@ -870,7 +870,7 @@ function NodeProps() {
     return Math.round(x - width * anchorX);
   }
 
-  return (<div className='h-screen overflow-y-auto bg-[#252525] pb-4'>
+  return (<div className='h-full overflow-y-auto bg-[#252525] pb-4'>
     <InspectorSection
       title='Node'
       headerAction={propEntries.length === 0 && selectedNode.tag !== 'Sprite' && (

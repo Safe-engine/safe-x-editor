@@ -39,6 +39,7 @@
     "watcherGlob": "**"
   },
   "devDependencies": {
+    "@danfessler/react-dockable": "^0.6.0",
     "@headlessui/react": "^1.7.19",
     "@safe-engine/sdl": "^1.2.16",
     "@types/estraverse": "^5.1.7",
