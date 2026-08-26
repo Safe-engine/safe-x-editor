@@ -41,6 +41,7 @@ export class PreviewScene extends PreviewSceneSelection {
   arrowSpriteHorizonNode: Node
   arrowSpriteVerticalNode: Node
   selectionBorderNode: Node
+  selectionNodeBorderNodes: Node[] = []
   selectionAnchorNode: Node
   selectionCornerNodes: Node[]
   rotationHandleNode: Node
@@ -208,7 +209,7 @@ export class PreviewScene extends PreviewSceneSelection {
     const scale = getLastSceneScale()
     let value = scale + offset
     if (value < 0.1) value = 0.1
-    if (value > 2) value = 2
+    if (value > 3.5) value = 3.5
     if (focus && value !== scale) {
       const x = focus.x - (focus.x - this.drawNode.x) * value / scale
       const y = focus.y - (focus.y - this.drawNode.y) * value / scale
@@ -220,8 +221,13 @@ export class PreviewScene extends PreviewSceneSelection {
     setLastSceneScale(value)
     this.borderNode.scale = value
     this.drawNode.scale = value
+    window.postMessage({ type: 'previewZoomChanged', scale: value }, '*')
     this.updateArrowPosition()
     this.syncSnapOverlay()
+  }
+
+  setRootScaleValue(value: number) {
+    this.setRootScale(value - getLastSceneScale())
   }
 
   createBorder() {
@@ -245,6 +251,7 @@ export class PreviewScene extends PreviewSceneSelection {
     this.drawNode.x = this.borderNode.x = getLastSceneX()
     this.drawNode.y = this.borderNode.y = getLastSceneY()
     this.drawNode.scale = this.borderNode.scale = getLastSceneScale()
+    window.postMessage({ type: 'previewZoomChanged', scale: getLastSceneScale() }, '*')
     this.syncSnapOverlay()
   }
 

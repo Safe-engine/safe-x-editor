@@ -169,5 +169,6 @@ export function registerMessageHandler(scene: PreviewScene) {
     else if (message.type === 'moveHierarchyNodes') void scene.moveHierarchyNodes(message.dragIds, message.parentId, message.index)
     else if (message.type === 'setSnapEnabled') scene.setSnapEnabled(message.enabled)
     else if (message.type === 'setSnapGuides') scene.setSnapGuides(message.verticalGuides, message.horizontalGuides)
+    else if (message.type === 'setSceneZoom' && Number.isFinite(message.scale)) scene.setRootScaleValue(message.scale)
   })
 }

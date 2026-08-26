@@ -1,6 +1,6 @@
 {
   "name": "safe-x-editor",
-  "version": "1.0.3",
+  "version": "1.1.0",
   "description": "react electron safex editor",
   "main": "build/main/index.js",
   "scripts": {

@@ -1,4 +1,5 @@
 import { sendRequest } from 'app/app.ipc';
+import { getLastSceneScale } from 'data/AppData';
 import QRCode from 'qrcode';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
@@ -16,6 +17,7 @@ export default function ScenePanelTitle() {
   const [isStartingDevServer, setIsStartingDevServer] = useState(false);
   const [devPageUrl, setDevPageUrl] = useState('');
   const [qrCodeUrl, setQrCodeUrl] = useState('');
+  const [zoomPercent, setZoomPercent] = useState(() => Math.round(getLastSceneScale() * 100));
 
   useEffect(() => {
     if (!devPageUrl) return;
@@ -25,6 +27,7 @@ export default function ScenePanelTitle() {
   useEffect(() => {
     const listener = (event: MessageEvent) => {
       if (event.data?.type === 'previewEditingState') setIsProjectDirty(event.data.isEditing);
+      if (event.data?.type === 'previewZoomChanged') setZoomPercent(Math.round(event.data.scale * 100));
     };
     window.addEventListener('message', listener);
     return () => window.removeEventListener('message', listener);
@@ -48,31 +51,32 @@ export default function ScenePanelTitle() {
   const stopTabInteraction = (event: React.PointerEvent | React.MouseEvent) => event.stopPropagation();
 
   return (
-    <span className='scene-panel-title' onPointerDown={stopTabInteraction}>
-      <button
-        type='button'
-        className={`flex h-6 w-6 items-center justify-center rounded-sm ${isProjectDirty ? 'text-[#ff5c5c] hover:bg-[#303846] hover:text-[#ff7777]' : 'text-[#aeb8c5] hover:bg-[#303846] hover:text-white'}`}
-        onClick={() => window.postMessage({ type: 'saveProject' }, '*')}
-        title='Save Project (Ctrl/Cmd+S)'
-        aria-label='Save Project'
-      >
-        <FiSave size={14} />
-      </button>
-      <button
-        type='button'
-        className='flex h-6 w-6 items-center justify-center rounded-sm text-[#aeb8c5] hover:bg-[#303846] hover:text-white disabled:cursor-not-allowed disabled:opacity-40'
-        onClick={() => {
-          loadComponent(filePath);
-          window.postMessage({ type: 'reLoad' }, '*');
-        }}
-        disabled={!filePath}
-        aria-label='Reload component'
-        title='Reload component'
-      >
-        <FiRefreshCw size={14} />
-      </button>
-      {devPageUrl ? (
-        <span className='group relative'>
+    <div className='scene-panel-title' onPointerDown={stopTabInteraction}>
+      <div className='pointer-events-auto flex items-center gap-0.5'>
+        <button
+          type='button'
+          className={`flex h-6 w-6 items-center justify-center rounded-sm ${isProjectDirty ? 'text-[#ff5c5c] hover:bg-[#303846] hover:text-[#ff7777]' : 'text-[#aeb8c5] hover:bg-[#303846] hover:text-white'}`}
+          onClick={() => window.postMessage({ type: 'saveProject' }, '*')}
+          title='Save Project (Ctrl/Cmd+S)'
+          aria-label='Save Project'
+        >
+          <FiSave size={14} />
+        </button>
+        <button
+          type='button'
+          className='flex h-6 w-6 items-center justify-center rounded-sm text-[#aeb8c5] hover:bg-[#303846] hover:text-white disabled:cursor-not-allowed disabled:opacity-40'
+          onClick={() => {
+            loadComponent(filePath);
+            window.postMessage({ type: 'reLoad' }, '*');
+          }}
+          disabled={!filePath}
+          aria-label='Reload component'
+          title='Reload component'
+        >
+          <FiRefreshCw size={14} />
+        </button>
+        {devPageUrl ? (
+          <span className='group relative'>
           <button
             type='button'
             className='flex h-6 w-6 items-center justify-center rounded-sm text-[#aeb8c5] hover:bg-[#303846] hover:text-white'
@@ -85,19 +89,37 @@ export default function ScenePanelTitle() {
             {qrCodeUrl && <img className='mx-auto h-48 w-48 rounded bg-white p-1' src={qrCodeUrl} alt={`QR code for ${devPageUrl}`} />}
             <span className='mt-2 block break-all text-[10px] text-[#aeb8c5]'>{devPageUrl}</span>
           </span>
-        </span>
-      ) : (
-        <button
-          type='button'
-          className='flex h-6 w-6 items-center justify-center rounded-sm text-[#aeb8c5] hover:bg-[#303846] hover:text-white disabled:cursor-not-allowed disabled:opacity-40'
-          onClick={() => void runDevServer()}
-          disabled={!rootFolder || isStartingDevServer}
-          aria-label='Run dev server'
-          title='Run dev server'
-        >
-          {isStartingDevServer ? <FiLoader className='animate-spin' size={14} /> : <FiPlay size={14} />}
-        </button>
-      )}
-    </span>
+          </span>
+        ) : (
+          <button
+            type='button'
+            className='flex h-6 w-6 items-center justify-center rounded-sm text-[#aeb8c5] hover:bg-[#303846] hover:text-white disabled:cursor-not-allowed disabled:opacity-40'
+            onClick={() => void runDevServer()}
+            disabled={!rootFolder || isStartingDevServer}
+            aria-label='Run dev server'
+            title='Run dev server'
+          >
+            {isStartingDevServer ? <FiLoader className='animate-spin' size={14} /> : <FiPlay size={14} />}
+          </button>
+        )}
+      </div>
+      <label className='pointer-events-auto flex h-6 items-center gap-2 text-xs text-[#aeb8c5]' title='Scene zoom'>
+        <input
+          type='range'
+          min={10}
+          max={350}
+          step={5}
+          value={zoomPercent}
+          className='h-1 w-20 cursor-pointer accent-[#4a90e2]'
+          aria-label='Scene zoom'
+          onChange={(event) => {
+            const nextZoomPercent = Number(event.target.value)
+            setZoomPercent(nextZoomPercent)
+            window.postMessage({ type: 'setSceneZoom', scale: nextZoomPercent / 100 }, '*')
+          }}
+        />
+        <span className='w-9 text-right'>{zoomPercent}%</span>
+      </label>
+    </div>
   );
 }

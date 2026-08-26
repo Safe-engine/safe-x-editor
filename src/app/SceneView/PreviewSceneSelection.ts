@@ -1,7 +1,8 @@
 import { MeshAttachment, RegionAttachment } from '@esotericsoftware/spine-core'
 import { Node, Scene, SpineSkeleton } from '@safe-engine/sdl'
 import { first } from 'lodash-es'
-import { getCurrentNode } from './utils'
+import { RectRender } from './loader'
+import { createNode, getCurrentNode } from './utils'
 
 export abstract class PreviewSceneSelection extends Scene {
   static readonly ARROW_HIT_RADIUS = 32
@@ -12,6 +13,7 @@ export abstract class PreviewSceneSelection extends Scene {
   declare arrowSpriteHorizonNode: Node
   declare arrowSpriteVerticalNode: Node
   declare selectionBorderNode: Node
+  declare selectionNodeBorderNodes: Node[]
   declare selectionAnchorNode: Node
   declare selectionCornerNodes: Node[]
   declare rotationHandleNode: Node
@@ -43,11 +45,17 @@ export abstract class PreviewSceneSelection extends Scene {
   updateArrowPosition() {
     if (this.marqueeSelection?.active || !this.editingPaths[0]) {
       this.arrowContainerNode.active = false
+      this.selectionNodeBorderNodes.forEach((border) => (border.active = false))
       return
     }
     if (this.editingPaths.length > 1) {
       this.selectionCornerNodes.forEach((corner) => (corner.active = false))
       this.rotationHandleNode.active = false
+      const selectionBorder = this.selectionBorderNode.getComponent(RectRender)
+      if (selectionBorder) {
+        selectionBorder.strokeColor = { r: 34, g: 197, b: 94, a: 255 }
+        selectionBorder.lineWidth = 2
+      }
       const combinedBounds = this.getCombinedBoundsFromPaths(this.editingPaths)
       if (!combinedBounds) {
         this.arrowContainerNode.active = false
@@ -62,10 +70,17 @@ export abstract class PreviewSceneSelection extends Scene {
       this.selectionBorderNode.anchorY = 0.5
       this.selectionBorderNode.scaleX = 1
       this.selectionBorderNode.scaleY = 1
+      this.updateSelectedNodeBorders()
       this.positionArrowGizmos(combinedBounds)
       return
     }
     const currentNode = getCurrentNode(this.drawNode, this.getChildrenIndex(this.editingPaths[0]))
+    const selectionBorder = this.selectionBorderNode.getComponent(RectRender)
+    if (selectionBorder) {
+      selectionBorder.strokeColor = { r: 34, g: 197, b: 94, a: 255 }
+      selectionBorder.lineWidth = 2
+    }
+    this.selectionNodeBorderNodes.forEach((border) => (border.active = false))
     this.arrowContainerNode.active = true
     this.arrowContainerNode.x = currentNode.worldX
     this.arrowContainerNode.y = currentNode.worldY
@@ -92,6 +107,32 @@ export abstract class PreviewSceneSelection extends Scene {
       corner.x = cornerPositions[index][0] - this.arrowContainerNode.x
       corner.y = cornerPositions[index][1] - this.arrowContainerNode.y
     })
+  }
+
+  updateSelectedNodeBorders() {
+    this.editingPaths.forEach((path, index) => {
+      const bounds = this.getNodeBounds(getCurrentNode(this.drawNode, this.getChildrenIndex(path)))
+      let border = this.selectionNodeBorderNodes[index]
+      if (!border) {
+        border = createNode('SelectedNodeBorder')
+        border.anchorX = 0
+        border.anchorY = 0
+        border.zIndex = -1
+        border.addComponent(new RectRender({ strokeColor: { r: 59, g: 130, b: 246, a: 255 }, lineWidth: 1 }))
+        this.arrowContainerNode.addChild(border)
+        this.selectionNodeBorderNodes[index] = border
+      }
+      if (!bounds) {
+        border.active = false
+        return
+      }
+      border.active = true
+      border.x = bounds.left - this.arrowContainerNode.x
+      border.y = bounds.top - this.arrowContainerNode.y
+      border.width = bounds.right - bounds.left
+      border.height = bounds.bottom - bounds.top
+    })
+    this.selectionNodeBorderNodes.slice(this.editingPaths.length).forEach((border) => (border.active = false))
   }
 
   positionArrowGizmos(bounds: SelectionBounds) {
@@ -223,11 +264,17 @@ export abstract class PreviewSceneSelection extends Scene {
     const anchorY = this.arrowContainerNode.y + this.selectionAnchorNode.y
     if (Math.abs(x - anchorX) <= this.selectionAnchorNode.width / 2 && Math.abs(y - anchorY) <= this.selectionAnchorNode.height / 2) return 'anchor' as const
     const radius = PreviewSceneSelection.ARROW_HIT_RADIUS
-    if (Math.abs(x - (this.arrowContainerNode.x + this.arrowSpriteHorizonNode.x)) <= radius && Math.abs(y - (this.arrowContainerNode.y + this.arrowSpriteHorizonNode.y)) <= radius) return 'x' as const
-    if (Math.abs(x - (this.arrowContainerNode.x + this.arrowSpriteVerticalNode.x)) <= radius && Math.abs(y - (this.arrowContainerNode.y + this.arrowSpriteVerticalNode.y)) <= radius) return 'y' as const
+    const horizontalCenter = this.arrowSpriteHorizonNode.contentToWorld(this.arrowSpriteHorizonNode.width / 2, this.arrowSpriteHorizonNode.height / 2)
+    if (Math.abs(x - horizontalCenter.x) <= radius && Math.abs(y - horizontalCenter.y) <= radius) return 'x' as const
+    const verticalCenter = this.arrowSpriteVerticalNode.contentToWorld(this.arrowSpriteVerticalNode.width / 2, this.arrowSpriteVerticalNode.height / 2)
+    if (Math.abs(x - verticalCenter.x) <= radius && Math.abs(y - verticalCenter.y) <= radius) return 'y' as const
   }
 
   isPointInsideSelectedNode(x: number, y: number) {
+    if (this.editingPaths.length > 1) {
+      const bounds = this.getCombinedBoundsFromPaths(this.editingPaths)
+      return Boolean(bounds && x >= bounds.left && x <= bounds.right && y >= bounds.top && y <= bounds.bottom)
+    }
     if (this.editingPaths.length !== 1) return false
     const node = getCurrentNode(this.drawNode, this.getChildrenIndex(this.editingPaths[0]))
     return this.isPointInsideNode(node, x, y)

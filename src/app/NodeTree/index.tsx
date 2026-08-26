@@ -124,8 +124,8 @@ export default function NodeTree() {
     // }
   }
 
-  const onFocusNode = (node) => {
-    const path = node.data.id;
+  const onFocusNode = (node: any) => {
+    const path = node?.data?.id || node?.id;
     if (!path) return;
     selectEditMultiNodes([path]);
     window.postMessage({ type: 'focusPreviewNode', path }, '*');
