@@ -32,4 +32,8 @@ To create a production build, run `bun run build`. On macOS, package the applica
 
 To start a new Safex project, choose **File > New** (`Cmd+N` or `Ctrl+N`), select a parent folder, and enter a project name. Creating a project downloads the Safex starter template and runs `bun install`, so it requires an internet connection and Bun on your `PATH`.
 
-Use **File > Open With** to reveal the current project in Finder or open it in VS Code, Codex, or another configured application.
+Use **File > Open With** to reveal the current project in Finder (macOS) or File Explorer (Windows/Linux), or open it in VS Code, Codex, or another configured application. On Windows, choose an `.exe` file when adding another application.
+
+### Preview on another device
+
+With a project open, select the play button in the Scene toolbar to start its `bun run dev` server. The editor opens the local page in your browser and replaces the play button with a QR-code button. Select it to scan the LAN address with another device on the same network, copy the address, or open it in a browser. Bun must be available on your `PATH` for this feature.
