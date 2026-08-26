@@ -73,7 +73,8 @@ export default class MenuBuilder {
     ipcMain.handle(ADD_OPEN_WITH_APP_REQUEST, () => {
       const [appPath] = dialog.showOpenDialogSync(this.mainWindow, {
         title: 'Select an application to open projects',
-        properties: ['openFile', 'openDirectory'],
+        properties: ['openFile'],
+        ...(process.platform === 'win32' ? { filters: [{ name: 'Applications', extensions: ['exe'] }] } : {}),
       }) || []
       if (!appPath) return { apps: this.getCustomAppPaths() }
 
@@ -101,9 +102,42 @@ export default class MenuBuilder {
       return
     }
 
-    execFile(application, [projectPath], error => {
+    execFile(this.getApplicationCommand(application), [projectPath], error => {
       if (error) dialog.showErrorBox('Unable to open project', `Could not open ${application}.`)
     })
+  }
+
+  getApplicationCommand(application: string) {
+    if (process.platform !== 'win32') {
+      if (application === 'Visual Studio Code') return 'code'
+      if (application === 'Codex') return 'codex'
+      return application
+    }
+
+    const executableNames: Record<string, { executable: string; folders: string[]; fallback: string }> = {
+      'Visual Studio Code': {
+        executable: 'Code.exe',
+        folders: ['Microsoft VS Code'],
+        fallback: 'code',
+      },
+      Codex: {
+        executable: 'Codex.exe',
+        folders: ['Codex'],
+        fallback: 'codex',
+      },
+    }
+    const configuredApp = executableNames[application]
+    if (!configuredApp) return application
+
+    const userInstallRoot = process.env.LOCALAPPDATA
+    const systemInstallRoots = [process.env.PROGRAMFILES, process.env['PROGRAMFILES(X86)']].filter(Boolean) as string[]
+    const executablePath = [
+      ...(userInstallRoot ? configuredApp.folders.map(folder => join(userInstallRoot, 'Programs', folder, configuredApp.executable)) : []),
+      ...systemInstallRoots.flatMap(root => configuredApp.folders.map(folder => join(root, folder, configuredApp.executable))),
+    ]
+      .find(path => existsSync(path))
+
+    return executablePath || configuredApp.fallback
   }
 
   showProjectInFinder() {
@@ -153,7 +187,7 @@ export default class MenuBuilder {
   buildOpenWithSubmenu() {
     const submenu: any[] = [
       {
-        label: 'Finder',
+        label: process.platform === 'darwin' ? 'Finder' : 'File Explorer',
         click: () => this.showProjectInFinder(),
       },
       {
