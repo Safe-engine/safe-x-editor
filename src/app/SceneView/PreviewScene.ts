@@ -3,6 +3,7 @@ import { getLastLoadedFile, getLastRootFolder, getLastSceneScale, getLastSceneX,
 import { GlobalState } from 'data/GloablState'
 import { normalizeNodeProps, parseBoolFromValue, parseFloatFromValue } from 'helper/node'
 import { cloneDeep, first, isNumber, parseInt, set } from 'lodash-es'
+import toast from 'react-hot-toast'
 import { sendRequest } from '../app.ipc'
 import { arrow } from './assets'
 import { CircleRender } from './CircleRender'
@@ -40,6 +41,7 @@ export class PreviewScene extends PreviewSceneSelection {
   arrowSpriteHorizonNode: Node
   arrowSpriteVerticalNode: Node
   selectionBorderNode: Node
+  selectionNodeBorderNodes: Node[] = []
   selectionAnchorNode: Node
   selectionCornerNodes: Node[]
   rotationHandleNode: Node
@@ -52,10 +54,15 @@ export class PreviewScene extends PreviewSceneSelection {
   borderNode: Node
   isEditing = false
   isMiddleMouse = false
+  isRightMouse = false
+  isPanMouse = false
   isShiftPressed = false
   isMultiSelectModifierPressed = false
   lockX = false
   lockY = false
+  snapEnabled = true
+  verticalSnapGuides: number[] = []
+  horizontalSnapGuides: number[] = []
   editingPaths: any[] = []
   editingComponent: any[] = []
   editingComponentName = ''
@@ -68,8 +75,10 @@ export class PreviewScene extends PreviewSceneSelection {
   didCaptureDragHistory = false
   logicalCanvasWidth = window.innerWidth
   lastTouch?: { x: number; y: number }
+  panSelectionPaths?: string[]
   middleMouseSelectionPaths?: string[]
   activeArrowAxis?: 'x' | 'y' | 'move' | 'anchor'
+  activeScaleCorner?: 'top-left' | 'top-right'
   activeResizeEdge?: ResizeHandle
   isRotating = false
   activeSpineBonePoint?: { componentIndex: number; pointIndex: number }
@@ -109,6 +118,28 @@ export class PreviewScene extends PreviewSceneSelection {
   updateInputModifiers(modifiers: { shiftKey?: boolean; ctrlKey?: boolean; metaKey?: boolean }) {
     this.isShiftPressed = Boolean(modifiers.shiftKey)
     this.isMultiSelectModifierPressed = Boolean(modifiers.ctrlKey || modifiers.metaKey)
+  }
+
+  syncSnapOverlay() {
+    window.postMessage({
+      type: 'snapOverlayTransform',
+      transform: {
+        x: this.drawNode.x,
+        y: this.drawNode.y,
+        scaleX: this.drawNode.scaleX || 1,
+        scaleY: this.drawNode.scaleY || 1,
+        logicalWidth: this.logicalCanvasWidth,
+      },
+    }, '*')
+  }
+
+  setSnapEnabled(enabled: boolean) {
+    this.snapEnabled = Boolean(enabled)
+  }
+
+  setSnapGuides(verticalGuides: unknown, horizontalGuides: unknown) {
+    this.verticalSnapGuides = Array.isArray(verticalGuides) ? verticalGuides.filter(isNumber) : []
+    this.horizontalSnapGuides = Array.isArray(horizontalGuides) ? horizontalGuides.filter(isNumber) : []
   }
 
   toggleSelectPath(path?: string) {
@@ -174,15 +205,29 @@ export class PreviewScene extends PreviewSceneSelection {
     }
   }
 
-  setRootScale(offset: number) {
+  setRootScale(offset: number, focus?: { x: number; y: number }) {
     const scale = getLastSceneScale()
     let value = scale + offset
     if (value < 0.1) value = 0.1
-    if (value > 2) value = 2
+    if (value > 3.5) value = 3.5
+    if (focus && value !== scale) {
+      const x = focus.x - (focus.x - this.drawNode.x) * value / scale
+      const y = focus.y - (focus.y - this.drawNode.y) * value / scale
+      this.drawNode.x = this.borderNode.x = x
+      this.drawNode.y = this.borderNode.y = y
+      setLastSceneX(x)
+      setLastSceneY(y)
+    }
     setLastSceneScale(value)
     this.borderNode.scale = value
     this.drawNode.scale = value
+    window.postMessage({ type: 'previewZoomChanged', scale: value }, '*')
     this.updateArrowPosition()
+    this.syncSnapOverlay()
+  }
+
+  setRootScaleValue(value: number) {
+    this.setRootScale(value - getLastSceneScale())
   }
 
   createBorder() {
@@ -206,6 +251,8 @@ export class PreviewScene extends PreviewSceneSelection {
     this.drawNode.x = this.borderNode.x = getLastSceneX()
     this.drawNode.y = this.borderNode.y = getLastSceneY()
     this.drawNode.scale = this.borderNode.scale = getLastSceneScale()
+    window.postMessage({ type: 'previewZoomChanged', scale: getLastSceneScale() }, '*')
+    this.syncSnapOverlay()
   }
 
   createArrows() {
@@ -230,7 +277,7 @@ export class PreviewScene extends PreviewSceneSelection {
         lineWidth: 2,
       }),
     )
-    selectionCorners.forEach((corner) => {
+    selectionCorners.forEach((corner, index) => {
       corner.width = PreviewScene.RESIZE_CORNER_SIZE
       corner.height = PreviewScene.RESIZE_CORNER_SIZE
       corner.anchorX = 0.5
@@ -238,8 +285,8 @@ export class PreviewScene extends PreviewSceneSelection {
       corner.zIndex = -1
       corner.addComponent(
         new RectRender({
-          fillColor: { r: 255, g: 255, b: 255, a: 255 },
-          strokeColor: { r: 34, g: 197, b: 94, a: 255 },
+          fillColor: index < 2 ? { r: 219, g: 234, b: 254, a: 255 } : { r: 254, g: 243, b: 199, a: 255 },
+          strokeColor: index < 2 ? { r: 37, g: 99, b: 235, a: 255 } : { r: 217, g: 119, b: 6, a: 255 },
           lineWidth: 2,
         }),
       )
@@ -257,8 +304,10 @@ export class PreviewScene extends PreviewSceneSelection {
     this.selectionAnchorNode = selectionAnchor
     this.selectionCornerNodes = selectionCorners
     this.rotationHandleNode = rotationHandle
+    arrowSpriteVertical.anchorY = 1
     arrowSpriteVertical.y = 48
     arrowSpriteVertical.color = { r: 255, g: 0, b: 0, a: 255 }
+    arrowSpriteHorizon.anchorY = 1
     arrowSpriteHorizon.x = 48
     arrowSpriteHorizon.rotation = 90
     arrowSpriteVertical.rotation = 180
@@ -773,6 +822,11 @@ export class PreviewScene extends PreviewSceneSelection {
         return node
       })
     this.editingComponent = removeSelectedNodes(this.editingComponent)
+    const assignIds = (nodes: any[], prefix = '') => nodes.forEach((node, nodeIndex) => {
+      node.id = prefix ? `${prefix}-${nodeIndex}` : `${nodeIndex}`
+      assignIds(node.children || [], node.id)
+    })
+    assignIds(this.editingComponent)
     window.postMessage({ type: 'previewRestoreComponentTree', treeData: this.editingComponent, selectPaths: [] }, '*')
     this.changeSelectPath([])
     await this.reloadEditingComponent()
@@ -806,41 +860,72 @@ export class PreviewScene extends PreviewSceneSelection {
     }
     const parentNode = parentId ? findNode(this.editingComponent, parentId) : undefined
     const children = parentNode?.children ?? (sceneRoot.children ??= [])
-    const id = parentNode ? `${parentNode.id}-${children.length}` : `${sceneRoot.id}-${children.length}`
-    const asset = item.asset || {}
-    const assetKey = asset.key || asset.name
-    const node = item.kind === 'component'
-      ? {
-        id,
-        expanded: true,
-        tag: item.name,
-        props: item.name === 'UILayout'
-          ? { node: { width: 200, height: 200 } }
-          : ['Label', 'RichText'].includes(item.name) ? { string: '' } : {},
-        components: [],
-        children: [],
-      }
-      : asset.type === 'spine'
-        ? { id, expanded: true, tag: 'SpineSkeleton', props: { data: assetKey }, components: [], children: [] }
-      : asset.type === 'dragonBones'
-        ? { id, expanded: true, tag: 'DragonBones', props: { data: assetKey }, components: [], children: [] }
-      : asset.type === 'dicedSprite'
-        ? { id, expanded: true, tag: 'DicedSprite', props: { data: assetKey, animation: asset.json?.animations?.[0]?.name || '' }, components: [], children: [] }
-      : asset.type === 'tiledMap'
-        ? { id, expanded: true, tag: 'TiledMap', props: { mapFile: assetKey }, components: [], children: [] }
-      : asset.type === 'font'
-        ? { id, expanded: true, tag: 'Label', props: { string: '', font: assetKey }, components: [], children: [] }
-      : asset.type === 'spriteFrame' || asset.type === 'frame'
-        ? { id, expanded: true, tag: 'Sprite', props: { spriteFrame: assetKey }, components: [], children: [] }
-        : { id, expanded: true, tag: 'Node', props: {}, components: [], children: [] }
+    const items = Array.isArray(item.items) ? item.items : [item]
     const position = this.getScenePositionFromClient(clientX, clientY)
-    if (position) setNodePositionProps(node.props, position.x, position.y)
+    const nodes = items.filter(Boolean).map((droppedItem, index) => {
+      const childIndex = children.length + index
+      const id = parentNode ? `${parentNode.id}-${childIndex}` : `${sceneRoot.id}-${childIndex}`
+      const asset = droppedItem.asset || {}
+      const assetKey = asset.key || asset.name
+      const node = droppedItem.kind === 'component'
+        ? {
+          id,
+          expanded: true,
+          tag: droppedItem.name,
+          props: droppedItem.name === 'UILayout'
+            ? { node: { width: 200, height: 200 } }
+            : ['Label', 'RichText'].includes(droppedItem.name) ? { string: '' } : {},
+          components: [],
+          children: [],
+        }
+        : asset.type === 'spine'
+          ? { id, expanded: true, tag: 'SpineSkeleton', props: { data: assetKey }, components: [], children: [] }
+        : asset.type === 'dragonBones'
+          ? { id, expanded: true, tag: 'DragonBones', props: { data: assetKey }, components: [], children: [] }
+        : asset.type === 'dicedSprite'
+          ? { id, expanded: true, tag: 'DicedSprite', props: { data: assetKey, animation: asset.json?.animations?.[0]?.name || '' }, components: [], children: [] }
+        : asset.type === 'tiledMap'
+          ? { id, expanded: true, tag: 'TiledMap', props: { mapFile: assetKey }, components: [], children: [] }
+        : asset.type === 'font'
+          ? { id, expanded: true, tag: 'Label', props: { string: '', font: assetKey }, components: [], children: [] }
+        : asset.type === 'spriteFrame' || asset.type === 'frame'
+          ? { id, expanded: true, tag: 'Sprite', props: { spriteFrame: assetKey }, components: [], children: [] }
+          : { id, expanded: true, tag: 'Node', props: {}, components: [], children: [] }
+      if (position) setNodePositionProps(node.props, position.x, position.y)
+      return node
+    })
+    if (!nodes.length) return
 
     this.pushUndoHistory()
-    children.push(node)
-    this.editingPaths = [id]
+    children.push(...nodes)
+    this.editingPaths = nodes.map((node) => node.id)
     await this.reloadEditingComponent()
     window.postMessage({ type: 'previewRestoreComponentTree', treeData: this.editingComponent, selectPaths: this.editingPaths }, '*')
+  }
+
+  async importPngAsSprite(sourcePaths: string[], clientX?: number, clientY?: number) {
+    const rootFolder = getLastRootFolder()
+    if (!rootFolder || !sourcePaths?.length) return
+    const response: any = await sendRequest({
+      key: 'IMPORT_RESOURCES_REQUEST',
+      rootFolder,
+      resourcePath: 'Texture',
+      sourcePaths,
+    })
+    const assets = response?.assets || []
+    if (!response || response.error || !assets.length) {
+      toast.error(response?.message || 'Unable to import PNG as a Sprite')
+      return
+    }
+
+    await this.reloadProjectData()
+    await this.addDroppedNode({
+      items: assets
+        .filter((asset) => asset.key)
+        .map((asset) => ({ kind: 'asset', asset: { type: 'spriteFrame', key: asset.key, path: asset.path } })),
+    }, undefined, clientX, clientY)
+    window.postMessage({ type: 'resourcesImported', rootFolder }, '*')
+    toast.success(`Imported ${assets.length} PNG${assets.length === 1 ? '' : 's'} as Sprite${assets.length === 1 ? '' : 's'}`)
   }
 
   async moveHierarchyNodes(dragIds: string[], parentId: string | null, index: number | null) {
@@ -862,6 +947,11 @@ export class PreviewScene extends PreviewSceneSelection {
 
     if (!draggedNodes.length || !targetChildren || draggedNodes.some((node) => node.tag === 'SceneComponent' || containsNode(node, parentNode))) return
 
+    const worldPositions = new Map<any, { x: number; y: number }>()
+    draggedNodes.forEach((node) => {
+      const runtimeNode = getCurrentNode(this.drawNode, this.getChildrenIndex(node.id))
+      if (runtimeNode) worldPositions.set(node, { x: runtimeNode.worldX, y: runtimeNode.worldY })
+    })
     this.pushUndoHistory()
     const movedIds = new Set(draggedNodes.map((node) => node.id))
     const targetIndex = Math.max(0, Math.min(index ?? targetChildren.length, targetChildren.length))
@@ -887,6 +977,20 @@ export class PreviewScene extends PreviewSceneSelection {
     assignIds(this.editingComponent)
     this.editingPaths = draggedNodes.map((node) => node.id)
     await this.reloadEditingComponent()
+    draggedNodes.forEach((node) => {
+      const worldPosition = worldPositions.get(node)
+      const runtimeNode = getCurrentNode(this.drawNode, this.getChildrenIndex(node.id))
+      if (!worldPosition || !runtimeNode) return
+
+      const position = (runtimeNode.parent ?? this.drawNode).convertToNodeSpace(worldPosition)
+      runtimeNode.x = position.x
+      runtimeNode.y = position.y
+      node.props ??= {}
+      setNodePositionProps(node.props, position.x, position.y)
+      normalizeNodeProps(node.props)
+    })
+    this.syncEditingFlag()
+    this.updateArrowPosition()
     window.postMessage({ type: 'previewRestoreComponentTree', treeData: this.editingComponent, selectPaths: this.editingPaths }, '*')
   }
 
@@ -976,8 +1080,37 @@ export class PreviewScene extends PreviewSceneSelection {
         if (editNode.children[index - componentChildrenNum]) editNode = editNode.children[index - componentChildrenNum]
       })
       const widgetProps = editNode?.components?.find((component) => component.tag === 'Widget')?.props || {}
-      const nodeMoveX = parseBoolFromValue(widgetProps.centerHorizon) ? 0 : moveX
-      const nodeMoveY = parseBoolFromValue(widgetProps.centerVertical) ? 0 : moveY
+      let nodeMoveX = parseBoolFromValue(widgetProps.centerHorizon) ? 0 : moveX
+      let nodeMoveY = parseBoolFromValue(widgetProps.centerVertical) ? 0 : moveY
+      if (this.snapEnabled) {
+        const parent = currentNode.parent ?? this.drawNode
+        const parentScaleX = parent.worldScaleX || 1
+        const parentScaleY = parent.worldScaleY || 1
+        const bounds = this.getNodeBounds(currentNode)
+        const findSnapOffset = (guides: number[], positions: number[], offset: number, scale: number) => guides
+          .map((guide) => offset + guide * scale)
+          .flatMap((guide) => positions.map((position) => ({ guide, offset: guide - position })))
+          .filter(({ offset }) => Math.abs(offset) <= 8)
+          .sort((left, right) => Math.abs(left.offset) - Math.abs(right.offset))[0]?.offset
+        const snapX = findSnapOffset(
+          this.verticalSnapGuides,
+          bounds
+            ? [bounds.left, (bounds.left + bounds.right) / 2, bounds.right].map((position) => position + nodeMoveX * parentScaleX)
+            : [currentNode.worldX + nodeMoveX * parentScaleX],
+          this.drawNode.x,
+          this.drawNode.worldScaleX || 1,
+        )
+        const snapY = findSnapOffset(
+          this.horizontalSnapGuides,
+          bounds
+            ? [bounds.top, (bounds.top + bounds.bottom) / 2, bounds.bottom].map((position) => position + nodeMoveY * parentScaleY)
+            : [currentNode.worldY + nodeMoveY * parentScaleY],
+          this.drawNode.y,
+          this.drawNode.worldScaleY || 1,
+        )
+        if (snapX !== undefined) nodeMoveX += snapX / parentScaleX
+        if (snapY !== undefined) nodeMoveY += snapY / parentScaleY
+      }
       currentNode.x = (isNumber(currentNode.x) ? currentNode.x : 0) + nodeMoveX
       currentNode.y = (isNumber(currentNode.y) ? currentNode.y : 0) + nodeMoveY
       const nx = Math.round(currentNode.x)
@@ -1098,6 +1231,48 @@ export class PreviewScene extends PreviewSceneSelection {
     return true
   }
 
+  scaleSelectedNode(corner: 'top-left' | 'top-right', dx: number) {
+    if (this.editingPaths.length !== 1) return false
+    const editingPath = this.editingPaths[0]
+    const currentNode = getCurrentNode(this.drawNode, this.getChildrenIndex(editingPath))
+    const parent = currentNode.parent ?? this.drawNode
+    const parentScaleX = Math.abs(parent.worldScaleX || this.drawNode.scaleX || 1)
+    const width = Math.max(1, currentNode.width * parentScaleX)
+    const scaleDelta = (corner === 'top-left' ? -dx : dx) / width
+    const scaleX = currentNode.scaleX || 1
+    const scaleY = currentNode.scaleY || 1
+    const scaleFactor = Math.max(0.1 / Math.max(Math.abs(scaleX), 0.001), 1 + scaleDelta / Math.max(Math.abs(scaleX), 0.001))
+    const nextScaleX = this.lockX ? scaleX : Number((scaleX * scaleFactor).toFixed(3))
+    const nextScaleY = this.lockY ? scaleY : Number((scaleY * scaleFactor).toFixed(3))
+    if (nextScaleX === scaleX && nextScaleY === scaleY) return false
+
+    currentNode.scaleX = nextScaleX
+    currentNode.scaleY = nextScaleY
+    const editNode = this.getEditingNodeByPath(editingPath)
+    if (!editNode) return false
+    editNode.props ??= {}
+    editNode.props.node ??= {}
+    editNode.props.node.scale = undefined
+    editNode.props.node.scaleX = nextScaleX
+    editNode.props.node.scaleY = nextScaleY
+    normalizeNodeProps(editNode.props)
+    const didUpdateWidget = this.syncWidgetInsets(editNode, currentNode)
+    this.syncEditingFlag()
+    window.postMessage({
+      type: 'previewUpdateSelectedNodes',
+      selectPaths: this.editingPaths,
+      nodes: [{ component: 'props', updated: editNode.props }],
+    }, '*')
+    if (didUpdateWidget) {
+      window.postMessage({
+        type: 'previewUpdateSelectedNodes',
+        selectPaths: [editingPath],
+        nodes: [{ component: 'components', updated: editNode.components }],
+      }, '*')
+    }
+    return true
+  }
+
   getRotationAngle(node: Node, x: number, y: number) {
     return Math.atan2(y - node.worldY, x - node.worldX) * 180 / Math.PI
   }
@@ -1194,6 +1369,7 @@ export class PreviewScene extends PreviewSceneSelection {
     setLastSceneX(this.drawNode.x)
     setLastSceneY(this.drawNode.y)
     this.updateArrowPosition()
+    this.syncSnapOverlay()
   }
 
   onTouchStart(event: Touch) {
@@ -1201,9 +1377,12 @@ export class PreviewScene extends PreviewSceneSelection {
     const { x, y } = event
     this.lastTouch = { x, y }
     this.didCaptureDragHistory = false
+    this.activeScaleCorner = undefined
     this.marqueeSelection = undefined
-    if (this.isMiddleMouse) {
+    const isPanMode = this.isPanMouse || this.isRightMouse
+    if (isPanMode) {
       this.activeArrowAxis = undefined
+      this.activeScaleCorner = undefined
       this.activeResizeEdge = undefined
       this.isRotating = false
       this.activeSpineBonePoint = undefined
@@ -1213,7 +1392,8 @@ export class PreviewScene extends PreviewSceneSelection {
       this.updateArrowOpacity()
       return
     }
-    const isModifierSelecting = this.isMultiSelectModifierPressed && !this.isMiddleMouse
+    if (this.isMiddleMouse) return
+    const isModifierSelecting = this.isMultiSelectModifierPressed && !isPanMode
     this.activeSpineBonePoint = isModifierSelecting || this.isShiftPressed ? undefined : this.getActiveSpineBonePoint(x, y)
     this.activeBoxColliderResizeEdge = isModifierSelecting || this.isShiftPressed ? undefined : this.getActiveBoxColliderResizeEdge(x, y)
     this.activeBoxColliderOffset = this.activeBoxColliderResizeEdge || isModifierSelecting || this.isShiftPressed
@@ -1258,11 +1438,17 @@ export class PreviewScene extends PreviewSceneSelection {
       ? undefined
       : this.getActiveArrowAxis(x, y)
     this.activeArrowAxis = activeArrowAxis === 'anchor' ? activeArrowAxis : undefined
-    this.activeResizeEdge = this.isRotating || isModifierSelecting || this.activeArrowAxis
+    this.activeScaleCorner = this.isRotating || isModifierSelecting || this.activeArrowAxis
+      ? undefined
+      : this.getActiveScaleCorner(x, y)
+    this.activeResizeEdge = this.isRotating || isModifierSelecting || this.activeArrowAxis || this.activeScaleCorner
       ? undefined
       : this.getActiveResizeEdge(x, y)
-    if (!this.activeArrowAxis && !this.activeResizeEdge) this.activeArrowAxis = activeArrowAxis
-    if (this.isShiftPressed && !this.isMiddleMouse) {
+    if (!this.activeArrowAxis && !this.activeScaleCorner && !this.activeResizeEdge) this.activeArrowAxis = activeArrowAxis
+    if (!this.isRotating && !this.activeScaleCorner && !this.activeResizeEdge && !this.activeArrowAxis && !isModifierSelecting && this.isPointInsideSelectedNode(x, y)) {
+      this.activeArrowAxis = 'move'
+    }
+    if (!this.isRotating && !this.activeScaleCorner && !this.activeResizeEdge && !this.activeArrowAxis && !isModifierSelecting && !isPanMode) {
       this.activeArrowAxis = undefined
       this.activeResizeEdge = undefined
       this.isRotating = false
@@ -1272,7 +1458,7 @@ export class PreviewScene extends PreviewSceneSelection {
       this.updateArrowOpacity()
       return
     }
-    if (!this.isRotating && !this.activeResizeEdge && !this.activeArrowAxis && !this.isMiddleMouse) {
+    if (!this.isRotating && !this.activeScaleCorner && !this.activeResizeEdge && !this.activeArrowAxis && !isPanMode) {
       const selectedPath = this.findSelectionPath(x, y)
       if (isModifierSelecting) {
         this.toggleSelectPath(selectedPath)
@@ -1286,8 +1472,11 @@ export class PreviewScene extends PreviewSceneSelection {
   onTouchMove(event: Touch) {
     if (this.isSaveDialogVisible()) return
     const { x, y } = event
-    if (this.isMiddleMouse && this.middleMouseSelectionPaths && this.editingPaths.join(',') !== this.middleMouseSelectionPaths.join(',')) {
-      this.changeSelectPath(this.middleMouseSelectionPaths)
+    const isPanMode = this.isPanMouse || this.isRightMouse
+    if (this.isMiddleMouse) return
+    const savedSelectionPaths = this.panSelectionPaths ?? this.middleMouseSelectionPaths
+    if (isPanMode && savedSelectionPaths && this.editingPaths.join(',') !== savedSelectionPaths.join(',')) {
+      this.changeSelectPath(savedSelectionPaths)
     }
     const last = this.lastTouch ?? { x, y }
     const dx = x - last.x
@@ -1328,14 +1517,16 @@ export class PreviewScene extends PreviewSceneSelection {
       this.resizeBoxCollider(this.activeBoxColliderResizeEdge, dx, dy)
       return
     }
-    if (!this.editingPaths[0] || this.isMiddleMouse) {
+    if (isPanMode) {
       this.drawNode.x += dx
       this.drawNode.y += dy
       this.borderNode.x = this.drawNode.x
       this.borderNode.y = this.drawNode.y
       setLastSceneX(this.drawNode.x)
       setLastSceneY(this.drawNode.y)
+      this.syncSnapOverlay()
     } else {
+      if (!this.editingPaths[0]) return
       const selectedNode = getCurrentNode(this.drawNode, this.getChildrenIndex(this.editingPaths[0]))
       if (this.isRotating) {
         if (!this.didCaptureDragHistory) {
@@ -1343,6 +1534,15 @@ export class PreviewScene extends PreviewSceneSelection {
           this.didCaptureDragHistory = true
         }
         this.rotateSelectedNode(x, y)
+        this.updateArrowPosition()
+        return
+      }
+      if (this.activeScaleCorner) {
+        if (!this.didCaptureDragHistory) {
+          this.pushUndoHistory()
+          this.didCaptureDragHistory = true
+        }
+        this.scaleSelectedNode(this.activeScaleCorner, dx)
         this.updateArrowPosition()
         return
       }
@@ -1382,7 +1582,7 @@ export class PreviewScene extends PreviewSceneSelection {
     if (this.marqueeSelection) {
       if (!this.marqueeSelection.active) {
         const selectedPath = this.findSelectionPath(this.marqueeSelection.startX, this.marqueeSelection.startY)
-        this.changeSelectPath(selectedPath ? [selectedPath] : [])
+        if (selectedPath) this.changeSelectPath([selectedPath])
       }
       this.marqueeSelection = undefined
       this.marqueeSelectionNode.active = false
@@ -1390,6 +1590,7 @@ export class PreviewScene extends PreviewSceneSelection {
     }
     this.lastTouch = undefined
     this.activeArrowAxis = undefined
+    this.activeScaleCorner = undefined
     this.activeResizeEdge = undefined
     this.isRotating = false
     this.activeSpineBonePoint = undefined

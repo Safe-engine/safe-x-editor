@@ -3,22 +3,21 @@ import { ipcMain } from 'helper/electronRemote';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Tree, TreeApi } from 'react-arborist';
 import toast from 'react-hot-toast';
-import { FiRefreshCw } from 'react-icons/fi';
 import { GEN_COMPONENT_REQUEST } from 'shared/constant.message';
 import { useActions, useSelector } from 'states/app.context';
 import { selectComponentTree, selectSelectedFilePath, selectSelectedPaths } from 'states/app.selectors';
 import { TreeItem } from './TreeItem';
 
 export default function NodeTree() {
-  const { loadComponent, selectEditingTagNode, selectEditMultiNodes } = useActions();
-  const treeData = useSelector(selectComponentTree);
+  const { selectEditingTagNode, selectEditMultiNodes } = useActions();
+  const treeData = useSelector(selectComponentTree) || [];
   const filePath = useSelector(selectSelectedFilePath);
   const selectedPaths = useSelector(selectSelectedPaths);
   const treeRef = useRef<TreeApi<any> | undefined>(undefined);
   const treeContainerRef = useRef<HTMLDivElement>(null);
   const isApplyingPreviewSelection = useRef(false);
   const [selectedTreeItem, setSelectedTreeItem] = useState<any>({});
-  const [treeHeight, setTreeHeight] = useState(0);
+  const [treeHeight, setTreeHeight] = useState(() => Math.max(0, typeof window !== 'undefined' ? window.innerHeight - 32 : 500));
 
   useEffect(() => {
     if (treeData && treeData[0]) {
@@ -44,7 +43,11 @@ export default function NodeTree() {
     const container = treeContainerRef.current;
     if (!container) return;
 
-    const updateTreeHeight = () => setTreeHeight(container.clientHeight);
+    const updateTreeHeight = () => {
+      if (container.clientHeight > 0) {
+        setTreeHeight(container.clientHeight);
+      }
+    };
     updateTreeHeight();
 
     const observer = new ResizeObserver(updateTreeHeight);
@@ -121,8 +124,8 @@ export default function NodeTree() {
     // }
   }
 
-  const onFocusNode = (node) => {
-    const path = node.data.id;
+  const onFocusNode = (node: any) => {
+    const path = node?.data?.id || node?.id;
     if (!path) return;
     selectEditMultiNodes([path]);
     window.postMessage({ type: 'focusPreviewNode', path }, '*');
@@ -156,25 +159,7 @@ export default function NodeTree() {
   }
 
   return (
-    <div className='flex h-full flex-col bg-[#252525] text-[#dcdcdc]' >
-      <div className='flex h-8 shrink-0 items-center border-b border-[#151515] bg-[#202020] px-2'>
-        <div className='min-w-0 text-[11px] font-bold uppercase tracking-wide text-[#dcdcdc]'>
-          Hierarchy
-        </div>
-        <button
-          type='button'
-          className='ml-auto flex h-6 w-6 items-center justify-center rounded-sm text-[#aeb8c5] hover:bg-[#303846] hover:text-white disabled:cursor-not-allowed disabled:opacity-40'
-          onClick={() => {
-            loadComponent(filePath)
-            window.postMessage({ type: 'reLoad' }, '*')
-          }}
-          disabled={!filePath}
-          aria-label='Reload component'
-          title='Reload component'
-        >
-          <FiRefreshCw size={14} />
-        </button>
-      </div>
+    <div className='flex w-full flex-col bg-[#252525] text-[#dcdcdc]' >
       <div
         ref={treeContainerRef}
         className='min-h-0 flex-1'
@@ -189,7 +174,7 @@ export default function NodeTree() {
         <Tree
           ref={treeRef}
           className='px-1 py-1'
-          data={treeData[0]?.tag === 'SceneComponent' ? treeData[0].children : treeData}
+          data={treeData[0]?.tag === 'SceneComponent' ? (treeData[0].children || []) : treeData}
           height={treeHeight}
           width="100%"
           onSelect={

@@ -227,11 +227,12 @@ function getSpriteFrameNamesUsedByProps(nodesData, spriteFrameNames: Set<string>
 
 function addSpriteFrameImports(content: string, filePath: string, nodesData) {
   const spriteFramesFilePath = pathUtil.join(GlobalData.rootProject, 'src', 'assets', 'TextureAssets.ts');
+  const assetsFolderPath = pathUtil.dirname(spriteFramesFilePath);
   const spriteFrameNames = new Set(parseAssetsSrcFile(spriteFramesFilePath).map((asset) => asset.key));
   const usedSpriteFrameNames = getSpriteFrameNamesUsedByProps(nodesData, spriteFrameNames);
   if (!usedSpriteFrameNames.length) return content;
 
-  let importPath = pathUtil.relative(pathUtil.dirname(filePath), spriteFramesFilePath).replace(/\\/g, '/').replace(/\.ts$/, '');
+  let importPath = pathUtil.relative(pathUtil.dirname(filePath), assetsFolderPath).replace(/\\/g, '/');
   if (!importPath.startsWith('.')) importPath = `./${importPath}`;
   const importPattern = new RegExp(`import\\s+\\{([^}]*)\\}\\s+from\\s+(['"])${escapeRegExp(importPath)}\\2;?`);
   const match = importPattern.exec(content);

@@ -3,7 +3,7 @@ import {
   CHANGE_LANGUAGE, CHECK_FILE_EXIST,
   CREATE_ACTION, CREATE_ASSET_REQUEST, CREATE_COMPONENT_FILE_REQUEST, CREATE_I18N, CREATE_NEW_ACTION, CREATE_PROJECT_REQUEST, CREATE_SPRITE_IMAGE_ASSET_REQUEST, CREATE_SPRITE_IMAGE_ASSET_FILE_REQUEST, CREATE_SPRITE_IMAGE_ASSET_CLIPBOARD_REQUEST, GENERATE_SPRITE_IMAGES_REQUEST, REPLACE_SPRITE_IMAGE_REQUEST, REPLACE_SPRITE_IMAGE_FILE_REQUEST, REPLACE_SPRITE_IMAGE_CLIPBOARD_REQUEST, RESIZE_SPRITE_IMAGE_REQUEST,
   DELETE_COMPONENT, DUPLICATE_COMPONENT,
-  SYNC_RES_REQUEST, GEN_COMPONENT_REQUEST, GEN_PROP_TYPES_REQUEST, GET_FOLDER_FILES,
+  SYNC_RES_REQUEST, RENAME_RESOURCE_REQUEST, IMPORT_RESOURCES_REQUEST, GEN_COMPONENT_REQUEST, GEN_PROP_TYPES_REQUEST, GET_FOLDER_FILES, RUN_DEV_SERVER_REQUEST,
   GET_COLLIDER_SETTINGS_REQUEST, LOAD_COMPONENT_REQUEST, NEW_COMPONENT,
   NEW_PAGE, RE_NAME_COMPONENT, SAVE_COLLIDER_SETTINGS_REQUEST, UPDATE_PROJECT_COLORS_REQUEST,
   ADD_OPEN_WITH_APP_REQUEST, GET_OPEN_WITH_APPS_REQUEST, REMOVE_OPEN_WITH_APP_REQUEST,
@@ -37,6 +37,7 @@ export type IpcRequest =
   | { key: typeof GET_FOLDER_FILES, src: string, patternList?: [string] }
   | { key: typeof CHECK_FILE_EXIST, folderPath: string }
   | { key: typeof LOAD_COMPONENT_REQUEST, path: string }
+  | { key: typeof RUN_DEV_SERVER_REQUEST, rootFolder: string }
   | { key: typeof GEN_COMPONENT_REQUEST, nodesData: any, filePath: string }
   | { key: typeof GEN_PROP_TYPES_REQUEST }
   | { key: typeof NEW_COMPONENT }
@@ -46,6 +47,8 @@ export type IpcRequest =
   | { key: typeof CREATE_ACTION }
   | { key: typeof ADD_NEW_STATE }
   | { key: typeof SYNC_RES_REQUEST, rootFolder: string }
+  | { key: typeof RENAME_RESOURCE_REQUEST, rootFolder: string, resourcePath: string, resourceKey: string, newName: string }
+  | { key: typeof IMPORT_RESOURCES_REQUEST, rootFolder: string, resourcePath: string, sourcePaths: string[] }
   | { key: typeof NEW_PAGE }
 
 export type RequestMessage = IpcRequest['key'];
@@ -77,6 +80,7 @@ export type IpcResponse =
   | { key: typeof GET_FOLDER_FILES }
   | { key: typeof CHECK_FILE_EXIST }
   | { key: typeof LOAD_COMPONENT_REQUEST }
+  | { key: typeof RUN_DEV_SERVER_REQUEST }
   | { key: typeof GEN_COMPONENT_REQUEST }
   | { key: typeof GEN_PROP_TYPES_REQUEST }
   | { key: typeof NEW_COMPONENT }
@@ -86,6 +90,8 @@ export type IpcResponse =
   | { key: typeof CREATE_ACTION }
   | { key: typeof ADD_NEW_STATE }
   | { key: typeof SYNC_RES_REQUEST }
+  | { key: typeof RENAME_RESOURCE_REQUEST }
+  | { key: typeof IMPORT_RESOURCES_REQUEST }
   | { key: typeof NEW_PAGE }
 
 export type ResponseMessage = IpcResponse['key'];

@@ -18,10 +18,10 @@ jobs:
         include:
           - platform: macOS
             runner: macos-latest
-            command: bun run package
+            command: bun run --script package
           - platform: Windows
             runner: windows-latest
-            command: bun run package-win
+            command: bun run --script package-win
     runs-on: ${{ matrix.runner }}
 
     steps:

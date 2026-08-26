@@ -61,6 +61,8 @@ export function getEditingRoot(editingComponent: any, indexes: number[]) {
 }
 
 export function setNodePositionProps(props: { node?: Record<string, unknown> }, x: number, y: number) {
+  x = Math.round(x)
+  y = Math.round(y)
   const node = props?.node
   if (node?.position !== undefined) {
     set(props, 'node.position', `Vec2(${x},${y})`)

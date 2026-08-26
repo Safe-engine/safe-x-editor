@@ -1,9 +1,9 @@
 import { Box, Center, HStack } from "base/Stack";
 import clsx from "clsx";
 import { get } from "lodash-es";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { NodeRendererProps } from "react-arborist";
-import { AiFillFolderOpen } from "react-icons/ai";
+import { AiFillFolder, AiFillFolderOpen } from "react-icons/ai";
 import { FiChevronRight, FiEye, FiPlus, FiRepeat } from "react-icons/fi";
 import { RiBox3Line } from "react-icons/ri";
 
@@ -19,9 +19,9 @@ const addNodeMenu = [
   { label: 'UI', items: ['ProgressBar', 'CircleProgress', 'Slider', 'Button', 'RichText', 'Label'] },
 ];
 
-function renderIcon(data: any) {
+function renderIcon(data: any, isOpen = false) {
   if (data.isDirectory) {
-    return <AiFillFolderOpen color="#d6d6d6" />;
+    return isOpen ? <AiFillFolderOpen color="#d6d6d6" /> : <AiFillFolder color="#d6d6d6" />;
   }
   if (data.loop) {
     return <FiRepeat color="#9fb7ff" />;
@@ -55,6 +55,14 @@ export function TreeItem({ node, style, dragHandle, onAddNode, onFocusNode, onDr
   const [isDropTarget, setIsDropTarget] = useState(false);
   const [isAddMenuOpen, setIsAddMenuOpen] = useState(false);
   const [activeMenu, setActiveMenu] = useState(addNodeMenu[0].label);
+  const lastClickRef = useRef(0);
+
+  const handleFocus = (e?: React.SyntheticEvent) => {
+    e?.preventDefault();
+    e?.stopPropagation();
+    onFocusNode(node);
+  };
+
   const handleContextMenu = (
     e: React.MouseEvent,
     node: any
@@ -66,12 +74,19 @@ export function TreeItem({ node, style, dragHandle, onAddNode, onFocusNode, onDr
   return <HStack ref={dragHandle}
     style={style}
     className={clsx(
-      'h-full w-full items-center justify-between rounded-sm px-1 text-[12px] text-[#d6d6d6] hover:cursor-pointer hover:bg-[#303846]',
+      'h-full w-full select-none items-center justify-between rounded-sm px-1 text-[12px] text-[#d6d6d6] hover:cursor-pointer hover:bg-[#303846]',
       node.isSelected && 'bg-[#304766] text-[#f0f0f0]',
       node.willReceiveDrop && 'bg-[#315a3a] ring-1 ring-inset ring-[#58d68d]',
       isDropTarget && 'bg-[#315a3a] ring-1 ring-inset ring-[#58d68d]'
     )}
-    onDoubleClick={() => onFocusNode(node)}
+    onClick={(e) => {
+      const now = Date.now();
+      if (e.detail === 2 || now - lastClickRef.current < 350) {
+        handleFocus(e);
+      }
+      lastClickRef.current = now;
+    }}
+    onDoubleClick={(e) => handleFocus(e)}
     onContextMenu={(e) => handleContextMenu(e, node.data)}
     onDragEnter={(event) => {
       if (isExternalNodeDrop(event)) setIsDropTarget(true);
@@ -99,7 +114,20 @@ export function TreeItem({ node, style, dragHandle, onAddNode, onFocusNode, onDr
     }}
   >
     <Center>
-      <Box className="m-auto w-4 shrink-0">{renderIcon(node.data)}</Box>
+      <Box
+        className="m-auto w-4 shrink-0"
+        onClick={(e) => {
+          if (node.isInternal || node.data.isDirectory) {
+            e.stopPropagation();
+            node.toggle();
+          }
+        }}
+        onDoubleClick={(e) => {
+          e.stopPropagation();
+        }}
+      >
+        {renderIcon(node.data, node.isOpen)}
+      </Box>
       <Box className={clsx('truncate font-semibold', node.isSelected ? 'text-[#ffffff]' : 'text-[#d6d6d6]')}>{node.data.tag}</Box>
       {renderName(node)}
     </Center>
@@ -115,6 +143,7 @@ export function TreeItem({ node, style, dragHandle, onAddNode, onFocusNode, onDr
           setActiveMenu(addNodeMenu[0].label)
           setIsAddMenuOpen((open) => !open)
         }}
+        onDoubleClick={(event) => event.stopPropagation()}
       >
         <FiPlus size={14} />
       </button>
@@ -123,6 +152,7 @@ export function TreeItem({ node, style, dragHandle, onAddNode, onFocusNode, onDr
           className="absolute right-0 top-6 z-50 flex min-w-44 rounded-sm border border-[#111] bg-[#252525] py-1 text-[12px] text-[#dcdcdc] shadow-lg"
           onMouseDown={(event) => event.stopPropagation()}
           onClick={(event) => event.stopPropagation()}
+          onDoubleClick={(event) => event.stopPropagation()}
         >
           <div className="w-24 border-r border-[#3a3a3a]">
             {addNodeMenu.map((menu) => (
@@ -163,6 +193,7 @@ export function TreeItem({ node, style, dragHandle, onAddNode, onFocusNode, onDr
           event.stopPropagation()
           onFocusNode(node)
         }}
+        onDoubleClick={(event) => event.stopPropagation()}
       >
         <FiEye size={14} />
       </button>

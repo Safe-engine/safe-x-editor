@@ -55,28 +55,58 @@ export function registerKeyboardHandler(scene: PreviewScene) {
 export function registerMouseHandler(scene: PreviewScene) {
   const canvas = document.querySelector<HTMLCanvasElement>('#sdl-canvas')
   canvas?.addEventListener('wheel', (event) => {
-    scene.setRootScale(event.deltaY > 0 ? -0.05 : 0.05)
+    const bounds = canvas.getBoundingClientRect()
+    const scale = scene.logicalCanvasWidth / bounds.width
+    scene.setRootScale(event.deltaY > 0 ? -0.05 : 0.05, {
+      x: (event.clientX - bounds.left) * scale,
+      y: (event.clientY - bounds.top) * scale,
+    })
     event.preventDefault()
   }, { passive: false })
+  canvas?.addEventListener('contextmenu', (event) => {
+    event.preventDefault()
+  })
+  canvas?.addEventListener('dblclick', (event) => {
+    const bounds = canvas.getBoundingClientRect()
+    const x = (event.clientX - bounds.left) * scene.logicalCanvasWidth / bounds.width
+    const y = (event.clientY - bounds.top) * scene.logicalCanvasWidth / bounds.width
+    const selectedPath = scene.findSelectionPath(x, y)
+    if (selectedPath) scene.changeSelectPath([selectedPath])
+    else scene.changeSelectPath([])
+  })
   canvas?.addEventListener('pointerdown', (event) => {
     scene.isMiddleMouse = event.button === 1
-    if (scene.isMiddleMouse) scene.middleMouseSelectionPaths = [...scene.editingPaths]
+    scene.isRightMouse = event.button === 2
+    scene.isPanMouse = event.button === 2
+    if (scene.isPanMouse) {
+      scene.panSelectionPaths = [...scene.editingPaths]
+      scene.middleMouseSelectionPaths = [...scene.editingPaths]
+    }
     scene.updateInputModifiers(event)
   }, true)
   canvas?.addEventListener('pointermove', (event) => {
     scene.updateInputModifiers(event)
+    if (scene.isPanMouse || scene.isRightMouse) {
+      canvas.style.cursor = 'move'
+      return
+    }
     const bounds = canvas.getBoundingClientRect()
     const x = (event.clientX - bounds.left) * scene.logicalCanvasWidth / bounds.width
     const y = (event.clientY - bounds.top) * scene.logicalCanvasWidth / bounds.width
     scene.updateSpineBoneTooltip(x, y, event.clientX, event.clientY)
     const canEdit = !scene.isShiftPressed && !scene.isMultiSelectModifierPressed
     const activeArrowAxis = canEdit && scene.editingPaths[0] ? scene.getActiveArrowAxis(x, y) : undefined
-    if (activeArrowAxis === 'anchor') {
-      canvas.style.cursor = 'move'
+    if (activeArrowAxis) {
+      canvas.style.cursor = activeArrowAxis === 'x' ? 'ew-resize' : activeArrowAxis === 'y' ? 'ns-resize' : 'crosshair'
       return
     }
     if (canEdit && scene.getActiveRotationHandle(x, y)) {
       canvas.style.cursor = 'grab'
+      return
+    }
+    const scaleCorner = canEdit ? scene.getActiveScaleCorner(x, y) : undefined
+    if (scaleCorner) {
+      canvas.style.cursor = scaleCorner === 'top-left' ? 'nwse-resize' : 'nesw-resize'
       return
     }
     const colliderResizeEdge = canEdit ? scene.getActiveBoxColliderResizeEdge(x, y) : undefined
@@ -91,16 +121,23 @@ export function registerMouseHandler(scene: PreviewScene) {
     const handle = canEdit ? scene.getActiveResizeEdge(x, y) : undefined
     const canResizeX = handle?.includes('left') || handle?.includes('right') ? !scene.lockX : false
     const canResizeY = handle?.includes('top') || handle?.includes('bottom') ? !scene.lockY : false
-    canvas.style.cursor = canResizeX && canResizeY
+    if (handle) {
+      canvas.style.cursor = canResizeX && canResizeY
       ? handle === 'top-left' || handle === 'bottom-right' ? 'nwse-resize' : 'nesw-resize'
-      : canResizeX ? 'ew-resize' : canResizeY ? 'ns-resize' : 'default'
+      : canResizeX ? 'col-resize' : canResizeY ? 'row-resize' : 'default'
+      return
+    }
+    canvas.style.cursor = canEdit && scene.isPointInsideSelectedNode(x, y) ? 'move' : 'default'
   })
   canvas?.addEventListener('pointerleave', () => {
     canvas.style.cursor = 'default'
     if (scene.spineBoneTooltipNode) scene.spineBoneTooltipNode.style.display = 'none'
   })
   const resetPointerState = () => {
+    scene.isPanMouse = false
     scene.isMiddleMouse = false
+    scene.isRightMouse = false
+    scene.panSelectionPaths = undefined
     scene.middleMouseSelectionPaths = undefined
     scene.isShiftPressed = false
     scene.isMultiSelectModifierPressed = false
@@ -128,6 +165,10 @@ export function registerMessageHandler(scene: PreviewScene) {
     else if (message.type === 'changeSelectedNodeType') void scene.changeSelectedNodeType(message.tag)
     else if (message.type === 'toggleBoxColliderEditor') scene.toggleBoxColliderEditor(message.componentIndex)
     else if (message.type === 'addDroppedNode') void scene.addDroppedNode(message.item, message.parentId, message.clientX, message.clientY)
+    else if (message.type === 'importPngAsSprite') void scene.importPngAsSprite(message.sourcePaths, message.clientX, message.clientY)
     else if (message.type === 'moveHierarchyNodes') void scene.moveHierarchyNodes(message.dragIds, message.parentId, message.index)
+    else if (message.type === 'setSnapEnabled') scene.setSnapEnabled(message.enabled)
+    else if (message.type === 'setSnapGuides') scene.setSnapGuides(message.verticalGuides, message.horizontalGuides)
+    else if (message.type === 'setSceneZoom' && Number.isFinite(message.scale)) scene.setRootScaleValue(message.scale)
   })
 }

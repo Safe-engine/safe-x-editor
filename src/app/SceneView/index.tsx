@@ -1,16 +1,23 @@
 import { Engine, loadScene } from '@safe-engine/sdl'
+import ScenePanelTitle from 'app/ScenePanelTitle'
 import { useEffect, useRef, useState } from 'react'
-import { FiSave } from 'react-icons/fi'
+import { TOGGLE_RULER, TOGGLE_SNAP } from 'shared/constant.message'
 import { useActions, useSelector } from 'states/app.context'
 import { selectSelectedFilePath, selectSelectedPaths } from 'states/app.selectors'
 import { PreviewScene } from './PreviewScene'
+import { SnapRulers } from './SnapRulers'
+
+function getDroppedFilePath(file: File) {
+  const electronRequire = (globalThis as any).require
+  return electronRequire?.('electron')?.webUtils?.getPathForFile(file) || (file as any).path || ''
+}
 
 export default function SceneView() {
   const { replaceComponentTree, selectEditMultiNodes, updateMultiNodes } = useActions()
   const selectedFilePath = useSelector(selectSelectedFilePath)
   const selectedPaths = useSelector(selectSelectedPaths)
   const didStartEngine = useRef(false)
-  const [isProjectDirty, setIsProjectDirty] = useState(false)
+  const [isRulerVisible, setIsRulerVisible] = useState(true)
 
   useEffect(() => {
     if (didStartEngine.current) return
@@ -29,13 +36,25 @@ export default function SceneView() {
       } else if (message.type === 'previewUpdateSelectedNodes') {
         selectEditMultiNodes(message.selectPaths)
         updateMultiNodes(message.nodes)
-      } else if (message.type === 'previewEditingState') {
-        setIsProjectDirty(message.isEditing)
       }
     }
     window.addEventListener('message', listener)
     return () => window.removeEventListener('message', listener)
   }, [replaceComponentTree, selectEditMultiNodes, updateMultiNodes])
+
+  useEffect(() => {
+    const ipcRenderer = (globalThis as any).require?.('electron')?.ipcRenderer
+    const onToggleSnap = (_event: unknown, enabled: boolean) => window.postMessage({ type: 'setSnapEnabled', enabled }, '*')
+    ipcRenderer?.on(TOGGLE_SNAP, onToggleSnap)
+    return () => ipcRenderer?.removeListener(TOGGLE_SNAP, onToggleSnap)
+  }, [])
+
+  useEffect(() => {
+    const ipcRenderer = (globalThis as any).require?.('electron')?.ipcRenderer
+    const onToggleRuler = (_event: unknown, visible: boolean) => setIsRulerVisible(visible)
+    ipcRenderer?.on(TOGGLE_RULER, onToggleRuler)
+    return () => ipcRenderer?.removeListener(TOGGLE_RULER, onToggleRuler)
+  }, [])
 
   useEffect(() => {
     if (!selectedFilePath) return
@@ -50,15 +69,19 @@ export default function SceneView() {
     }
   }
 
+  const getDroppedPngPaths = (event: React.DragEvent) => Array.from(event.dataTransfer.files)
+    .map(getDroppedFilePath)
+    .filter((path) => /\.png$/i.test(path));
+
   useEffect(() => {
     window.postMessage({ type: 'changeSelectPath', selectPaths: selectedPaths }, '*')
   }, [selectedPaths])
 
   return (
     <div
-      className='relative h-full w-full bg-[#1e1e1e]'
+      className='relative h-full w-full overflow-hidden bg-[#1e1e1e]'
       onDragOver={(event) => {
-        if (!event.dataTransfer.types.includes('application/x-safex-node')) return
+        if (!event.dataTransfer.types.includes('application/x-safex-node') && !event.dataTransfer.types.includes('Files')) return
         event.preventDefault()
         event.dataTransfer.dropEffect = 'copy'
       }}
@@ -71,18 +94,20 @@ export default function SceneView() {
           clientX: event.clientX,
           clientY: event.clientY,
         }, '*')
+        else {
+          const sourcePaths = getDroppedPngPaths(event)
+          if (sourcePaths.length) window.postMessage({
+            type: 'importPngAsSprite',
+            sourcePaths,
+            clientX: event.clientX,
+            clientY: event.clientY,
+          }, '*')
+        }
       }}
     >
-      <button
-        className={`absolute right-2 top-2 z-10 flex h-7 w-7 items-center justify-center rounded-sm border border-[#111] bg-[#2a2a2a] hover:bg-[#343434] ${isProjectDirty ? 'text-[#ff5c5c] hover:text-[#ff7777]' : 'text-[#bdbdbd] hover:text-white'}`}
-        type='button'
-        onClick={() => window.postMessage({ type: 'saveProject' }, '*')}
-        title='Save Project (Ctrl/Cmd+S)'
-        aria-label='Save Project'
-      >
-        <FiSave size={14} />
-      </button>
+      <ScenePanelTitle />
       <canvas id="sdl-canvas" className='block bg-[#1e1e1e]'></canvas>
+      <SnapRulers visible={isRulerVisible} />
     </div>
   )
 }

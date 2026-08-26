@@ -6,6 +6,8 @@ import {
   GET_OPEN_WITH_APPS_REQUEST,
   NEW_PROJECT,
   REMOVE_OPEN_WITH_APP_REQUEST,
+  TOGGLE_RULER,
+  TOGGLE_SNAP,
 } from '@shared/constant.message'
 import { execFile } from 'child_process'
 import { app, dialog, ipcMain, Menu, shell } from 'electron'
@@ -109,6 +111,24 @@ export default class MenuBuilder {
 
   configureSettings() {
     ipcMain.emit(CONFIGURE_SETTINGS)
+  }
+
+  buildSnapMenuItem() {
+    return {
+      label: 'Snap',
+      type: 'checkbox' as const,
+      checked: true,
+      click: (menuItem: { checked?: boolean }) => this.mainWindow.webContents.send(TOGGLE_SNAP, Boolean(menuItem.checked)),
+    }
+  }
+
+  buildRulerMenuItem() {
+    return {
+      label: 'Ruler',
+      type: 'checkbox' as const,
+      checked: true,
+      click: (menuItem: { checked?: boolean }) => this.mainWindow.webContents.send(TOGGLE_RULER, Boolean(menuItem.checked)),
+    }
   }
 
   buildOpenWithSubmenu() {
@@ -233,6 +253,9 @@ export default class MenuBuilder {
     const subMenuViewDev = {
       label: 'View',
       submenu: [
+        this.buildSnapMenuItem(),
+        this.buildRulerMenuItem(),
+        { type: 'separator' },
         {
           label: 'Reload',
           accelerator: 'Command+R',
@@ -259,6 +282,9 @@ export default class MenuBuilder {
     const subMenuViewProd = {
       label: 'View',
       submenu: [
+        this.buildSnapMenuItem(),
+        this.buildRulerMenuItem(),
+        { type: 'separator' },
         {
           label: 'Toggle Full Screen',
           accelerator: 'Ctrl+Command+F',
@@ -362,7 +388,10 @@ export default class MenuBuilder {
         label: '&View',
         submenu:
           process.env.NODE_ENV === 'development'
-            ? [
+              ? [
+                this.buildSnapMenuItem(),
+                this.buildRulerMenuItem(),
+                { type: 'separator' },
                 {
                   label: '&Reload',
                   accelerator: 'Ctrl+R',
@@ -386,6 +415,9 @@ export default class MenuBuilder {
                 },
               ]
             : [
+                this.buildSnapMenuItem(),
+                this.buildRulerMenuItem(),
+                { type: 'separator' },
                 {
                   label: 'Toggle &Full Screen',
                   accelerator: 'F11',

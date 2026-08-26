@@ -21,13 +21,18 @@ export const GET_OPEN_WITH_APPS_REQUEST = 'Get Open With Apps';
 export const ADD_OPEN_WITH_APP_REQUEST = 'Add Open With App';
 export const REMOVE_OPEN_WITH_APP_REQUEST = 'Remove Open With App';
 export const CONFIGURE_SETTINGS = 'Configure Settings';
+export const TOGGLE_SNAP = 'Toggle Snap';
+export const TOGGLE_RULER = 'Toggle Ruler';
 export const GET_AI_IMAGE_SETTINGS_REQUEST = 'Get AI Image Settings';
 export const SAVE_AI_IMAGE_SETTINGS_REQUEST = 'Save AI Image Settings';
 
 export const SYNC_RES_REQUEST = 'SYNC_RES_REQUEST';
+export const RENAME_RESOURCE_REQUEST = 'RENAME_RESOURCE_REQUEST';
+export const IMPORT_RESOURCES_REQUEST = 'IMPORT_RESOURCES_REQUEST';
 export const GET_FOLDER_FILES = 'GET_FOLDER_FILES';
 export const CHECK_FILE_EXIST = 'CHECK_FILE_EXIST';
 export const LOAD_COMPONENT_REQUEST = 'LOAD_COMPONENT_REQUEST';
+export const RUN_DEV_SERVER_REQUEST = 'RUN_DEV_SERVER_REQUEST';
 export const GEN_COMPONENT_REQUEST = 'GEN_COMPONENT_REQUEST';
 export const GEN_PROP_TYPES_REQUEST = 'GEN_PROP_TYPES_REQUEST';
 
