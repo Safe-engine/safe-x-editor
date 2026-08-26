@@ -10,9 +10,10 @@ import {
   TOGGLE_SNAP,
 } from '@shared/constant.message'
 import { execFile } from 'child_process'
-import { app, dialog, ipcMain, Menu, shell } from 'electron'
+import { app, dialog, ipcMain, Menu, nativeImage, shell } from 'electron'
 import { existsSync, readFileSync, writeFileSync } from 'fs'
 import { basename, join } from 'path'
+import packageJson from '../package.json'
 import { GlobalData } from './parser/global'
 
 const OPEN_WITH_SETTINGS_FILE = 'open-with.json'
@@ -111,6 +112,24 @@ export default class MenuBuilder {
 
   configureSettings() {
     ipcMain.emit(CONFIGURE_SETTINGS)
+  }
+
+  showAboutDialog() {
+    const iconCandidates = [
+      join(__dirname, '../../resources/icons/512x512.png'),
+      join(app.getAppPath(), 'resources/icons/512x512.png'),
+    ]
+    const iconPath = iconCandidates.find(p => existsSync(p))
+    const icon = iconPath ? nativeImage.createFromPath(iconPath) : undefined
+
+    dialog.showMessageBox(this.mainWindow, {
+      type: 'info',
+      title: 'About',
+      message: 'Safex Editor',
+      detail: `Version: ${packageJson.version}`,
+      icon,
+      buttons: ['OK'],
+    })
   }
 
   buildSnapMenuItem() {
@@ -294,22 +313,14 @@ export default class MenuBuilder {
         },
       ],
     }
-    const subMenuWindow = {
-      label: 'Window',
-      submenu: [
-        {
-          label: 'Minimize',
-          accelerator: 'Command+M',
-          selector: 'performMiniaturize:',
-        },
-        { label: 'Close', accelerator: 'Command+W', selector: 'performClose:' },
-        { type: 'separator' },
-        { label: 'Bring All to Front', selector: 'arrangeInFront:' },
-      ],
-    }
     const subMenuHelp = {
       label: 'Help',
       submenu: [
+        {
+          label: 'About',
+          click: () => this.showAboutDialog(),
+        },
+        { type: 'separator' },
         {
           label: 'Learn More',
           click() {
@@ -339,7 +350,7 @@ export default class MenuBuilder {
 
     const subMenuView = process.env.NODE_ENV === 'development' ? subMenuViewDev : subMenuViewProd
 
-    return [subMenuAbout, subMenuEdit, subMenuView, subMenuWindow, subMenuHelp]
+    return [subMenuAbout, subMenuEdit, subMenuView, subMenuHelp]
   }
 
   buildDefaultTemplate() {
@@ -430,6 +441,11 @@ export default class MenuBuilder {
       {
         label: 'Help',
         submenu: [
+          {
+            label: 'About',
+            click: () => this.showAboutDialog(),
+          },
+          { type: 'separator' },
           {
             label: 'Learn More',
             click() {
