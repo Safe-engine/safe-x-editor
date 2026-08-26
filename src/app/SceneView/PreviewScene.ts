@@ -1498,7 +1498,7 @@ export class PreviewScene extends PreviewSceneSelection {
     if (this.marqueeSelection) {
       if (!this.marqueeSelection.active) {
         const selectedPath = this.findSelectionPath(this.marqueeSelection.startX, this.marqueeSelection.startY)
-        this.changeSelectPath(selectedPath ? [selectedPath] : [])
+        if (selectedPath) this.changeSelectPath([selectedPath])
       }
       this.marqueeSelection = undefined
       this.marqueeSelectionNode.active = false

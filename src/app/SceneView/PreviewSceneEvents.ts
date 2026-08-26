@@ -66,6 +66,14 @@ export function registerMouseHandler(scene: PreviewScene) {
   canvas?.addEventListener('contextmenu', (event) => {
     event.preventDefault()
   })
+  canvas?.addEventListener('dblclick', (event) => {
+    const bounds = canvas.getBoundingClientRect()
+    const x = (event.clientX - bounds.left) * scene.logicalCanvasWidth / bounds.width
+    const y = (event.clientY - bounds.top) * scene.logicalCanvasWidth / bounds.width
+    const selectedPath = scene.findSelectionPath(x, y)
+    if (selectedPath) scene.changeSelectPath([selectedPath])
+    else scene.changeSelectPath([])
+  })
   canvas?.addEventListener('pointerdown', (event) => {
     scene.isMiddleMouse = event.button === 1
     scene.isRightMouse = event.button === 2
