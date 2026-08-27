@@ -2,6 +2,7 @@ import { sendRequest } from 'app/app.ipc';
 import Button from 'base/Button';
 import Modal from 'base/Modal';
 import { dialog, getCurrentWindow } from 'helper/electronRemote';
+import { toFileUrl } from 'helper/fileUrl';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { FiClipboard, FiUpload, FiX } from 'react-icons/fi';
@@ -22,6 +23,7 @@ type Props = {
 export default function AiLayoutDialog({ isOpen, onClose, rootFolder, filePath, fileName, onGenerated }: Props) {
   const [prompt, setPrompt] = useState(DEFAULT_PROMPT);
   const [referenceImagePath, setReferenceImagePath] = useState('');
+  const [referenceImagePreviewUrl, setReferenceImagePreviewUrl] = useState('');
   const [useClipboardReference, setUseClipboardReference] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isReferenceDropTarget, setIsReferenceDropTarget] = useState(false);
@@ -41,11 +43,13 @@ export default function AiLayoutDialog({ isOpen, onClose, rootFolder, filePath, 
 
   function useClipboardImage() {
     const clipboard = (globalThis as any).require?.('electron')?.clipboard;
-    if (clipboard?.readImage?.().isEmpty()) {
+    const image = clipboard?.readImage?.();
+    if (!image || image.isEmpty()) {
       toast.error('The clipboard does not contain an image');
       return;
     }
     setReferenceImagePath('');
+    setReferenceImagePreviewUrl(image.toDataURL());
     setUseClipboardReference(true);
   }
 
@@ -55,6 +59,13 @@ export default function AiLayoutDialog({ isOpen, onClose, rootFolder, filePath, 
       return;
     }
     setReferenceImagePath(sourcePath);
+    setReferenceImagePreviewUrl(toFileUrl(sourcePath));
+    setUseClipboardReference(false);
+  }
+
+  function clearReferenceImage() {
+    setReferenceImagePath('');
+    setReferenceImagePreviewUrl('');
     setUseClipboardReference(false);
   }
 
@@ -116,8 +127,12 @@ export default function AiLayoutDialog({ isOpen, onClose, rootFolder, filePath, 
             <Button className='w-auto' type='button' disabled={isGenerating} onClick={chooseReferenceImage}><FiUpload className='mr-1' />Upload</Button>
             <Button className='w-auto' type='button' disabled={isGenerating} onClick={useClipboardImage} title='Paste image from clipboard (Ctrl/Cmd + V)'><FiClipboard className='mr-1' />Paste</Button>
             {referenceLabel && <span className='min-w-0 flex-1 truncate text-[#8f8f8f]' title={referenceLabel}>{referenceLabel}</span>}
-            {referenceLabel && <button className='text-[#8f8f8f] hover:text-[#f0f0f0]' type='button' onClick={() => { setReferenceImagePath(''); setUseClipboardReference(false); }} aria-label='Clear reference image'><FiX size={15} /></button>}
+            {referenceLabel && <button className='text-[#8f8f8f] hover:text-[#f0f0f0]' type='button' onClick={clearReferenceImage} aria-label='Clear reference image'><FiX size={15} /></button>}
           </div>
+          {referenceImagePreviewUrl && <div className='flex items-center gap-2 rounded-sm border border-[#111] bg-[#1d1d1d] p-2'>
+            <img className='h-16 w-16 rounded-sm border border-[#333] object-contain' src={referenceImagePreviewUrl} alt='Reference image preview' />
+            <span className='min-w-0 truncate text-[#aeb8c5]'>{referenceLabel}</span>
+          </div>}
           <div
             className={`flex h-16 items-center justify-center rounded-sm border border-dashed text-[#8f8f8f] transition-colors ${isReferenceDropTarget ? 'border-[#4a90e2] bg-[#304766]/40 text-[#dcdcdc]' : 'border-[#444] bg-[#1d1d1d]'}`}
             onDragOver={(event) => {
