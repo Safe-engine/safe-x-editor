@@ -25,7 +25,9 @@ export function registerKeyboardHandler(scene: PreviewScene) {
       return
     }
     if (keyCode === KEY.backspace || keyCode === KEY.delete) {
+      if (!document.activeElement?.closest('[data-keyboard-scope="scene"]')) return
       event.preventDefault()
+      event.stopImmediatePropagation()
       await scene.deleteSelectedNodes()
       return
     }

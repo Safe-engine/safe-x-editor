@@ -79,7 +79,10 @@ export default function SceneView() {
 
   return (
     <div
-      className='relative h-full w-full overflow-hidden bg-[#1e1e1e]'
+      className='relative h-full w-full overflow-hidden bg-[#1e1e1e] outline-none'
+      data-keyboard-scope='scene'
+      tabIndex={-1}
+      onPointerDown={(event) => event.currentTarget.focus()}
       onDragOver={(event) => {
         if (!event.dataTransfer.types.includes('application/x-safex-node') && !event.dataTransfer.types.includes('Files')) return
         event.preventDefault()
