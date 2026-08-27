@@ -81,6 +81,22 @@ describe('SpineBonesControl', () => {
 });
 
 describe('Sprite', () => {
+  it('parses tiled={false} as a boolean', async () => {
+    const source = '<Sprite tiled={false} />';
+    const parsed = parse(source, { jsx: true, range: true });
+    const { treeData } = await convertComponentData(parsed, 'Sprite.tsx', source);
+
+    expect(treeData.props.tiled).toBe(false);
+  });
+
+  it('parses capInsets as numeric values', async () => {
+    const source = '<Sprite spriteFrame={sf_daily_1} capInsets={[100, 115, 99, 83]} />';
+    const parsed = parse(source, { jsx: true, range: true });
+    const { treeData } = await convertComponentData(parsed, 'Sprite.tsx', source);
+
+    expect(treeData.props.capInsets).toEqual([100, 115, 99, 83]);
+  });
+
   it('writes spriteFrame asset names as JSX expressions', () => {
     const { component } = genReactComponentString({ tag: 'Sprite', props: { spriteFrame: 'sf_char_progress' } });
 

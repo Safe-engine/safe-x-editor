@@ -175,6 +175,17 @@ async function parseChildren(root, parentNode: Node, data: ProjectData, evalInit
     return spriteFrameAsset?.value
   }
 
+  function getTextureSize(spriteFrame: string) {
+    const frameName = parseStringFromValue(spriteFrame)
+    const spriteFrameAsset = spriteFramesAssets.find((item) => item.key === frameName)
+    const texture = assetsTextureList.find((item) => (
+      item.key === frameName
+      || item.key === spriteFrameAsset?.value
+      || item.value === spriteFrameAsset?.value
+    ))
+    return texture?.size
+  }
+
   function getLabelText(value: unknown = ''): string {
     const string = typeof value === 'string' ? value : String(value ?? '')
     if (string.includes('[')) {
@@ -343,6 +354,9 @@ async function parseChildren(root, parentNode: Node, data: ProjectData, evalInit
 
   const { node = {} } = props
   const { scaleX = 1, scaleY = 1, scale = 1, rotation = 0, width, height, color, active, anchorX, anchorY, zIndex, zOrder, name, tag: nodeTag } = node
+  const textureSize = ['Sprite', 'Button', 'ProgressBar', 'CircleProgress'].includes(tag)
+    ? getTextureSize(props.spriteFrame)
+    : undefined
   if (node.position || node.xy || node.x !== undefined || node.y !== undefined) {
     const { x, y } = getNodePosition(node, initWithProps)
     renderNode.x = x
@@ -357,8 +371,10 @@ async function parseChildren(root, parentNode: Node, data: ProjectData, evalInit
   if (zIndex !== undefined) renderNode.zIndex = parseEval(initWithProps)(zIndex)
   if (name !== undefined) renderNode.name = parseEval(initWithProps)(name)
   if (nodeTag !== undefined) renderNode.tag = parseEval(initWithProps)(nodeTag)
-  if (width) renderNode.width = parseEval(initWithProps)(width)
-  if (height) renderNode.height = parseEval(initWithProps)(height)
+  if (width !== undefined) renderNode.width = parseEval(initWithProps)(width)
+  else if (textureSize?.width) renderNode.width = textureSize.width
+  if (height !== undefined) renderNode.height = parseEval(initWithProps)(height)
+  else if (textureSize?.height) renderNode.height = textureSize.height
   if (active !== undefined) {
     try {
       renderNode.active = parseEval(initWithProps)(active)

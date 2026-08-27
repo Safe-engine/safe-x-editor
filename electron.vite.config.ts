@@ -48,6 +48,7 @@ export default defineConfig({
     root: resolve('src'),
     publicDir: resolve('public'),
     resolve: {
+      dedupe: ['react', 'react-dom'],
       alias: {
         app: resolve('src/app'),
         base: resolve('src/base'),

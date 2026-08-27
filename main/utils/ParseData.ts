@@ -70,7 +70,18 @@ const getAttributeProps = (openingElement, fileOrigin) => {
       });
     } else {
       const value = values.join('=');
-      props[key] = key === 'bones' ? parseBoneControls(value) ?? getPropValue(value) : values.length ? getPropValue(value) : true;
+      const arrayValue = (key === 'capInsets' || key === 'offset') && att.value?.expression?.type === 'ArrayExpression'
+        ? att.value.expression.elements.map(parseValue)
+        : undefined;
+      props[key] = key === 'bones'
+        ? parseBoneControls(value) ?? getPropValue(value)
+        : (key === 'capInsets' || key === 'offset') && arrayValue
+          ? arrayValue
+        : key === 'tiled' && value === '{false}'
+          ? false
+          : values.length
+            ? getPropValue(value)
+            : true;
     }
     // console.log(props[key])
   });
@@ -253,7 +264,7 @@ const genPropsLine = (props: { [key: string]: any }, tag?: string) => {
         return `${key}={[${bones.map(([name, x, y]) => `[${quoteSingle(name)}, ${x}, ${y}]`).join(', ')}]}`;
       }
       if ((key === 'capInsets' || key === 'offset') && Array.isArray(val)) {
-        return `${key}={${JSON.stringify(val)}}`;
+        return `${key}={${val.join(', ')}}`;
       }
       if (key === 'node') {
         // console.log('genPropsLine node', val);
