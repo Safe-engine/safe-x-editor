@@ -40,6 +40,10 @@ body {
   pointer-events: none;
 }
 
+.scene-panel-title--with-ruler {
+  inset: 18px 0 auto 18px;
+}
+
 .scene-panel-title__label {
   padding: 0 8px 0 2px;
 }

@@ -17,11 +17,9 @@ export function SnapRulers({ visible = true }: { visible?: boolean }) {
   const [draftGuide, setDraftGuide] = useState<{ axis: Axis; value: number }>()
   const [selectedGuide, setSelectedGuide] = useState<GuideSelection>()
   const [canvasRect, setCanvasRect] = useState<DOMRect>()
-  const [titleRect, setTitleRect] = useState<DOMRect>()
 
   const updateCanvasRect = () => {
     setCanvasRect(document.querySelector<HTMLCanvasElement>('#sdl-canvas')?.getBoundingClientRect())
-    setTitleRect(document.querySelector<HTMLElement>('.scene-panel-title')?.getBoundingClientRect())
   }
 
   useEffect(() => {
@@ -32,9 +30,7 @@ export function SnapRulers({ visible = true }: { visible?: boolean }) {
     window.addEventListener('resize', updateCanvasRect)
     const observer = new ResizeObserver(updateCanvasRect)
     const canvas = document.querySelector('#sdl-canvas')
-    const title = document.querySelector('.scene-panel-title')
     if (canvas) observer.observe(canvas)
-    if (title) observer.observe(title)
     updateCanvasRect()
     return () => {
       window.removeEventListener('message', onMessage)
@@ -133,7 +129,7 @@ export function SnapRulers({ visible = true }: { visible?: boolean }) {
     const rootRect = rootRef.current.getBoundingClientRect()
     return {
       left: canvasRect ? canvasRect.left - rootRect.left : 0,
-      top: titleRect ? titleRect.bottom - rootRect.top : canvasRect ? canvasRect.top - rootRect.top : 0,
+      top: canvasRect ? canvasRect.top - rootRect.top : 0,
     }
   }
 

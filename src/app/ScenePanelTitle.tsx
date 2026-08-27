@@ -11,7 +11,7 @@ import { RUN_DEV_SERVER_REQUEST } from 'shared/constant.message';
 import { useActions, useSelector } from 'states/app.context';
 import { selectRootFolder, selectSelectedFilePath } from 'states/app.selectors';
 
-export default function ScenePanelTitle() {
+export default function ScenePanelTitle({ hasRuler = true }: { hasRuler?: boolean }) {
   const { loadComponent } = useActions();
   const filePath = useSelector(selectSelectedFilePath);
   const rootFolder = useSelector(selectRootFolder);
@@ -54,7 +54,7 @@ export default function ScenePanelTitle() {
   const stopTabInteraction = (event: React.PointerEvent | React.MouseEvent) => event.stopPropagation();
 
   return (
-    <div className='scene-panel-title' onPointerDown={stopTabInteraction}>
+    <div className={`scene-panel-title${hasRuler ? ' scene-panel-title--with-ruler' : ''}`} onPointerDown={stopTabInteraction}>
       <div className='pointer-events-auto flex items-center gap-0.5'>
         <button
           type='button'

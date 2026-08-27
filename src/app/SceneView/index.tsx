@@ -105,7 +105,7 @@ export default function SceneView() {
         }
       }}
     >
-      <ScenePanelTitle />
+      <ScenePanelTitle hasRuler={isRulerVisible} />
       <canvas id="sdl-canvas" className='block bg-[#1e1e1e]'></canvas>
       <SnapRulers visible={isRulerVisible} />
     </div>
