@@ -264,7 +264,7 @@ const genPropsLine = (props: { [key: string]: any }, tag?: string) => {
         return `${key}={[${bones.map(([name, x, y]) => `[${quoteSingle(name)}, ${x}, ${y}]`).join(', ')}]}`;
       }
       if ((key === 'capInsets' || key === 'offset') && Array.isArray(val)) {
-        return `${key}={${val.join(', ')}}`;
+        return `${key}={[${val.join(', ')}]}`;
       }
       if (key === 'node') {
         // console.log('genPropsLine node', val);

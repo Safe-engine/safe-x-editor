@@ -97,6 +97,12 @@ describe('Sprite', () => {
     expect(treeData.props.capInsets).toEqual([100, 115, 99, 83]);
   });
 
+  it('writes capInsets as an array expression', () => {
+    const { component } = genReactComponentString({ tag: 'Sprite', props: { capInsets: [100, 115, 99, 83] } });
+
+    expect(component).toBe('<Sprite capInsets={[100, 115, 99, 83]} />');
+  });
+
   it('writes spriteFrame asset names as JSX expressions', () => {
     const { component } = genReactComponentString({ tag: 'Sprite', props: { spriteFrame: 'sf_char_progress' } });
 
