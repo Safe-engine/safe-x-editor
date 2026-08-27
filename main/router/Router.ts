@@ -1,4 +1,5 @@
 import { createAsset } from '@@/services/AssetCreateService';
+import { generateLayoutWithAi } from '@@/services/AiLayoutService';
 import { createSpriteImageAsset, createSpriteImageAssetFromClipboard, createSpriteImageAssetFromFile, generateSpriteImages, getAiImageSettings, replaceSpriteImage, replaceSpriteImageFromClipboard, replaceSpriteImageFromFile, saveAiImageSettings } from '@@/services/AiImageService';
 import { updateProjectColors } from '@@/services/ColorService';
 import { resizeSpriteImage } from '@@/services/ImageResizeService';
@@ -26,6 +27,7 @@ import {
   CREATE_SPRITE_IMAGE_ASSET_FILE_REQUEST,
   CREATE_SPRITE_IMAGE_ASSET_CLIPBOARD_REQUEST,
   GENERATE_SPRITE_IMAGES_REQUEST,
+  GENERATE_LAYOUT_WITH_AI_REQUEST,
   GET_AI_IMAGE_SETTINGS_REQUEST,
   CREATE_I18N,
   CREATE_PROJECT_REQUEST,
@@ -94,6 +96,7 @@ export default function Router() {
   addListener(CREATE_ASSET_REQUEST, createAsset);
   addListener(CREATE_COMPONENT_FILE_REQUEST, createComponentFile);
   addListener(GENERATE_SPRITE_IMAGES_REQUEST, generateSpriteImages);
+  addListener(GENERATE_LAYOUT_WITH_AI_REQUEST, generateLayoutWithAi);
   addListener(REPLACE_SPRITE_IMAGE_REQUEST, replaceSpriteImage);
   addListener(REPLACE_SPRITE_IMAGE_FILE_REQUEST, replaceSpriteImageFromFile);
   addListener(REPLACE_SPRITE_IMAGE_CLIPBOARD_REQUEST, replaceSpriteImageFromClipboard);

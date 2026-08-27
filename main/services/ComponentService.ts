@@ -19,8 +19,6 @@ export const loadComponent = async ({ path }) => {
 };
 
 export function createComponentFile({ rootFolder, directory, name, kind }) {
-  const className = String(name || '').trim();
-  if (!/^[A-Za-z_$][\w$]*$/.test(className)) throw Error('Use a valid class name.');
   if (kind !== 'component' && kind !== 'scene') throw Error('Invalid file type.');
 
   const root = pathUtil.resolve(rootFolder, 'src');
@@ -28,6 +26,15 @@ export function createComponentFile({ rootFolder, directory, name, kind }) {
   const expectedFolder = pathUtil.resolve(root, kind === 'component' ? 'components' : 'scene');
   if (targetDirectory !== expectedFolder || !targetDirectory.startsWith(`${root}${pathUtil.sep}`)) {
     throw Error(`New ${kind}s can only be created in ${expectedFolder}.`);
+  }
+
+  const requestedName = String(name || '').trim();
+  if (requestedName && !/^[A-Za-z_$][\w$]*$/.test(requestedName)) throw Error('Use a valid class name.');
+  const defaultName = kind === 'component' ? 'NewComponent' : 'NewScene';
+  let className = requestedName || defaultName;
+  let suffix = 2;
+  while (fs.existsSync(pathUtil.join(targetDirectory, `${className}.tsx`))) {
+    className = `${defaultName}${suffix++}`;
   }
 
   const targetPath = pathUtil.join(targetDirectory, `${className}.tsx`);
@@ -92,11 +99,46 @@ export function createComponentFile({ rootFolder, directory, name, kind }) {
 //   return true;
 // }
 
-export async function renameComponent({ newName, componentPath, path }) {
-  const source = componentPath || path;
-  const target = pathUtil.join(pathUtil.dirname(source), newName);
+function codeFiles(directory: string): string[] {
+  if (!fs.existsSync(directory)) return [];
+  return fs.readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+    const filePath = pathUtil.join(directory, entry.name);
+    if (entry.isDirectory()) return codeFiles(filePath);
+    return ['.ts', '.tsx', '.js', '.jsx'].includes(pathUtil.extname(entry.name)) ? [filePath] : [];
+  });
+}
+
+export async function renameComponent({ rootFolder, newName, componentPath, path }) {
+  const source = pathUtil.resolve(componentPath || path || '');
+  const sourceRoot = pathUtil.resolve(rootFolder || '', 'src');
+  const requestedName = String(newName || '').trim();
+  const parsedName = pathUtil.parse(requestedName);
+  const className = parsedName.name;
+
+  if (!rootFolder || !componentPath || pathUtil.extname(source) !== '.tsx') throw Error('Invalid component rename request.');
+  if (requestedName !== parsedName.base || (parsedName.ext && parsedName.ext !== '.tsx') || !/^[A-Za-z_$][\w$]*$/.test(className)) {
+    throw Error('Use a valid class name.');
+  }
+  if (!source.startsWith(`${sourceRoot}${pathUtil.sep}`) || !fs.existsSync(source)) {
+    throw Error('The selected component no longer exists in the project.');
+  }
+
+  const oldClassName = pathUtil.basename(source, '.tsx');
+  const target = pathUtil.join(pathUtil.dirname(source), `${className}.tsx`);
+  if (source === target) return { success: true, path: source, replacedFiles: 0 };
+  if (fs.existsSync(target)) throw Error(`${pathUtil.basename(target)} already exists.`);
+
   fs.renameSync(source, target);
-  return true;
+  const pattern = new RegExp(`\\b${escapeRegExp(oldClassName)}\\b`, 'g');
+  let replacedFiles = 0;
+  for (const filePath of codeFiles(sourceRoot)) {
+    const content = fs.readFileSync(filePath, 'utf8');
+    const updated = content.replace(pattern, className);
+    if (updated === content) continue;
+    fs.writeFileSync(filePath, updated, 'utf8');
+    replacedFiles++;
+  }
+  return { success: true, path: target, replacedFiles };
 }
 
 export async function duplicateComponent({ componentPath, path }) {

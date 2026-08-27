@@ -10,12 +10,13 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Tree, TreeApi } from 'react-arborist'
 import toast from 'react-hot-toast'
 import { FiGrid, FiList, FiRefreshCw, FiX } from 'react-icons/fi'
-import { CREATE_ASSET_REQUEST, CREATE_COMPONENT_FILE_REQUEST, DELETE_COMPONENT, GET_FOLDER_FILES, IMPORT_RESOURCES_REQUEST, RENAME_RESOURCE_REQUEST, SYNC_RES_REQUEST } from 'shared/constant.message'
+import { CREATE_ASSET_REQUEST, CREATE_COMPONENT_FILE_REQUEST, DELETE_COMPONENT, GET_FOLDER_FILES, IMPORT_RESOURCES_REQUEST, RE_NAME_COMPONENT, RENAME_RESOURCE_REQUEST, SYNC_RES_REQUEST } from 'shared/constant.message'
 import { useActions, useSelector } from 'states/app.context'
 import { selectFilesData, selectResourceFilesData, selectRootFolder } from 'states/app.selectors'
 import CreateAnimationAssetDialog from './CreateAnimationAssetDialog'
 import CreateAudioAssetDialog from './CreateAudioAssetDialog'
 import CreateImageAssetDialog from './CreateImageAssetDialog'
+import AiLayoutDialog from './AiLayoutDialog'
 import ResourceGridView from './ResourceGridView'
 import { getDroppedPaths } from './resourceUtils'
 
@@ -69,9 +70,7 @@ export default function AssetsPanel({ tab, loadProject = false }: { tab: 'compon
   const treeData = useSelector(selectFilesData);
   const resourceTreeData = useSelector(selectResourceFilesData);
   const rootFolder = useSelector(selectRootFolder);
-  const [createFileKind, setCreateFileKind] = useState<CreateFileKind | null>(null);
-  const [createDirectory, setCreateDirectory] = useState('');
-  const [createClassName, setCreateClassName] = useState('');
+  const [pendingRenamePath, setPendingRenamePath] = useState<string | null>(null);
   const selectedTab = tab;
   const [resourceViewMode, setResourceViewMode] = useState<'tree' | 'grid'>('tree');
   const [resourceFilter, setResourceFilter] = useState('');
@@ -79,6 +78,7 @@ export default function AssetsPanel({ tab, loadProject = false }: { tab: 'compon
   const [createAssetDialog, setCreateAssetDialog] = useState<CreateAssetDialogType>(null);
   const [isTreeDropTarget, setIsTreeDropTarget] = useState(false);
   const [deleteConfirmItems, setDeleteConfirmItems] = useState<DeleteItem[] | null>(null);
+  const [aiLayoutItem, setAiLayoutItem] = useState<any>(null);
 
   function resolveItemFullPath(data: any): string | null {
     if (!data || data.type === 'frame') return null;
@@ -111,7 +111,7 @@ export default function AssetsPanel({ tab, loadProject = false }: { tab: 'compon
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
-      if (createFileKind || createAssetDialog || deleteConfirmItems) return;
+      if (createAssetDialog || deleteConfirmItems) return;
       const target = event.target as HTMLElement;
       if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable || target.tagName === 'SELECT')) {
         return;
@@ -144,7 +144,7 @@ export default function AssetsPanel({ tab, loadProject = false }: { tab: 'compon
     }
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [createFileKind, createAssetDialog, deleteConfirmItems, selectedTab, resourceViewMode, rootFolder]);
+  }, [createAssetDialog, deleteConfirmItems, selectedTab, resourceViewMode, rootFolder]);
   const filteredResourceTreeData = useMemo(
     () => filterResourceTreeData(resourceTreeData, resourceFilter),
     [resourceTreeData, resourceFilter]
@@ -194,6 +194,15 @@ export default function AssetsPanel({ tab, loadProject = false }: { tab: 'compon
       treeRef.current.select(node)
     }
   }, [selectedTab, treeData])
+
+  useEffect(() => {
+    if (!pendingRenamePath) return;
+    const node = treeRef.current?.get(pendingRenamePath);
+    if (!node) return;
+    node.select();
+    node.edit();
+    setPendingRenamePath(null);
+  }, [pendingRenamePath, treeData]);
 
   useEffect(() => {
     const content = contentRef.current;
@@ -301,21 +310,38 @@ export default function AssetsPanel({ tab, loadProject = false }: { tab: 'compon
     getFiles(rootFolder);
   }
 
-  async function createFile() {
-    if (!rootFolder || !createFileKind || !createClassName.trim()) return;
+  async function createFile(data: any) {
+    if (!rootFolder) return;
     const response: any = await sendRequest({
       key: CREATE_COMPONENT_FILE_REQUEST,
       rootFolder,
-      directory: createDirectory,
-      name: createClassName.trim(),
-      kind: createFileKind,
+      directory: data.path,
+      kind: data.createKind,
     });
     if (!response || response.error) {
       toast.error(response?.message || 'Unable to create file');
       return;
     }
-    toast.success(`${createFileKind === 'component' ? 'Component' : 'Scene'} created`);
-    setCreateFileKind(null);
+    toast.success(`${data.createKind === 'component' ? 'Component' : 'Scene'} created`);
+    setComponentFilter('');
+    setPendingRenamePath(response.path);
+    getFiles(rootFolder);
+    loadComponent(response.path);
+  }
+
+  async function renameComponentFile({ node, name }: { node: any, name: string }) {
+    if (!rootFolder) return;
+    const response: any = await sendRequest({
+      key: RE_NAME_COMPONENT,
+      rootFolder,
+      componentPath: node.data.path,
+      newName: name,
+    });
+    if (!response || response.error) {
+      toast.error(response?.message || 'Unable to rename component');
+      return;
+    }
+    toast.success('Component renamed');
     getFiles(rootFolder);
     loadComponent(response.path);
   }
@@ -487,8 +513,9 @@ export default function AssetsPanel({ tab, loadProject = false }: { tab: 'compon
               }}
               onRename={(node) => {
                 if (selectedTab === 'res') return renameResource(node);
+                return renameComponentFile(node);
               }}
-              disableEdit={(data) => selectedTab !== 'res' || data.isDirectory || data.type === 'frame'}
+              disableEdit={(data) => data.isDirectory || data.type === 'frame'}
               openByDefault
             >
               {(props) => <TreeNode
@@ -501,12 +528,11 @@ export default function AssetsPanel({ tab, loadProject = false }: { tab: 'compon
                     .filter(Boolean);
                 }}
                 onCreate={(data) => {
-                  setCreateFileKind(data.createKind);
-                  setCreateDirectory(data.path);
-                  setCreateClassName('');
+                  createFile(data);
                 }}
-                canRename={selectedTab === 'res'}
+                canRename
                 onImport={selectedTab === 'res' ? importResources : undefined}
+                onAiGenerate={selectedTab === 'components' ? setAiLayoutItem : undefined}
               />}
             </Tree>
           </div>
@@ -539,26 +565,17 @@ export default function AssetsPanel({ tab, loadProject = false }: { tab: 'compon
         setOpen={(value) => setCreateAssetDialog(value ? 'animation' : null)}
         onCreate={(data) => handleCreateAsset('animation', data)}
       />
-      <Modal isOpen={Boolean(createFileKind)} onClose={() => setCreateFileKind(null)} title={`New ${createFileKind === 'scene' ? 'Scene' : 'Component'}`}>
-        <div className='mt-4 flex w-[360px] flex-col gap-3 text-[12px]'>
-          <label className='flex flex-col gap-1'>
-            <span className='text-[#bdbdbd]'>Class name</span>
-            <Input
-              value={createClassName}
-              onChange={(event) => setCreateClassName(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter') createFile();
-              }}
-              placeholder={createFileKind === 'scene' ? 'GameScene' : 'PlayerComponent'}
-              autoFocus
-            />
-          </label>
-          <div className='mt-2 flex justify-end gap-2'>
-            <button type='button' className='rounded-sm bg-[#3a3a3a] px-3 py-1.5 hover:bg-[#4a4a4a]' onClick={() => setCreateFileKind(null)}>Cancel</button>
-            <button type='button' className='rounded-sm bg-[#3b82f6] px-3 py-1.5 text-white disabled:opacity-50' onClick={createFile} disabled={!createClassName.trim()}>Create</button>
-          </div>
-        </div>
-      </Modal>
+      {aiLayoutItem && <AiLayoutDialog
+        isOpen={Boolean(aiLayoutItem)}
+        onClose={() => setAiLayoutItem(null)}
+        rootFolder={rootFolder}
+        filePath={aiLayoutItem.path}
+        fileName={getComponentName(aiLayoutItem.path)}
+        onGenerated={() => {
+          getFiles(rootFolder)
+          loadComponent(aiLayoutItem.path)
+        }}
+      />}
       <Modal
         isOpen={Boolean(deleteConfirmItems && deleteConfirmItems.length > 0)}
         onClose={() => setDeleteConfirmItems(null)}

@@ -1,9 +1,10 @@
 import { Box, Center, HStack } from "base/Stack";
 import clsx from "clsx";
+import pathUtils from 'path-browserify';
 import { useEffect, useRef, useState } from "react";
 import { NodeRendererProps } from "react-arborist";
 import { FiPlus } from 'react-icons/fi';
-import pathUtils from 'path-browserify';
+import { LuSparkle } from 'react-icons/lu';
 import { getDroppedPaths, renderResourceIcon } from "./resourceUtils";
 
 type AssetTreeNodeProps = NodeRendererProps<any> & {
@@ -12,13 +13,20 @@ type AssetTreeNodeProps = NodeRendererProps<any> & {
   onCreate?: (data: any) => void;
   canRename?: boolean;
   onImport?: (data: any, sourcePaths: string[]) => void;
+  onAiGenerate?: (data: any) => void;
 };
 
-export function TreeNode({ node, style, dragItem, getDragItems, onCreate, canRename, onImport }: AssetTreeNodeProps) {
+export function TreeNode({ node, style, dragItem, getDragItems, onCreate, canRename, onImport, onAiGenerate }: AssetTreeNodeProps) {
   const renameInput = useRef<HTMLInputElement>(null);
   const [isFileDropTarget, setIsFileDropTarget] = useState(false);
   const isRenamable = canRename && !node.data.isDirectory && node.data.type !== 'frame';
   const canReceiveFileDrop = Boolean(onImport);
+  const displayName = node.data.type === 'component' && node.data.name.endsWith('.tsx')
+    ? node.data.name.slice(0, -4)
+    : node.data.name;
+  const canGenerateLayout = !node.data.isDirectory
+    && node.data.name?.endsWith('.tsx')
+    && /[\\/]src[\\/](?:scene|components)[\\/]/.test(node.data.path || '');
 
   useEffect(() => {
     if (node.isEditing) {
@@ -98,15 +106,29 @@ export function TreeNode({ node, style, dragItem, getDragItems, onCreate, canRen
       {node.isEditing ? <input
         ref={renameInput}
         className="h-5 min-w-0 rounded-sm border border-[#4a90e2] bg-[#151515] px-1 text-[12px] text-[#e2e2e2] outline-none"
-        defaultValue={node.data.name}
+        defaultValue={displayName}
         onBlur={() => node.reset()}
         onClick={(event) => event.stopPropagation()}
         onKeyDown={(event) => {
           if (event.key === 'Escape') node.reset()
           if (event.key === 'Enter') node.submit(renameInput.current?.value || '')
         }}
-      /> : <Box className={clsx('truncate', node.isSelected ? 'text-[#ffffff]' : 'text-[#d6d6d6]')}>{node.data.name}</Box>}
+      /> : <Box className={clsx('truncate', node.isSelected ? 'text-[#ffffff]' : 'text-[#d6d6d6]')}>{displayName}</Box>}
     </Center>
+    <div className='ml-1 flex shrink-0 items-center'>
+    {canGenerateLayout && <button
+      type="button"
+      className="flex items-center gap-1 rounded px-1 py-0.5 text-[11px] text-[#aeb8c5] hover:bg-[#49637f] hover:text-white"
+      title="Generate layout with AI"
+      aria-label="Generate layout with AI"
+      onMouseDown={(event) => event.stopPropagation()}
+      onClick={(event) => {
+        event.stopPropagation()
+        onAiGenerate?.(node.data)
+      }}
+    >
+      <LuSparkle size={13} />
+    </button>}
     {node.data.createKind && <button
       type="button"
       className="ml-1 flex shrink-0 rounded p-0.5 text-[#aeb8c5] hover:bg-[#49637f] hover:text-white"
@@ -120,5 +142,6 @@ export function TreeNode({ node, style, dragItem, getDragItems, onCreate, canRen
     >
       <FiPlus size={14} />
     </button>}
+    </div>
   </HStack >
 }

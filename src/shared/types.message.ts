@@ -1,7 +1,7 @@
 import {
   ADD_NEW_STATE, CHANGE_FUNCTION,
   CHANGE_LANGUAGE, CHECK_FILE_EXIST,
-  CREATE_ACTION, CREATE_ASSET_REQUEST, CREATE_COMPONENT_FILE_REQUEST, CREATE_I18N, CREATE_NEW_ACTION, CREATE_PROJECT_REQUEST, CREATE_SPRITE_IMAGE_ASSET_REQUEST, CREATE_SPRITE_IMAGE_ASSET_FILE_REQUEST, CREATE_SPRITE_IMAGE_ASSET_CLIPBOARD_REQUEST, GENERATE_SPRITE_IMAGES_REQUEST, REPLACE_SPRITE_IMAGE_REQUEST, REPLACE_SPRITE_IMAGE_FILE_REQUEST, REPLACE_SPRITE_IMAGE_CLIPBOARD_REQUEST, RESIZE_SPRITE_IMAGE_REQUEST,
+  CREATE_ACTION, CREATE_ASSET_REQUEST, CREATE_COMPONENT_FILE_REQUEST, CREATE_I18N, CREATE_NEW_ACTION, CREATE_PROJECT_REQUEST, CREATE_SPRITE_IMAGE_ASSET_REQUEST, CREATE_SPRITE_IMAGE_ASSET_FILE_REQUEST, CREATE_SPRITE_IMAGE_ASSET_CLIPBOARD_REQUEST, GENERATE_LAYOUT_WITH_AI_REQUEST, GENERATE_SPRITE_IMAGES_REQUEST, REPLACE_SPRITE_IMAGE_REQUEST, REPLACE_SPRITE_IMAGE_FILE_REQUEST, REPLACE_SPRITE_IMAGE_CLIPBOARD_REQUEST, RESIZE_SPRITE_IMAGE_REQUEST,
   DELETE_COMPONENT, DUPLICATE_COMPONENT,
   SYNC_RES_REQUEST, RENAME_RESOURCE_REQUEST, IMPORT_RESOURCES_REQUEST, GEN_COMPONENT_REQUEST, GEN_PROP_TYPES_REQUEST, GET_FOLDER_FILES, RUN_DEV_SERVER_REQUEST,
   GET_COLLIDER_SETTINGS_REQUEST, LOAD_COMPONENT_REQUEST, NEW_COMPONENT,
@@ -17,8 +17,9 @@ export type IpcRequest =
   | { key: typeof CREATE_I18N }
   | { key: typeof CREATE_PROJECT_REQUEST, rootFolder: string, projectName: string }
   | { key: typeof CREATE_ASSET_REQUEST, rootFolder: string, assetType: string, data: any }
-  | { key: typeof CREATE_COMPONENT_FILE_REQUEST, rootFolder: string, directory: string, name: string, kind: 'component' | 'scene' }
+  | { key: typeof CREATE_COMPONENT_FILE_REQUEST, rootFolder: string, directory: string, name?: string, kind: 'component' | 'scene' }
   | { key: typeof GENERATE_SPRITE_IMAGES_REQUEST, rootFolder: string, prompt: string, targetPath?: string }
+  | { key: typeof GENERATE_LAYOUT_WITH_AI_REQUEST, rootFolder: string, filePath: string, prompt: string, referenceImagePath?: string, useClipboardReference?: boolean }
   | { key: typeof REPLACE_SPRITE_IMAGE_REQUEST, rootFolder: string, targetPath: string, targetKey: string, jobId: string, imageIndex: number }
   | { key: typeof REPLACE_SPRITE_IMAGE_FILE_REQUEST, rootFolder: string, targetPath: string, sourcePath: string }
   | { key: typeof REPLACE_SPRITE_IMAGE_CLIPBOARD_REQUEST, rootFolder: string, targetPath: string, targetKey: string }
@@ -41,7 +42,7 @@ export type IpcRequest =
   | { key: typeof GEN_COMPONENT_REQUEST, nodesData: any, filePath: string }
   | { key: typeof GEN_PROP_TYPES_REQUEST }
   | { key: typeof NEW_COMPONENT }
-  | { key: typeof RE_NAME_COMPONENT }
+  | { key: typeof RE_NAME_COMPONENT, rootFolder: string, componentPath: string, newName: string }
   | { key: typeof DUPLICATE_COMPONENT }
   | { key: typeof DELETE_COMPONENT }
   | { key: typeof CREATE_ACTION }
@@ -62,6 +63,7 @@ export type IpcResponse =
   | { key: typeof CREATE_ASSET_REQUEST }
   | { key: typeof CREATE_COMPONENT_FILE_REQUEST }
   | { key: typeof GENERATE_SPRITE_IMAGES_REQUEST }
+  | { key: typeof GENERATE_LAYOUT_WITH_AI_REQUEST }
   | { key: typeof REPLACE_SPRITE_IMAGE_REQUEST }
   | { key: typeof REPLACE_SPRITE_IMAGE_FILE_REQUEST }
   | { key: typeof REPLACE_SPRITE_IMAGE_CLIPBOARD_REQUEST }
