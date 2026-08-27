@@ -832,6 +832,31 @@ export class PreviewScene extends PreviewSceneSelection {
     await this.reloadEditingComponent()
   }
 
+  async duplicateSelectedNode() {
+    const selectedNode = this.getEditingNodeByPath(this.editingPaths[0])
+    if (!selectedNode || selectedNode.tag === 'SceneComponent') return
+
+    const findSiblings = (nodes: any[]): any[] | undefined => {
+      if (nodes.includes(selectedNode)) return nodes
+      return nodes.map((node) => findSiblings(node.children || [])).find(Boolean)
+    }
+    const siblings = findSiblings(this.editingComponent)
+    if (!siblings) return
+
+    this.pushUndoHistory()
+    const duplicate = cloneDeep(selectedNode)
+    siblings.splice(siblings.indexOf(selectedNode) + 1, 0, duplicate)
+
+    const assignIds = (nodes: any[], prefix = '') => nodes.forEach((node, nodeIndex) => {
+      node.id = prefix ? `${prefix}-${nodeIndex}` : `${nodeIndex}`
+      assignIds(node.children || [], node.id)
+    })
+    assignIds(this.editingComponent)
+    this.editingPaths = [duplicate.id]
+    await this.reloadEditingComponent()
+    window.postMessage({ type: 'previewRestoreComponentTree', treeData: this.editingComponent, selectPaths: this.editingPaths }, '*')
+  }
+
   getScenePositionFromClient(clientX?: number, clientY?: number) {
     const canvas = document.querySelector<HTMLCanvasElement>('#sdl-canvas')
     const bounds = canvas?.getBoundingClientRect()

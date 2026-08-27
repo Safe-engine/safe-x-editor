@@ -12,6 +12,11 @@ export function registerKeyboardHandler(scene: PreviewScene) {
     if (keyCode === KEY.shift || keyCode === KEY.shiftR) return
     if (event.ctrlKey || event.metaKey) {
       if (keyCode === KEY.s) await scene.saveComponent()
+      else if (keyCode === KEY.d) {
+        event.preventDefault()
+        event.stopImmediatePropagation()
+        await scene.duplicateSelectedNode()
+      }
       else if (keyCode === KEY.r) {
         setLastSceneX(0)
         setLastSceneY(0)
