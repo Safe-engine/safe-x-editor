@@ -175,19 +175,20 @@ async function parseChildren(root, parentNode: Node, data: ProjectData, evalInit
     return spriteFrameAsset?.value
   }
 
-  function getLabelText(string = '') {
+  function getLabelText(value: unknown = ''): string {
+    const string = typeof value === 'string' ? value : String(value ?? '')
     if (string.includes('[')) {
       const staticKey = parseStringFromValue(string).split('[')[0]
       const staticProps = staticPropsMap[staticKey]
       if (staticProps) {
         const arrayIndexStr = string.replace(staticKey, 'staticData')
-        return eval(`const staticData = ${JSON.stringify(staticProps)};${evalInit}${arrayIndexStr}`)
+        return String(eval(`const staticData = ${JSON.stringify(staticProps)};${evalInit}${arrayIndexStr}`) ?? '')
       }
     } else if (string.includes('`')) {
-      return tryGetValue(string.substring(1, string.length - 1))
+      return String(tryGetValue(string.substring(1, string.length - 1)) ?? '')
     }
-    if (string.includes('.')) return tryGetValue(string)
-    return parseStringFromValue(string) ?? string
+    if (string.includes('.')) return String(tryGetValue(string) ?? '')
+    return String(parseStringFromValue(string) ?? string)
   }
 
   if (tag === 'Sprite' || tag === 'Button' || tag === 'ProgressBar' || tag === 'CircleProgress') {
