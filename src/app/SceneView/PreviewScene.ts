@@ -607,9 +607,26 @@ export class PreviewScene extends PreviewSceneSelection {
   async restoreHistoryEntry(historyEntry: HistoryEntry) {
     this.editingComponent = cloneDeep(historyEntry.editingComponent)
     this.editingPaths = [...historyEntry.editingPaths]
-    this.drawNode.destroy()
-    this.createDrawNode()
-    await loadSceneViewSdl({ name: this.editingComponentName, treeData: this.editingComponent }, GlobalState.data, this.drawNode)
+    const previousDrawNode = this.drawNode
+    const nextDrawNode = createNode('PreviewDrawNode')
+    nextDrawNode.anchorX = 0
+    nextDrawNode.anchorY = 0
+    nextDrawNode.addComponent(new GridRender())
+    nextDrawNode.x = previousDrawNode.x
+    nextDrawNode.y = previousDrawNode.y
+    nextDrawNode.scaleX = previousDrawNode.scaleX
+    nextDrawNode.scaleY = previousDrawNode.scaleY
+    nextDrawNode.active = false
+    this.node.addChild(nextDrawNode)
+    try {
+      await loadSceneViewSdl({ name: this.editingComponentName, treeData: this.editingComponent }, GlobalState.data, nextDrawNode)
+    } catch (error) {
+      nextDrawNode.destroy()
+      throw error
+    }
+    this.drawNode = nextDrawNode
+    nextDrawNode.active = true
+    previousDrawNode.destroy()
     this.syncEditingFlag()
     this.updateBoxColliderEditor()
     this.updateArrowPosition()
@@ -814,6 +831,9 @@ export class PreviewScene extends PreviewSceneSelection {
       .filter((node) => node && node.tag !== 'SceneComponent'))
     if (!selectedNodes.size) return
 
+    const runtimeNodes = this.editingPaths
+      .map((editingPath) => getCurrentNode(this.drawNode, this.getChildrenIndex(editingPath)))
+      .filter((node) => node !== this.drawNode)
     this.pushUndoHistory()
     const removeSelectedNodes = (nodes: any[]): any[] => nodes
       .filter((node) => !selectedNodes.has(node))
@@ -827,9 +847,20 @@ export class PreviewScene extends PreviewSceneSelection {
       assignIds(node.children || [], node.id)
     })
     assignIds(this.editingComponent)
-    window.postMessage({ type: 'previewRestoreComponentTree', treeData: this.editingComponent, selectPaths: [] }, '*')
     this.changeSelectPath([])
-    await this.reloadEditingComponent()
+    const selectedRuntimeNodes = new Set(runtimeNodes)
+    runtimeNodes
+      .filter((node) => {
+        let parent = node.parent
+        while (parent) {
+          if (selectedRuntimeNodes.has(parent)) return false
+          parent = parent.parent
+        }
+        return true
+      })
+      .forEach((node) => node.destroy())
+    this.syncEditingFlag()
+    window.postMessage({ type: 'previewRestoreComponentTree', treeData: this.editingComponent, selectPaths: [] }, '*')
   }
 
   async duplicateSelectedNode() {
