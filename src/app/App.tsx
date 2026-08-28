@@ -5,6 +5,7 @@ import { Toaster } from 'react-hot-toast'
 
 import { useSelector } from 'states/app.context'
 import { selectRootFolder, selectSelectedEditingPath } from 'states/app.selectors'
+import { RESET_DOCK_LAYOUT } from 'shared/constant.message'
 import AssetsPanel from './AssetsPanel'
 import NewProjectDialog from './NewProjectDialog'
 import NodeTree from './NodeTree'
@@ -14,6 +15,16 @@ import SettingsDialog from './SettingsDialog'
 import './globals.css'
 
 const SCENE_TAB_ID = 'scene';
+const LAYOUT_STORAGE_KEY = 'safe-x-editor:dock-layout';
+
+function getSavedLayout(): LayoutNode[] | undefined {
+  try {
+    const layout = JSON.parse(localStorage.getItem(LAYOUT_STORAGE_KEY) || 'null');
+    return Array.isArray(layout) ? layout : undefined;
+  } catch {
+    return undefined;
+  }
+}
 
 function findSceneWindow(layout: LayoutNode[]): Extract<LayoutNode, { type: 'Window' }> | undefined {
   for (const node of layout) {
@@ -28,13 +39,31 @@ function findSceneWindow(layout: LayoutNode[]): Extract<LayoutNode, { type: 'Win
 export function App() {
   const rootFolder = useSelector(selectRootFolder);
   const componentName = useSelector(selectSelectedEditingPath);
-  const [layout, setLayout] = useState<LayoutNode[]>();
+  const [layout, setLayout] = useState<LayoutNode[] | undefined>(getSavedLayout);
   const [dockableKey, setDockableKey] = useState(0);
   const sceneWindowId = useRef<string>();
   useEffect(() => {
     const projectName = rootFolder.split(/[\\/]/).filter(Boolean).pop()
     document.title = [projectName, componentName].filter(Boolean).join(' - ') || 'Safe Engine X Editor'
   }, [rootFolder, componentName])
+
+  useEffect(() => {
+    if (!layout) return;
+    localStorage.setItem(LAYOUT_STORAGE_KEY, JSON.stringify(layout));
+  }, [layout])
+
+  useEffect(() => {
+    const ipcRenderer = (globalThis as any).require?.('electron')?.ipcRenderer;
+    const resetLayout = () => {
+      localStorage.removeItem(LAYOUT_STORAGE_KEY);
+      sceneWindowId.current = undefined;
+      setLayout(undefined);
+      setDockableKey((key) => key + 1);
+    };
+
+    ipcRenderer?.on(RESET_DOCK_LAYOUT, resetLayout);
+    return () => ipcRenderer?.removeListener(RESET_DOCK_LAYOUT, resetLayout);
+  }, [])
 
   const handleLayoutChange = useCallback((nextLayout: LayoutNode[]) => {
     const sceneWindow = findSceneWindow(nextLayout);
@@ -69,12 +98,12 @@ export function App() {
             </Dockable.Tab>
           </Dockable.Window>
         </Dockable.Panel>
-        <Dockable.Window size={3}>
+        <Dockable.Window size={2}>
           <Dockable.Tab id={SCENE_TAB_ID} name='Scene'>
             <SceneView />
           </Dockable.Tab>
         </Dockable.Window>
-        <Dockable.Panel orientation='column' size={1}>
+        <Dockable.Panel orientation='row' size={2}>
           <Dockable.Window>
             <Dockable.Tab id='hierarchy' name='Hierarchy'>
               <NodeTree />

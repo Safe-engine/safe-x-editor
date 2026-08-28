@@ -6,6 +6,7 @@ import {
   GET_OPEN_WITH_APPS_REQUEST,
   NEW_PROJECT,
   REMOVE_OPEN_WITH_APP_REQUEST,
+  RESET_DOCK_LAYOUT,
   TOGGLE_RULER,
   TOGGLE_SNAP,
 } from '@shared/constant.message'
@@ -184,6 +185,13 @@ export default class MenuBuilder {
     }
   }
 
+  buildResetLayoutMenuItem() {
+    return {
+      label: 'Reset Layout',
+      click: () => this.mainWindow.webContents.send(RESET_DOCK_LAYOUT),
+    }
+  }
+
   buildOpenWithSubmenu() {
     const submenu: any[] = [
       {
@@ -308,6 +316,7 @@ export default class MenuBuilder {
       submenu: [
         this.buildSnapMenuItem(),
         this.buildRulerMenuItem(),
+        this.buildResetLayoutMenuItem(),
         { type: 'separator' },
         {
           label: 'Reload',
@@ -337,6 +346,7 @@ export default class MenuBuilder {
       submenu: [
         this.buildSnapMenuItem(),
         this.buildRulerMenuItem(),
+        this.buildResetLayoutMenuItem(),
         { type: 'separator' },
         {
           label: 'Toggle Full Screen',
@@ -436,6 +446,7 @@ export default class MenuBuilder {
               ? [
                 this.buildSnapMenuItem(),
                 this.buildRulerMenuItem(),
+                this.buildResetLayoutMenuItem(),
                 { type: 'separator' },
                 {
                   label: '&Reload',
@@ -462,6 +473,7 @@ export default class MenuBuilder {
             : [
                 this.buildSnapMenuItem(),
                 this.buildRulerMenuItem(),
+                this.buildResetLayoutMenuItem(),
                 { type: 'separator' },
                 {
                   label: 'Toggle &Full Screen',

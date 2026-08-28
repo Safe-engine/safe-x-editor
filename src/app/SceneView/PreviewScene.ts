@@ -110,9 +110,9 @@ export class PreviewScene extends PreviewSceneSelection {
   }
 
   async loadLastComponent() {
-    const lastLoadedFile = getLastLoadedFile()
-    if (!lastLoadedFile || GlobalState.filePath) return
-    await this.loadComponent(lastLoadedFile)
+    const filePath = GlobalState.filePath || getLastLoadedFile()
+    if (!filePath) return
+    await this.loadComponent(filePath)
   }
 
   updateInputModifiers(modifiers: { shiftKey?: boolean; ctrlKey?: boolean; metaKey?: boolean }) {

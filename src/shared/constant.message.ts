@@ -24,6 +24,7 @@ export const REMOVE_OPEN_WITH_APP_REQUEST = 'Remove Open With App';
 export const CONFIGURE_SETTINGS = 'Configure Settings';
 export const TOGGLE_SNAP = 'Toggle Snap';
 export const TOGGLE_RULER = 'Toggle Ruler';
+export const RESET_DOCK_LAYOUT = 'Reset Dock Layout';
 export const GET_AI_IMAGE_SETTINGS_REQUEST = 'Get AI Image Settings';
 export const SAVE_AI_IMAGE_SETTINGS_REQUEST = 'Save AI Image Settings';
 
