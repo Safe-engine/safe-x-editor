@@ -1,11 +1,12 @@
 import { sendRequest } from 'app/app.ipc';
 import { ipcMain } from 'helper/electronRemote';
+import pathUtils from 'path-browserify';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Tree, TreeApi } from 'react-arborist';
 import toast from 'react-hot-toast';
-import { GEN_COMPONENT_REQUEST } from 'shared/constant.message';
+import { CREATE_COMPONENT_FILE_REQUEST, GEN_COMPONENT_REQUEST } from 'shared/constant.message';
 import { useActions, useSelector } from 'states/app.context';
-import { selectComponentTree, selectSelectedFilePath, selectSelectedPaths } from 'states/app.selectors';
+import { selectComponentTree, selectRootFolder, selectSelectedFilePath, selectSelectedPaths } from 'states/app.selectors';
 import { TreeItem } from './TreeItem';
 
 export default function NodeTree() {
@@ -13,6 +14,7 @@ export default function NodeTree() {
   const treeData = useSelector(selectComponentTree) || [];
   const filePath = useSelector(selectSelectedFilePath);
   const selectedPaths = useSelector(selectSelectedPaths);
+  const rootFolder = useSelector(selectRootFolder);
   const treeRef = useRef<TreeApi<any> | undefined>(undefined);
   const treeContainerRef = useRef<HTMLDivElement>(null);
   const isApplyingPreviewSelection = useRef(false);
@@ -139,6 +141,50 @@ export default function NodeTree() {
     window.postMessage({ type: 'addDroppedNode', item, parentId }, '*');
   }
 
+  async function createFile(kind: 'scene' | 'component', sourceNode?: any) {
+    if (!rootFolder) {
+      toast.error('No project is loaded');
+      return;
+    }
+    try {
+      const response: any = await sendRequest({
+        key: CREATE_COMPONENT_FILE_REQUEST,
+        rootFolder,
+        directory: `${rootFolder}/src/${kind === 'scene' ? 'scene' : 'components'}`,
+        kind,
+      });
+      if (!response || response.error) throw Error(response?.message || `Unable to create ${kind}`);
+
+      if (sourceNode) {
+        const generated: any = await sendRequest({
+          key: GEN_COMPONENT_REQUEST,
+          nodesData: sourceNode,
+          filePath: response.path,
+        });
+        if (!generated || generated.error) throw Error(generated?.message || `Unable to copy the selected node`);
+      }
+
+      if (kind === 'component' && sourceNode?.id) {
+        const componentName = response.path.split(/[\\/]/).pop()?.replace(/\.tsx$/, '') || '';
+        let importPath = pathUtils.relative(pathUtils.dirname(filePath), response.path).replace(/\\/g, '/').replace(/\.tsx$/, '');
+        if (!importPath.startsWith('.')) importPath = `./${importPath}`;
+        window.postMessage({
+          type: 'extractHierarchyNode',
+          nodeId: sourceNode.id,
+          componentName,
+          imported: `import { ${componentName} } from '${importPath}';`,
+          createdPath: response.path,
+          rootFolder,
+        }, '*');
+      } else {
+        window.postMessage({ type: 'focusComponentRename', path: response.path, rootFolder }, '*');
+      }
+      toast.success(`${kind === 'scene' ? 'Scene' : 'Component'} created`);
+    } catch (error: any) {
+      toast.error(error?.message || `Unable to create ${kind}`);
+    }
+  }
+
   const onAddNode = (name: string, parentId: string) => {
     window.postMessage({ type: 'addDroppedNode', item: { kind: 'component', name }, parentId }, '*');
   }
@@ -186,7 +232,7 @@ export default function NodeTree() {
           onMove={onMove}
           openByDefault
         >
-          {(props) => <TreeItem {...props} onAddNode={onAddNode} onFocusNode={onFocusNode} onDropNode={onDropNode} />}
+          {(props) => <TreeItem {...props} onAddNode={onAddNode} onCreateFile={createFile} onFocusNode={onFocusNode} onDropNode={onDropNode} />}
         </Tree>
       </div>
       {/* <ContextMenu

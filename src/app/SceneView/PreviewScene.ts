@@ -959,6 +959,39 @@ export class PreviewScene extends PreviewSceneSelection {
     window.postMessage({ type: 'previewRestoreComponentTree', treeData: this.editingComponent, selectPaths: this.editingPaths }, '*')
   }
 
+  async extractHierarchyNode(nodeId: string, componentName: string, imported: string, createdPath: string, rootFolder: string) {
+    if (!nodeId || !componentName || !imported || !this.editingComponent?.length) return
+
+    const findSiblings = (nodes: any[]): any[] | undefined => {
+      if (nodes.some((node) => node.id === nodeId)) return nodes
+      return nodes.map((node) => findSiblings(node.children || [])).find(Boolean)
+    }
+    const siblings = findSiblings(this.editingComponent)
+    const selectedNode = siblings?.find((node) => node.id === nodeId)
+    if (!siblings || !selectedNode || selectedNode.tag === 'SceneComponent') return
+
+    this.pushUndoHistory()
+    const replacement = {
+      id: selectedNode.id,
+      expanded: true,
+      tag: componentName,
+      props: {},
+      components: [],
+      children: [],
+      imported,
+    }
+    siblings.splice(siblings.indexOf(selectedNode), 1, replacement)
+    const assignIds = (nodes: any[], prefix = '') => nodes.forEach((node, nodeIndex) => {
+      node.id = prefix ? `${prefix}-${nodeIndex}` : `${nodeIndex}`
+      assignIds(node.children || [], node.id)
+    })
+    assignIds(this.editingComponent)
+    this.editingPaths = [replacement.id]
+    await this.saveComponent()
+    window.postMessage({ type: 'previewRestoreComponentTree', treeData: this.editingComponent, selectPaths: this.editingPaths }, '*')
+    window.postMessage({ type: 'focusComponentRename', path: createdPath, rootFolder }, '*')
+  }
+
   async importPngAsSprite(sourcePaths: string[], clientX?: number, clientY?: number) {
     const rootFolder = getLastRootFolder()
     if (!rootFolder || !sourcePaths?.length) return

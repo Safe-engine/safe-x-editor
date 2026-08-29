@@ -181,10 +181,16 @@ export default function AssetsPanel({ tab, loadProject = false }: { tab: 'compon
   useEffect(() => {
     const refreshResources = (event: MessageEvent) => {
       if (event.data?.type === 'resourcesImported' && event.data.rootFolder === rootFolder) getFiles(rootFolder);
+      if (selectedTab === 'components' && event.data?.type === 'focusComponentRename' && event.data.rootFolder === rootFolder) {
+        setComponentFilter('');
+        setPendingRenamePath(event.data.path);
+        getFiles(rootFolder);
+        loadComponent(event.data.path);
+      }
     };
     window.addEventListener('message', refreshResources);
     return () => window.removeEventListener('message', refreshResources);
-  }, [getFiles, rootFolder]);
+  }, [getFiles, loadComponent, rootFolder, selectedTab]);
 
   useEffect(() => {
     const lastFile = getLastLoadedFile()

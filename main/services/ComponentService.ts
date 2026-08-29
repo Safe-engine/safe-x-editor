@@ -41,8 +41,8 @@ export function createComponentFile({ rootFolder, directory, name, kind }) {
   if (fs.existsSync(targetPath)) throw Error(`${className}.tsx already exists.`);
 
   const baseClass = kind === 'component' ? 'ComponentX' : 'Scene';
-  const baseContainer = kind === 'component' ? 'Container' : 'Scene';
-  const importBaseContainer = kind === 'component' ? ', ' + baseContainer : '';
+  const baseContainer = 'Container';
+  const importBaseContainer = ', ' + baseContainer;
   fs.writeFileSync(targetPath, `import { ${baseClass}${importBaseContainer} } from '@safe-engine/sdl';\n\nexport class ${className} extends ${baseClass} {
     __view() {
       <${baseContainer} />
