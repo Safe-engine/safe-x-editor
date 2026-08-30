@@ -34,9 +34,11 @@ function parseBoneControls(value: string): BoneControl[] | undefined {
     const bones = JSON.parse(expression.slice(1, -1).replace(/'/g, '"'));
     if (!Array.isArray(bones)) return;
     return bones
-      .filter((bone): bone is unknown[] => Array.isArray(bone))
+      .filter((bone): bone is [string, unknown, unknown] => (
+        Array.isArray(bone) && typeof bone[0] === 'string' && bone[0].trim().length > 0
+      ))
       .map(([name, x, y]) => [
-        typeof name === 'string' ? name : '',
+        name,
         typeof x === 'number' ? x : 0,
         typeof y === 'number' ? y : 0,
       ]);
@@ -256,11 +258,15 @@ const genPropsLine = (props: { [key: string]: any }, tag?: string) => {
       if (val === false) { return `${key}={false}`; }
       if (typeof val === 'number') { return `${key}={${val}}`; }
       if (key === 'bones' && Array.isArray(val)) {
-        const bones: BoneControl[] = val.map(([name, x, y]) => [
-          typeof name === 'string' ? name : '',
-          typeof x === 'number' ? x : 0,
-          typeof y === 'number' ? y : 0,
-        ]);
+        const bones: BoneControl[] = val
+          .filter((bone): bone is [string, unknown, unknown] => (
+            Array.isArray(bone) && typeof bone[0] === 'string' && bone[0].trim().length > 0
+          ))
+          .map(([name, x, y]) => [
+            name,
+            typeof x === 'number' ? x : 0,
+            typeof y === 'number' ? y : 0,
+          ]);
         return `${key}={[${bones.map(([name, x, y]) => `[${quoteSingle(name)}, ${x}, ${y}]`).join(', ')}]}`;
       }
       if ((key === 'capInsets' || key === 'offset') && Array.isArray(val)) {

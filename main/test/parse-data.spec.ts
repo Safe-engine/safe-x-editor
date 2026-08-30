@@ -78,6 +78,20 @@ describe('SpineBonesControl', () => {
 
     expect(() => parse(`const view = (${component});`, { jsx: true, range: true })).not.toThrow();
   });
+
+  it('omits bone controls without a valid bone name', async () => {
+    const source = `const view = (
+  <SpineSkeleton>
+    <SpineBonesControl bones={[[null, 10, 20], ['head', 4, 8]]} />
+  </SpineSkeleton>
+);`;
+    const parsed = parse(source, { jsx: true, range: true });
+    const { treeData } = await convertComponentData(parsed, 'Spine.tsx', source);
+    const { component } = genReactComponentString(treeData);
+
+    expect(component).toContain("bones={[['head', 4, 8]]}");
+    expect(component).not.toContain('null, 10, 20');
+  });
 });
 
 describe('Sprite', () => {
