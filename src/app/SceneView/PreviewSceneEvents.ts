@@ -22,8 +22,9 @@ export function registerKeyboardHandler(scene: PreviewScene) {
         setLastSceneY(0)
         await scene.loadComponent(GlobalState.filePath)
       } else if (keyCode === KEY.a) {
-        await scene.loadProjectData()
-        await scene.loadComponent(GlobalState.filePath)
+        event.preventDefault()
+        event.stopImmediatePropagation()
+        scene.selectAllNodes()
       } else if (keyCode === KEY.z && event.shiftKey) await scene.redoEdit()
       else if (keyCode === KEY.z) await scene.undoEdit()
       else if (keyCode === KEY.y) await scene.redoEdit()
@@ -34,6 +35,13 @@ export function registerKeyboardHandler(scene: PreviewScene) {
       event.preventDefault()
       event.stopImmediatePropagation()
       await scene.deleteSelectedNodes()
+      return
+    }
+    if (!event.shiftKey && [KEY.up, KEY.down, KEY.left, KEY.right].includes(keyCode)) {
+      if (keyCode === KEY.up) scene.moveSelectedNodeWithHistory(0, -1)
+      else if (keyCode === KEY.down) scene.moveSelectedNodeWithHistory(0, 1)
+      else if (keyCode === KEY.left) scene.moveSelectedNodeWithHistory(-1, 0)
+      else scene.moveSelectedNodeWithHistory(1, 0)
       return
     }
     if (!event.shiftKey) return

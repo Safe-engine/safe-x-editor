@@ -4,7 +4,7 @@ import { ContextMenu } from 'components/ContextMenu';
 import { parseFloatFromValue, parseOutline, parseStringFromValue, removeTextureMatchingNodeSize } from 'helper/node';
 import { memo, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { FiBox, FiCircle, FiEdit2, FiGrid, FiLink, FiLogIn, FiPlus, FiRepeat, FiRotateCcw, FiShare2, FiTrash2, FiTriangle } from 'react-icons/fi';
+import { FiBox, FiCircle, FiEdit2, FiGrid, FiLink, FiLogIn, FiMoreVertical, FiPlus, FiRepeat, FiRotateCcw, FiShare2, FiTrash2, FiTriangle } from 'react-icons/fi';
 import { GET_COLLIDER_SETTINGS_REQUEST, SAVE_COLLIDER_SETTINGS_REQUEST, UPDATE_PROJECT_COLORS_REQUEST } from 'shared/constant.message';
 import { useActions, useSelector } from 'states/app.context';
 import { selectAssets, selectColors, selectDesignResolution, selectFilesData, selectRootFolder, selectSelectedNode } from 'states/app.selectors';
@@ -105,6 +105,7 @@ const COMPONENT_OPTIONS = [
   { tag: 'PolygonCollider', label: 'Polygon Collider', icon: FiTriangle, props: { points: [] } },
   { tag: 'Widget', label: 'Widget', icon: FiGrid, props: {} },
   { tag: 'RigidBody', label: 'RigidBody', icon: FiLink, props: {} },
+  { tag: 'TouchEventRegister', label: 'Touch Event Register', icon: FiEdit2, props: {} },
   { tag: 'SpineBonesControl', label: 'Spine Bones Control', icon: FiShare2, props: { bones: [] }, requiresSpineSkeleton: true },
 ];
 
@@ -601,14 +602,14 @@ function ShadowField({ value, colors, onChange }) {
   );
 }
 
-function InspectorSection({ title, headerContent, headerAction, children }) {
+function InspectorSection({ title, headerContent, headerAction, headerMenuAction, children }) {
   return (
     <details className='border-b border-[#141414]' open>
       <summary className='flex h-8 cursor-default select-none items-center bg-[#202020] px-2 text-[11px] font-bold text-[#dcdcdc] marker:text-[#a8c7ff]'>
         <span className='ml-1'>{title.replace(/([a-z])([A-Z])/g, '$1 $2')}</span>
         {headerContent}
         <span className='ml-auto flex items-center'>
-          <span className='text-lg leading-none text-[#bdbdbd]'>⋮</span>
+          {headerMenuAction || <span className='text-lg leading-none text-[#bdbdbd]'>⋮</span>}
           {headerAction}
         </span>
       </summary>
@@ -646,6 +647,7 @@ function NodeProps() {
   const [colliderMatrix, setColliderMatrix] = useState('[]');
   const [isColliderSettingsOpen, setIsColliderSettingsOpen] = useState(false);
   const [componentMenuPosition, setComponentMenuPosition] = useState<{ x: number; y: number } | null>(null);
+  const [componentActionMenu, setComponentActionMenu] = useState<{ x: number; y: number; index: number } | null>(null);
 
   async function loadColliderSettings() {
     const settings: any = await sendRequest({ key: GET_COLLIDER_SETTINGS_REQUEST });
@@ -774,6 +776,12 @@ function NodeProps() {
         ...updated,
       },
     });
+  }
+
+  function removeComponent(index) {
+    updateComponents((selectedNode.components || []).filter((_, componentIndex) => componentIndex !== index));
+    if (editingBoxColliderIndex === index) toggleBoxColliderEditor(index);
+    else if (editingBoxColliderIndex !== null && editingBoxColliderIndex > index) setEditingBoxColliderIndex(editingBoxColliderIndex - 1);
   }
 
   function toggleBoxColliderEditor(index) {
@@ -1144,6 +1152,23 @@ function NodeProps() {
         key={`${component.tag}-${index}`}
         title={component.tag || `Component ${index + 1}`}
         headerAction={<LoadComponentButton tag={component.tag} path={findComponentPath(filesData, component.tag)} onLoad={loadComponent} />}
+        headerMenuAction={
+          <button
+            className='flex h-5 w-5 items-center justify-center rounded-sm text-[#bdbdbd] hover:bg-[#3569a8] hover:text-white'
+            type='button'
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              const { left, bottom } = event.currentTarget.getBoundingClientRect();
+              setComponentMenuPosition(null);
+              setComponentActionMenu({ x: Math.max(8, Math.min(left, window.innerWidth - 200)), y: bottom + 4, index });
+            }}
+            title='Component actions'
+            aria-label={`Actions for ${component.tag || `component ${index + 1}`}`}
+          >
+            <FiMoreVertical size={15} />
+          </button>
+        }
         headerContent={
           component.tag === 'Widget' ? (
             <label
@@ -1319,6 +1344,18 @@ function NodeProps() {
               : addComponent(option),
         };
       })}
+    />
+    <ContextMenu
+      x={componentActionMenu?.x ?? 0}
+      y={componentActionMenu?.y ?? 0}
+      width={192}
+      visible={Boolean(componentActionMenu)}
+      onClose={() => setComponentActionMenu(null)}
+      actions={[{
+        label: 'Remove Component',
+        icon: <FiTrash2 className='text-[#e57373]' size={16} />,
+        onClick: () => componentActionMenu && removeComponent(componentActionMenu.index),
+      }]}
     />
     <ColorEditorDialog
       colors={colors}
