@@ -4,10 +4,10 @@ import { ContextMenu } from 'components/ContextMenu';
 import { parseFloatFromValue, parseOutline, parseStringFromValue, removeTextureMatchingNodeSize } from 'helper/node';
 import { memo, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { FiBox, FiCircle, FiEdit2, FiGrid, FiLink, FiLogIn, FiMoreVertical, FiPlus, FiRepeat, FiRotateCcw, FiShare2, FiTrash2, FiTriangle } from 'react-icons/fi';
+import { FiBox, FiCircle, FiCrosshair, FiEdit2, FiGrid, FiLink, FiLogIn, FiMoreVertical, FiPlus, FiRepeat, FiRotateCcw, FiShare2, FiTrash2, FiTriangle } from 'react-icons/fi';
 import { GET_COLLIDER_SETTINGS_REQUEST, SAVE_COLLIDER_SETTINGS_REQUEST, UPDATE_PROJECT_COLORS_REQUEST } from 'shared/constant.message';
 import { useActions, useSelector } from 'states/app.context';
-import { selectAssets, selectColors, selectDesignResolution, selectFilesData, selectRootFolder, selectSelectedNode, selectSelectedNodes } from 'states/app.selectors';
+import { selectAssets, selectColors, selectComponentTree, selectDesignResolution, selectFilesData, selectRootFolder, selectSelectedNode, selectSelectedNodes } from 'states/app.selectors';
 import CapInsetsField from './CapInsetsField';
 import { ColliderSettingsDialog } from './ColliderSettingsDialog';
 import ColorEditorDialog from './ColorEditorDialog';
@@ -67,6 +67,14 @@ function getTextureSize(spriteFrame, assets) {
     width: texture?.size?.width ?? 0,
     height: texture?.size?.height ?? 0,
   };
+}
+
+function findNodeById(nodes, id) {
+  for (const node of nodes || []) {
+    if (node.id === id) return node;
+    const foundNode = findNodeById(node.children, id);
+    if (foundNode) return foundNode;
+  }
 }
 
 function findComponentPath(files, tag) {
@@ -403,7 +411,7 @@ function AxisInput({ axis, value, color, step = 1, onChange }) {
   );
 }
 
-function AxisRow({ label, values, step, onChange, onReset, isSize }) {
+function AxisRow({ label, values, step, onChange, onReset, onCenter, isSize }) {
   const axes = [
     { key: 'x', label: isSize ? 'W' : 'X', color: '#ff6565' },
     { key: 'y', label: isSize ? 'H' : 'Y', color: '#71d36b' },
@@ -433,6 +441,16 @@ function AxisRow({ label, values, step, onChange, onReset, isSize }) {
             title='Reset size'
           >
             <FiRotateCcw size={13} />
+          </button>
+        )}
+        {onCenter && (
+          <button
+            className='flex h-6 w-6 shrink-0 items-center justify-center rounded-sm border border-[#111] bg-[#303030] text-[#bdbdbd] hover:text-[#f0f0f0]'
+            type='button'
+            onClick={onCenter}
+            title='Center in parent'
+          >
+            <FiCrosshair size={13} />
           </button>
         )}
       </div>
@@ -637,6 +655,7 @@ function NodeProps() {
   const { changeSelectedNodeType, getFiles, loadComponent, updateMultiNodes } = useActions();
   const assets = useSelector(selectAssets);
   const colors = useSelector(selectColors);
+  const componentTree = useSelector(selectComponentTree);
   const designResolution = useSelector(selectDesignResolution);
   const filesData = useSelector(selectFilesData);
   const rootFolder = useSelector(selectRootFolder);
@@ -818,6 +837,18 @@ function NodeProps() {
 
   const props = selectedNode.props || {};
   const node = props.node || {};
+  const parentNodeId = selectedNode.id?.includes('-') ? selectedNode.id.slice(0, selectedNode.id.lastIndexOf('-')) : '';
+  const parentNode = parentNodeId ? findNodeById(componentTree, parentNodeId) : undefined;
+  const parentNodeProps = parentNode?.props?.node || {};
+  const parentTextureSize = getTextureSize(parentNode?.props?.spriteFrame, assets);
+  const parentWidth = parseFloatFromValue(parentNodeProps.width) ?? parentTextureSize.width;
+  const parentHeight = parseFloatFromValue(parentNodeProps.height) ?? parentTextureSize.height;
+  const centerBounds = parentNode && parentNode.tag !== 'SceneComponent'
+    ? {
+      width: parentWidth || designResolution.width,
+      height: parentHeight || designResolution.height,
+    }
+    : designResolution;
   const loop = selectedNode.loop;
   const { count } = loop || {};
   const position = getNodePosition(node);
@@ -916,6 +947,7 @@ function NodeProps() {
           const nextPosition = { ...position, [axis]: nextValue };
           updateNodeProps(buildPositionUpdate(node, nextPosition.x, nextPosition.y));
         }}
+        onCenter={() => updateNodeProps(buildPositionUpdate(node, centerBounds.width / 2, centerBounds.height / 2))}
       />
       <Field
         label='Rotation'
