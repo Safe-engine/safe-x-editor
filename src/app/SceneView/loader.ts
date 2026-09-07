@@ -395,8 +395,17 @@ async function parseChildren(root, parentNode: Node, data: ProjectData, evalInit
 }
 
 export async function loadSceneViewSdl(componentData, data: ProjectData, drawLayer: Node) {
-  const root = componentData.treeData ?? componentData
+  let root = componentData.treeData ?? componentData
   if (!root) return
+  if (componentData.isComponentPreview && !Array.isArray(root)) {
+    root = {
+      ...root,
+      props: {
+        ...root.props,
+        node: { ...root.props?.node, active: true },
+      },
+    }
+  }
   const { designedResolution, defaultProps = {} } = data
   const { width, height } = designedResolution
   const init = `const width = ${width};const height = ${height};`

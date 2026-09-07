@@ -7,7 +7,7 @@ import toast from 'react-hot-toast';
 import { FiBox, FiCircle, FiEdit2, FiGrid, FiLink, FiLogIn, FiMoreVertical, FiPlus, FiRepeat, FiRotateCcw, FiShare2, FiTrash2, FiTriangle } from 'react-icons/fi';
 import { GET_COLLIDER_SETTINGS_REQUEST, SAVE_COLLIDER_SETTINGS_REQUEST, UPDATE_PROJECT_COLORS_REQUEST } from 'shared/constant.message';
 import { useActions, useSelector } from 'states/app.context';
-import { selectAssets, selectColors, selectDesignResolution, selectFilesData, selectRootFolder, selectSelectedNode } from 'states/app.selectors';
+import { selectAssets, selectColors, selectDesignResolution, selectFilesData, selectRootFolder, selectSelectedNode, selectSelectedNodes } from 'states/app.selectors';
 import CapInsetsField from './CapInsetsField';
 import { ColliderSettingsDialog } from './ColliderSettingsDialog';
 import ColorEditorDialog from './ColorEditorDialog';
@@ -641,6 +641,7 @@ function NodeProps() {
   const filesData = useSelector(selectFilesData);
   const rootFolder = useSelector(selectRootFolder);
   const selectedNode = useSelector(selectSelectedNode);
+  const selectedNodes = useSelector(selectSelectedNodes);
   const [isColorEditorOpen, setIsColorEditorOpen] = useState(false);
   const [editingBoxColliderIndex, setEditingBoxColliderIndex] = useState<number | null>(null);
   const [colliderGroups, setColliderGroups] = useState<string[]>([]);
@@ -721,6 +722,15 @@ function NodeProps() {
         ...updated,
       },
     });
+  }
+
+  function updateNodeColor(color) {
+    updateMultiNodes(selectedNodes.map((node) => {
+      const updatedNode = { ...(node.props?.node || {}), color };
+      if (color === undefined) delete updatedNode.color;
+      return { component: 'props', updated: { node: updatedNode } };
+    }));
+    updatePreview('props', { node: { color } });
   }
 
   function updatePropGroup(groupName, groupValue) {
@@ -942,7 +952,7 @@ function NodeProps() {
       <ColorField
         value={node.color}
         colors={colors}
-        onChange={(color) => updateNodeProps({ color })}
+        onChange={updateNodeColor}
         onEdit={() => setIsColorEditorOpen(true)}
       />
       {Object.entries(node)

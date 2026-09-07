@@ -15,7 +15,11 @@ export const loadComponent = async ({ path }) => {
   const input = fs.readFileSync(path, { encoding: 'utf8' });
   const parsed = parse(input, { jsx: true, range: true });
   // fs.writeFileSync(logOutput, JSON.stringify(parsed, null, 2));
-  return convertComponentData(parsed, path, input);
+  const component = await convertComponentData(parsed, path, input);
+  return {
+    ...component,
+    isComponentPreview: /extends\s+ComponentX\b/.test(input),
+  };
 };
 
 export function createComponentFile({ rootFolder, directory, name, kind }) {
