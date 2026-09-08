@@ -353,7 +353,7 @@ async function parseChildren(root, parentNode: Node, data: ProjectData, evalInit
   if (renderNode !== parentNode && !renderNode.parent) parentNode.addChild(renderNode)
 
   const { node = {} } = props
-  const { scaleX = 1, scaleY = 1, scale = 1, rotation = 0, width, height, color, active, anchorX, anchorY, zIndex, zOrder, name, tag: nodeTag } = node
+  const { scaleX = 1, scaleY = 1, scale = 1, rotation = 0, width, height, color, active, anchorX, anchorY, zIndex, name, tag: nodeTag } = node
   const textureSize = ['Sprite', 'Button', 'ProgressBar', 'CircleProgress'].includes(tag)
     ? getTextureSize(props.spriteFrame)
     : undefined

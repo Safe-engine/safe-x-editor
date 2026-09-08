@@ -17,6 +17,7 @@ export default function NodeTree() {
   const rootFolder = useSelector(selectRootFolder);
   const treeRef = useRef<TreeApi<any> | undefined>(undefined);
   const treeContainerRef = useRef<HTMLDivElement>(null);
+  const hierarchyHasFocus = useRef(false);
   const isApplyingPreviewSelection = useRef(false);
   const [selectedTreeItem, setSelectedTreeItem] = useState<any>({});
   const [treeHeight, setTreeHeight] = useState(() => Math.max(0, typeof window !== 'undefined' ? window.innerHeight - 32 : 500));
@@ -56,6 +57,36 @@ export default function NodeTree() {
     observer.observe(container);
     return () => observer.disconnect();
   }, []);
+
+  useEffect(() => {
+    const handleDelete = (event: KeyboardEvent) => {
+      if (event.key !== 'Delete' && event.key !== 'Backspace') return;
+      const target = event.target;
+      const isTargetInHierarchy = target instanceof Element && treeContainerRef.current?.contains(target);
+      if (!isTargetInHierarchy && !hierarchyHasFocus.current) return;
+      if (target instanceof Element && target.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"])')) return;
+
+      const selectedTreeNodeIds = treeRef.current?.selectedNodes.map((node) => node.data.id) || [];
+      const selectedNodeIds = selectedTreeNodeIds.length ? selectedTreeNodeIds : selectedPaths;
+      if (!selectedNodeIds.length) return;
+
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      window.postMessage({ type: 'deleteHierarchyNodes', nodeIds: selectedNodeIds }, '*');
+    };
+
+    const updateHierarchyFocus = (event: PointerEvent) => {
+      const target = event.target;
+      hierarchyHasFocus.current = target instanceof Element && Boolean(treeContainerRef.current?.contains(target));
+    };
+
+    window.addEventListener('keydown', handleDelete, true);
+    window.addEventListener('pointerdown', updateHierarchyFocus, true);
+    return () => {
+      window.removeEventListener('keydown', handleDelete, true);
+      window.removeEventListener('pointerdown', updateHierarchyFocus, true);
+    };
+  }, [selectedPaths]);
 
   useEffect(() => {
     const tree = treeRef.current;
@@ -209,6 +240,8 @@ export default function NodeTree() {
       <div
         ref={treeContainerRef}
         className='min-h-0 flex-1'
+        data-keyboard-scope='hierarchy'
+        onPointerDownCapture={() => { hierarchyHasFocus.current = true; }}
         onDragOver={(event) => {
           if (event.dataTransfer.types.includes('application/x-safex-node')) {
             event.preventDefault();

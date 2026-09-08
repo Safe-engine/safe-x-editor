@@ -175,6 +175,10 @@ export function registerMessageHandler(scene: PreviewScene) {
     } else if (message.type === 'saveProject') void scene.saveComponent()
     else if (message.type === 'changeSelectPath') scene.changeSelectPath(message.selectPaths, false)
     else if (message.type === 'focusPreviewNode') scene.focusNode(message.path)
+    else if (message.type === 'deleteHierarchyNodes') {
+      scene.changeSelectPath(message.nodeIds, false)
+      void scene.deleteSelectedNodes()
+    }
     else if (message.type === 'reloadProjectData') void scene.reloadProjectData()
     else if (message.type === 'updateSelectedNode') void scene.updateSelectedNode(message.component, message.updated)
     else if (message.type === 'changeSelectedNodeType') void scene.changeSelectedNodeType(message.tag)

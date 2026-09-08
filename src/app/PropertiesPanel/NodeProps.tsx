@@ -977,9 +977,9 @@ function NodeProps() {
         onReset={() => updateNodeProps({ width: undefined, height: undefined })}
       />
       <Field
-        label='zOrder'
-        value={node.zOrder ?? node.zIndex ?? 0}
-        onChange={(zOrder) => updateNodeProps({ zOrder })}
+        label='zIndex'
+        value={node.zIndex ?? node.zIndex ?? 0}
+        onChange={(zIndex) => updateNodeProps({ zIndex })}
       />
       <ColorField
         value={node.color}
@@ -988,7 +988,7 @@ function NodeProps() {
         onEdit={() => setIsColorEditorOpen(true)}
       />
       {Object.entries(node)
-        .filter(([key]) => !['position', 'xy', 'x', 'y', 'z', 'rotation', 'scale', 'scaleX', 'scaleY', 'scaleZ', 'width', 'height', 'anchorX', 'anchorY', 'zOrder', 'zIndex', 'name', 'tag', 'color', 'active'].includes(key))
+        .filter(([key]) => !['position', 'xy', 'x', 'y', 'z', 'rotation', 'scale', 'scaleX', 'scaleY', 'scaleZ', 'width', 'height', 'anchorX', 'anchorY', 'zIndex', 'zIndex', 'name', 'tag', 'color', 'active'].includes(key))
         .map(([key, value]) => (
           <Field
             key={key}
