@@ -27,6 +27,8 @@ export const TOGGLE_RULER = 'Toggle Ruler';
 export const RESET_DOCK_LAYOUT = 'Reset Dock Layout';
 export const GET_AI_IMAGE_SETTINGS_REQUEST = 'Get AI Image Settings';
 export const SAVE_AI_IMAGE_SETTINGS_REQUEST = 'Save AI Image Settings';
+export const GET_PROJECT_SETTINGS_REQUEST = 'Get Project Settings';
+export const SAVE_PROJECT_SETTINGS_REQUEST = 'Save Project Settings';
 
 export const SYNC_RES_REQUEST = 'SYNC_RES_REQUEST';
 export const RENAME_RESOURCE_REQUEST = 'RENAME_RESOURCE_REQUEST';

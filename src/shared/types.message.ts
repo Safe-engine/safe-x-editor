@@ -7,7 +7,8 @@ import {
   GET_COLLIDER_SETTINGS_REQUEST, LOAD_COMPONENT_REQUEST, NEW_COMPONENT,
   NEW_PAGE, RE_NAME_COMPONENT, SAVE_COLLIDER_SETTINGS_REQUEST, UPDATE_PROJECT_COLORS_REQUEST,
   ADD_OPEN_WITH_APP_REQUEST, GET_OPEN_WITH_APPS_REQUEST, REMOVE_OPEN_WITH_APP_REQUEST,
-  GET_AI_IMAGE_SETTINGS_REQUEST, SAVE_AI_IMAGE_SETTINGS_REQUEST
+  GET_AI_IMAGE_SETTINGS_REQUEST, SAVE_AI_IMAGE_SETTINGS_REQUEST,
+  GET_PROJECT_SETTINGS_REQUEST, SAVE_PROJECT_SETTINGS_REQUEST
 } from "./constant.message";
 
 export type IpcRequest =
@@ -35,6 +36,8 @@ export type IpcRequest =
   | { key: typeof REMOVE_OPEN_WITH_APP_REQUEST, appPath: string }
   | { key: typeof GET_AI_IMAGE_SETTINGS_REQUEST }
   | { key: typeof SAVE_AI_IMAGE_SETTINGS_REQUEST, numberOfImages: number, systemPrompt: string, provider: 'agy' | 'codex' | 'claude' | 'openai-compatible', model: string, baseUrl: string, apiKey: string }
+  | { key: typeof GET_PROJECT_SETTINGS_REQUEST }
+  | { key: typeof SAVE_PROJECT_SETTINGS_REQUEST, designedWidth: number, designedHeight: number, groupsList: string[], colliderMatrix: any[], defaultFont: string, defaultFontSize: number }
   | { key: typeof GET_FOLDER_FILES, src: string, patternList?: [string] }
   | { key: typeof CHECK_FILE_EXIST, folderPath: string }
   | { key: typeof LOAD_COMPONENT_REQUEST, path: string }
@@ -79,6 +82,8 @@ export type IpcResponse =
   | { key: typeof REMOVE_OPEN_WITH_APP_REQUEST }
   | { key: typeof GET_AI_IMAGE_SETTINGS_REQUEST }
   | { key: typeof SAVE_AI_IMAGE_SETTINGS_REQUEST }
+  | { key: typeof GET_PROJECT_SETTINGS_REQUEST }
+  | { key: typeof SAVE_PROJECT_SETTINGS_REQUEST }
   | { key: typeof GET_FOLDER_FILES }
   | { key: typeof CHECK_FILE_EXIST }
   | { key: typeof LOAD_COMPONENT_REQUEST }
