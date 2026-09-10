@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { CSSProperties, useEffect, useRef, useState } from 'react';
 import { IoMdCheckmark } from "react-icons/io";
 import { LuChevronDown } from "react-icons/lu";
 
@@ -6,9 +6,10 @@ type Props = {
   selected: any;
   items: Array<any>;
   setSelected?: any;
+  itemStyle?: (item: any) => CSSProperties;
 }
 
-function SelectBox({ items, selected, setSelected }: Props) {
+function SelectBox({ items, selected, setSelected, itemStyle }: Props) {
   const [isOpen, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -46,6 +47,7 @@ function SelectBox({ items, selected, setSelected }: Props) {
               key={index}
               type="button"
               onMouseDown={() => selectItem(item)}
+              style={itemStyle?.(item)}
             >
               <span className={`block truncate ${selected === item ? 'font-medium' : 'font-normal'}`}>{item}</span>
               {selected === item && (

@@ -79,6 +79,18 @@ The app has four resizable panels. Their arrangement adapts to the design resolu
 - `Shift` + arrow keys moves selected nodes by 10 pixels.
 - `Shift` + `C` selects the selected node’s children.
 
+### Run and share the development page
+
+Select the play button in the Scene toolbar to run `bun run dev` for the open project. The editor opens the local development page in your browser and changes the button to a QR-code button.
+
+Select the QR-code button to open **Dev Page QR Code**. From this dialog, you can:
+
+- Scan the QR code from a phone or other device on the same local network.
+- Click the QR code or the displayed address to open the page in a browser.
+- Select the copy button to copy the address to the clipboard.
+
+The project needs a working `bun run dev` script and Bun must be available on your `PATH`.
+
 ## Edit properties
 
 Select a node to open the **Properties** panel. Changes update the preview immediately and are applied to every selected node when multi-selecting.
@@ -146,9 +158,9 @@ Configure the image provider first in **File > Settings > Image AI**. The editor
 
 ## Open the project elsewhere
 
-Choose **File > Open With** to reveal the project in Finder or open it in VS Code, Codex, or another application.
+Choose **File > Open With** to reveal the project in Finder on macOS or File Explorer on Windows/Linux, or open it in VS Code, Codex, or another application.
 
-To add another application, choose **File > Settings > Editor**, select **Add other app**, then choose the application. Remove configured apps from the same screen.
+To add another application, choose **File > Settings > Editor**, select **Add other app**, then choose the application. On Windows, choose the application's `.exe` file. Remove configured apps from the same screen.
 
 ## Application window controls
 

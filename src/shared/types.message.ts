@@ -1,13 +1,14 @@
 import {
   ADD_NEW_STATE, CHANGE_FUNCTION,
   CHANGE_LANGUAGE, CHECK_FILE_EXIST,
-  CREATE_ACTION, CREATE_ASSET_REQUEST, CREATE_COMPONENT_FILE_REQUEST, CREATE_I18N, CREATE_NEW_ACTION, CREATE_PROJECT_REQUEST, CREATE_SPRITE_IMAGE_ASSET_REQUEST, CREATE_SPRITE_IMAGE_ASSET_FILE_REQUEST, CREATE_SPRITE_IMAGE_ASSET_CLIPBOARD_REQUEST, GENERATE_SPRITE_IMAGES_REQUEST, REPLACE_SPRITE_IMAGE_REQUEST, REPLACE_SPRITE_IMAGE_FILE_REQUEST, REPLACE_SPRITE_IMAGE_CLIPBOARD_REQUEST, RESIZE_SPRITE_IMAGE_REQUEST,
+  CREATE_ACTION, CREATE_ASSET_REQUEST, CREATE_COMPONENT_FILE_REQUEST, CREATE_I18N, CREATE_NEW_ACTION, CREATE_PROJECT_REQUEST, CREATE_SPRITE_IMAGE_ASSET_REQUEST, CREATE_SPRITE_IMAGE_ASSET_FILE_REQUEST, CREATE_SPRITE_IMAGE_ASSET_CLIPBOARD_REQUEST, GENERATE_LAYOUT_WITH_AI_REQUEST, GENERATE_SPRITE_IMAGES_REQUEST, REPLACE_SPRITE_IMAGE_REQUEST, REPLACE_SPRITE_IMAGE_FILE_REQUEST, REPLACE_SPRITE_IMAGE_CLIPBOARD_REQUEST, RESIZE_SPRITE_IMAGE_REQUEST,
   DELETE_COMPONENT, DUPLICATE_COMPONENT,
   SYNC_RES_REQUEST, RENAME_RESOURCE_REQUEST, IMPORT_RESOURCES_REQUEST, GEN_COMPONENT_REQUEST, GEN_PROP_TYPES_REQUEST, GET_FOLDER_FILES, RUN_DEV_SERVER_REQUEST,
   GET_COLLIDER_SETTINGS_REQUEST, LOAD_COMPONENT_REQUEST, NEW_COMPONENT,
   NEW_PAGE, RE_NAME_COMPONENT, SAVE_COLLIDER_SETTINGS_REQUEST, UPDATE_PROJECT_COLORS_REQUEST,
   ADD_OPEN_WITH_APP_REQUEST, GET_OPEN_WITH_APPS_REQUEST, REMOVE_OPEN_WITH_APP_REQUEST,
-  GET_AI_IMAGE_SETTINGS_REQUEST, SAVE_AI_IMAGE_SETTINGS_REQUEST
+  GET_AI_IMAGE_SETTINGS_REQUEST, SAVE_AI_IMAGE_SETTINGS_REQUEST,
+  GET_PROJECT_SETTINGS_REQUEST, SAVE_PROJECT_SETTINGS_REQUEST
 } from "./constant.message";
 
 export type IpcRequest =
@@ -17,8 +18,9 @@ export type IpcRequest =
   | { key: typeof CREATE_I18N }
   | { key: typeof CREATE_PROJECT_REQUEST, rootFolder: string, projectName: string }
   | { key: typeof CREATE_ASSET_REQUEST, rootFolder: string, assetType: string, data: any }
-  | { key: typeof CREATE_COMPONENT_FILE_REQUEST, rootFolder: string, directory: string, name: string, kind: 'component' | 'scene' }
+  | { key: typeof CREATE_COMPONENT_FILE_REQUEST, rootFolder: string, directory: string, name?: string, kind: 'component' | 'scene' }
   | { key: typeof GENERATE_SPRITE_IMAGES_REQUEST, rootFolder: string, prompt: string, targetPath?: string }
+  | { key: typeof GENERATE_LAYOUT_WITH_AI_REQUEST, rootFolder: string, filePath: string, prompt: string, referenceImagePath?: string, useClipboardReference?: boolean }
   | { key: typeof REPLACE_SPRITE_IMAGE_REQUEST, rootFolder: string, targetPath: string, targetKey: string, jobId: string, imageIndex: number }
   | { key: typeof REPLACE_SPRITE_IMAGE_FILE_REQUEST, rootFolder: string, targetPath: string, sourcePath: string }
   | { key: typeof REPLACE_SPRITE_IMAGE_CLIPBOARD_REQUEST, rootFolder: string, targetPath: string, targetKey: string }
@@ -34,6 +36,8 @@ export type IpcRequest =
   | { key: typeof REMOVE_OPEN_WITH_APP_REQUEST, appPath: string }
   | { key: typeof GET_AI_IMAGE_SETTINGS_REQUEST }
   | { key: typeof SAVE_AI_IMAGE_SETTINGS_REQUEST, numberOfImages: number, systemPrompt: string, provider: 'agy' | 'codex' | 'claude' | 'openai-compatible', model: string, baseUrl: string, apiKey: string }
+  | { key: typeof GET_PROJECT_SETTINGS_REQUEST }
+  | { key: typeof SAVE_PROJECT_SETTINGS_REQUEST, designedWidth: number, designedHeight: number, groupsList: string[], colliderMatrix: any[], defaultFont: string, defaultFontSize: number }
   | { key: typeof GET_FOLDER_FILES, src: string, patternList?: [string] }
   | { key: typeof CHECK_FILE_EXIST, folderPath: string }
   | { key: typeof LOAD_COMPONENT_REQUEST, path: string }
@@ -41,7 +45,7 @@ export type IpcRequest =
   | { key: typeof GEN_COMPONENT_REQUEST, nodesData: any, filePath: string }
   | { key: typeof GEN_PROP_TYPES_REQUEST }
   | { key: typeof NEW_COMPONENT }
-  | { key: typeof RE_NAME_COMPONENT }
+  | { key: typeof RE_NAME_COMPONENT, rootFolder: string, componentPath: string, newName: string }
   | { key: typeof DUPLICATE_COMPONENT }
   | { key: typeof DELETE_COMPONENT }
   | { key: typeof CREATE_ACTION }
@@ -62,6 +66,7 @@ export type IpcResponse =
   | { key: typeof CREATE_ASSET_REQUEST }
   | { key: typeof CREATE_COMPONENT_FILE_REQUEST }
   | { key: typeof GENERATE_SPRITE_IMAGES_REQUEST }
+  | { key: typeof GENERATE_LAYOUT_WITH_AI_REQUEST }
   | { key: typeof REPLACE_SPRITE_IMAGE_REQUEST }
   | { key: typeof REPLACE_SPRITE_IMAGE_FILE_REQUEST }
   | { key: typeof REPLACE_SPRITE_IMAGE_CLIPBOARD_REQUEST }
@@ -77,6 +82,8 @@ export type IpcResponse =
   | { key: typeof REMOVE_OPEN_WITH_APP_REQUEST }
   | { key: typeof GET_AI_IMAGE_SETTINGS_REQUEST }
   | { key: typeof SAVE_AI_IMAGE_SETTINGS_REQUEST }
+  | { key: typeof GET_PROJECT_SETTINGS_REQUEST }
+  | { key: typeof SAVE_PROJECT_SETTINGS_REQUEST }
   | { key: typeof GET_FOLDER_FILES }
   | { key: typeof CHECK_FILE_EXIST }
   | { key: typeof LOAD_COMPONENT_REQUEST }

@@ -4,10 +4,10 @@ import { ContextMenu } from 'components/ContextMenu';
 import { parseFloatFromValue, parseOutline, parseStringFromValue, removeTextureMatchingNodeSize } from 'helper/node';
 import { memo, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { FiBox, FiCircle, FiEdit2, FiGrid, FiLink, FiLogIn, FiPlus, FiRepeat, FiRotateCcw, FiShare2, FiTrash2, FiTriangle } from 'react-icons/fi';
+import { FiBox, FiCircle, FiCrosshair, FiEdit2, FiGrid, FiLink, FiLogIn, FiMoreVertical, FiPlus, FiRepeat, FiRotateCcw, FiShare2, FiTrash2, FiTriangle } from 'react-icons/fi';
 import { GET_COLLIDER_SETTINGS_REQUEST, SAVE_COLLIDER_SETTINGS_REQUEST, UPDATE_PROJECT_COLORS_REQUEST } from 'shared/constant.message';
 import { useActions, useSelector } from 'states/app.context';
-import { selectAssets, selectColors, selectDesignResolution, selectFilesData, selectRootFolder, selectSelectedNode } from 'states/app.selectors';
+import { selectAssets, selectColors, selectComponentTree, selectDesignResolution, selectFilesData, selectRootFolder, selectSelectedNode, selectSelectedNodes } from 'states/app.selectors';
 import CapInsetsField from './CapInsetsField';
 import { ColliderSettingsDialog } from './ColliderSettingsDialog';
 import ColorEditorDialog from './ColorEditorDialog';
@@ -69,6 +69,14 @@ function getTextureSize(spriteFrame, assets) {
   };
 }
 
+function findNodeById(nodes, id) {
+  for (const node of nodes || []) {
+    if (node.id === id) return node;
+    const foundNode = findNodeById(node.children, id);
+    if (foundNode) return foundNode;
+  }
+}
+
 function findComponentPath(files, tag) {
   for (const file of files || []) {
     if (file.isDirectory) {
@@ -105,6 +113,7 @@ const COMPONENT_OPTIONS = [
   { tag: 'PolygonCollider', label: 'Polygon Collider', icon: FiTriangle, props: { points: [] } },
   { tag: 'Widget', label: 'Widget', icon: FiGrid, props: {} },
   { tag: 'RigidBody', label: 'RigidBody', icon: FiLink, props: {} },
+  { tag: 'TouchEventRegister', label: 'Touch Event Register', icon: FiEdit2, props: {} },
   { tag: 'SpineBonesControl', label: 'Spine Bones Control', icon: FiShare2, props: { bones: [] }, requiresSpineSkeleton: true },
 ];
 
@@ -402,7 +411,7 @@ function AxisInput({ axis, value, color, step = 1, onChange }) {
   );
 }
 
-function AxisRow({ label, values, step, onChange, onReset, isSize }) {
+function AxisRow({ label, values, step, onChange, onReset, onCenter, isSize }) {
   const axes = [
     { key: 'x', label: isSize ? 'W' : 'X', color: '#ff6565' },
     { key: 'y', label: isSize ? 'H' : 'Y', color: '#71d36b' },
@@ -432,6 +441,16 @@ function AxisRow({ label, values, step, onChange, onReset, isSize }) {
             title='Reset size'
           >
             <FiRotateCcw size={13} />
+          </button>
+        )}
+        {onCenter && (
+          <button
+            className='flex h-6 w-6 shrink-0 items-center justify-center rounded-sm border border-[#111] bg-[#303030] text-[#bdbdbd] hover:text-[#f0f0f0]'
+            type='button'
+            onClick={onCenter}
+            title='Center in parent'
+          >
+            <FiCrosshair size={13} />
           </button>
         )}
       </div>
@@ -601,14 +620,14 @@ function ShadowField({ value, colors, onChange }) {
   );
 }
 
-function InspectorSection({ title, headerContent, headerAction, children }) {
+function InspectorSection({ title, headerContent, headerAction, headerMenuAction, children }) {
   return (
     <details className='border-b border-[#141414]' open>
       <summary className='flex h-8 cursor-default select-none items-center bg-[#202020] px-2 text-[11px] font-bold text-[#dcdcdc] marker:text-[#a8c7ff]'>
         <span className='ml-1'>{title.replace(/([a-z])([A-Z])/g, '$1 $2')}</span>
         {headerContent}
         <span className='ml-auto flex items-center'>
-          <span className='text-lg leading-none text-[#bdbdbd]'>⋮</span>
+          {headerMenuAction || <span className='text-lg leading-none text-[#bdbdbd]'>⋮</span>}
           {headerAction}
         </span>
       </summary>
@@ -636,16 +655,19 @@ function NodeProps() {
   const { changeSelectedNodeType, getFiles, loadComponent, updateMultiNodes } = useActions();
   const assets = useSelector(selectAssets);
   const colors = useSelector(selectColors);
+  const componentTree = useSelector(selectComponentTree);
   const designResolution = useSelector(selectDesignResolution);
   const filesData = useSelector(selectFilesData);
   const rootFolder = useSelector(selectRootFolder);
   const selectedNode = useSelector(selectSelectedNode);
+  const selectedNodes = useSelector(selectSelectedNodes);
   const [isColorEditorOpen, setIsColorEditorOpen] = useState(false);
   const [editingBoxColliderIndex, setEditingBoxColliderIndex] = useState<number | null>(null);
   const [colliderGroups, setColliderGroups] = useState<string[]>([]);
   const [colliderMatrix, setColliderMatrix] = useState('[]');
   const [isColliderSettingsOpen, setIsColliderSettingsOpen] = useState(false);
   const [componentMenuPosition, setComponentMenuPosition] = useState<{ x: number; y: number } | null>(null);
+  const [componentActionMenu, setComponentActionMenu] = useState<{ x: number; y: number; index: number } | null>(null);
 
   async function loadColliderSettings() {
     const settings: any = await sendRequest({ key: GET_COLLIDER_SETTINGS_REQUEST });
@@ -721,6 +743,15 @@ function NodeProps() {
     });
   }
 
+  function updateNodeColor(color) {
+    updateMultiNodes(selectedNodes.map((node) => {
+      const updatedNode = { ...(node.props?.node || {}), color };
+      if (color === undefined) delete updatedNode.color;
+      return { component: 'props', updated: { node: updatedNode } };
+    }));
+    updatePreview('props', { node: { color } });
+  }
+
   function updatePropGroup(groupName, groupValue) {
     updateProps({
       [groupName]: {
@@ -776,6 +807,12 @@ function NodeProps() {
     });
   }
 
+  function removeComponent(index) {
+    updateComponents((selectedNode.components || []).filter((_, componentIndex) => componentIndex !== index));
+    if (editingBoxColliderIndex === index) toggleBoxColliderEditor(index);
+    else if (editingBoxColliderIndex !== null && editingBoxColliderIndex > index) setEditingBoxColliderIndex(editingBoxColliderIndex - 1);
+  }
+
   function toggleBoxColliderEditor(index) {
     const isEditing = editingBoxColliderIndex === index;
     setEditingBoxColliderIndex(isEditing ? null : index);
@@ -800,6 +837,18 @@ function NodeProps() {
 
   const props = selectedNode.props || {};
   const node = props.node || {};
+  const parentNodeId = selectedNode.id?.includes('-') ? selectedNode.id.slice(0, selectedNode.id.lastIndexOf('-')) : '';
+  const parentNode = parentNodeId ? findNodeById(componentTree, parentNodeId) : undefined;
+  const parentNodeProps = parentNode?.props?.node || {};
+  const parentTextureSize = getTextureSize(parentNode?.props?.spriteFrame, assets);
+  const parentWidth = parseFloatFromValue(parentNodeProps.width) ?? parentTextureSize.width;
+  const parentHeight = parseFloatFromValue(parentNodeProps.height) ?? parentTextureSize.height;
+  const centerBounds = parentNode && parentNode.tag !== 'SceneComponent'
+    ? {
+      width: parentWidth || designResolution.width,
+      height: parentHeight || designResolution.height,
+    }
+    : designResolution;
   const loop = selectedNode.loop;
   const { count } = loop || {};
   const position = getNodePosition(node);
@@ -898,6 +947,7 @@ function NodeProps() {
           const nextPosition = { ...position, [axis]: nextValue };
           updateNodeProps(buildPositionUpdate(node, nextPosition.x, nextPosition.y));
         }}
+        onCenter={() => updateNodeProps(buildPositionUpdate(node, centerBounds.width / 2, centerBounds.height / 2))}
       />
       <Field
         label='Rotation'
@@ -927,18 +977,18 @@ function NodeProps() {
         onReset={() => updateNodeProps({ width: undefined, height: undefined })}
       />
       <Field
-        label='zOrder'
-        value={node.zOrder ?? node.zIndex ?? 0}
-        onChange={(zOrder) => updateNodeProps({ zOrder })}
+        label='zIndex'
+        value={node.zIndex ?? node.zIndex ?? 0}
+        onChange={(zIndex) => updateNodeProps({ zIndex })}
       />
       <ColorField
         value={node.color}
         colors={colors}
-        onChange={(color) => updateNodeProps({ color })}
+        onChange={updateNodeColor}
         onEdit={() => setIsColorEditorOpen(true)}
       />
       {Object.entries(node)
-        .filter(([key]) => !['position', 'xy', 'x', 'y', 'z', 'rotation', 'scale', 'scaleX', 'scaleY', 'scaleZ', 'width', 'height', 'anchorX', 'anchorY', 'zOrder', 'zIndex', 'name', 'tag', 'color', 'active'].includes(key))
+        .filter(([key]) => !['position', 'xy', 'x', 'y', 'z', 'rotation', 'scale', 'scaleX', 'scaleY', 'scaleZ', 'width', 'height', 'anchorX', 'anchorY', 'zIndex', 'zIndex', 'name', 'tag', 'color', 'active'].includes(key))
         .map(([key, value]) => (
           <Field
             key={key}
@@ -1144,6 +1194,23 @@ function NodeProps() {
         key={`${component.tag}-${index}`}
         title={component.tag || `Component ${index + 1}`}
         headerAction={<LoadComponentButton tag={component.tag} path={findComponentPath(filesData, component.tag)} onLoad={loadComponent} />}
+        headerMenuAction={
+          <button
+            className='flex h-5 w-5 items-center justify-center rounded-sm text-[#bdbdbd] hover:bg-[#3569a8] hover:text-white'
+            type='button'
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              const { left, bottom } = event.currentTarget.getBoundingClientRect();
+              setComponentMenuPosition(null);
+              setComponentActionMenu({ x: Math.max(8, Math.min(left, window.innerWidth - 200)), y: bottom + 4, index });
+            }}
+            title='Component actions'
+            aria-label={`Actions for ${component.tag || `component ${index + 1}`}`}
+          >
+            <FiMoreVertical size={15} />
+          </button>
+        }
         headerContent={
           component.tag === 'Widget' ? (
             <label
@@ -1319,6 +1386,18 @@ function NodeProps() {
               : addComponent(option),
         };
       })}
+    />
+    <ContextMenu
+      x={componentActionMenu?.x ?? 0}
+      y={componentActionMenu?.y ?? 0}
+      width={192}
+      visible={Boolean(componentActionMenu)}
+      onClose={() => setComponentActionMenu(null)}
+      actions={[{
+        label: 'Remove Component',
+        icon: <FiTrash2 className='text-[#e57373]' size={16} />,
+        onClick: () => componentActionMenu && removeComponent(componentActionMenu.index),
+      }]}
     />
     <ColorEditorDialog
       colors={colors}

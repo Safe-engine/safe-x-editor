@@ -17,13 +17,30 @@ export default function SceneView() {
   const selectedFilePath = useSelector(selectSelectedFilePath)
   const selectedPaths = useSelector(selectSelectedPaths)
   const didStartEngine = useRef(false)
+  const canvasContainerRef = useRef<HTMLDivElement>(null)
+  const canvasRef = useRef<HTMLCanvasElement>()
   const [isRulerVisible, setIsRulerVisible] = useState(true)
 
   useEffect(() => {
-    if (didStartEngine.current) return
-    didStartEngine.current = true
-    Engine.start('Safex SDL Preview', window.innerWidth, window.innerHeight, 'fixed-width')
-    loadScene(PreviewScene)
+    const attachCanvas = () => {
+      const canvas = canvasRef.current || document.getElementById('sdl-canvas')
+      if (!(canvas instanceof HTMLCanvasElement) || !canvasContainerRef.current) return
+      canvas.className = 'block bg-[#1e1e1e]'
+      canvasContainerRef.current.appendChild(canvas)
+      canvasRef.current = canvas
+    }
+
+    if (didStartEngine.current) {
+      attachCanvas()
+    } else {
+      didStartEngine.current = true
+      Engine.start('Safex SDL Preview', window.innerWidth, window.innerHeight, 'fixed-width').then(attachCanvas)
+      loadScene(PreviewScene)
+    }
+
+    return () => {
+      if (canvasRef.current) document.body.appendChild(canvasRef.current)
+    }
   }, [])
 
   useEffect(() => {
@@ -79,7 +96,10 @@ export default function SceneView() {
 
   return (
     <div
-      className='relative h-full w-full overflow-hidden bg-[#1e1e1e]'
+      className='relative h-full w-full overflow-hidden bg-[#1e1e1e] outline-none'
+      data-keyboard-scope='scene'
+      tabIndex={-1}
+      onPointerDown={(event) => event.currentTarget.focus()}
       onDragOver={(event) => {
         if (!event.dataTransfer.types.includes('application/x-safex-node') && !event.dataTransfer.types.includes('Files')) return
         event.preventDefault()
@@ -105,8 +125,8 @@ export default function SceneView() {
         }
       }}
     >
-      <ScenePanelTitle />
-      <canvas id="sdl-canvas" className='block bg-[#1e1e1e]'></canvas>
+      <ScenePanelTitle hasRuler={isRulerVisible} />
+      <div ref={canvasContainerRef} className='h-full w-full' />
       <SnapRulers visible={isRulerVisible} />
     </div>
   )

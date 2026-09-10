@@ -12,21 +12,36 @@ export function registerKeyboardHandler(scene: PreviewScene) {
     if (keyCode === KEY.shift || keyCode === KEY.shiftR) return
     if (event.ctrlKey || event.metaKey) {
       if (keyCode === KEY.s) await scene.saveComponent()
+      else if (keyCode === KEY.d) {
+        event.preventDefault()
+        event.stopImmediatePropagation()
+        await scene.duplicateSelectedNode()
+      }
       else if (keyCode === KEY.r) {
         setLastSceneX(0)
         setLastSceneY(0)
         await scene.loadComponent(GlobalState.filePath)
       } else if (keyCode === KEY.a) {
-        await scene.loadProjectData()
-        await scene.loadComponent(GlobalState.filePath)
+        event.preventDefault()
+        event.stopImmediatePropagation()
+        scene.selectAllNodes()
       } else if (keyCode === KEY.z && event.shiftKey) await scene.redoEdit()
       else if (keyCode === KEY.z) await scene.undoEdit()
       else if (keyCode === KEY.y) await scene.redoEdit()
       return
     }
     if (keyCode === KEY.backspace || keyCode === KEY.delete) {
+      if (!document.activeElement?.closest('[data-keyboard-scope="scene"]')) return
       event.preventDefault()
+      event.stopImmediatePropagation()
       await scene.deleteSelectedNodes()
+      return
+    }
+    if (!event.shiftKey && [KEY.up, KEY.down, KEY.left, KEY.right].includes(keyCode)) {
+      if (keyCode === KEY.up) scene.moveSelectedNodeWithHistory(0, -1)
+      else if (keyCode === KEY.down) scene.moveSelectedNodeWithHistory(0, 1)
+      else if (keyCode === KEY.left) scene.moveSelectedNodeWithHistory(-1, 0)
+      else scene.moveSelectedNodeWithHistory(1, 0)
       return
     }
     if (!event.shiftKey) return
@@ -160,11 +175,16 @@ export function registerMessageHandler(scene: PreviewScene) {
     } else if (message.type === 'saveProject') void scene.saveComponent()
     else if (message.type === 'changeSelectPath') scene.changeSelectPath(message.selectPaths, false)
     else if (message.type === 'focusPreviewNode') scene.focusNode(message.path)
+    else if (message.type === 'deleteHierarchyNodes') {
+      scene.changeSelectPath(message.nodeIds, false)
+      void scene.deleteSelectedNodes()
+    }
     else if (message.type === 'reloadProjectData') void scene.reloadProjectData()
     else if (message.type === 'updateSelectedNode') void scene.updateSelectedNode(message.component, message.updated)
     else if (message.type === 'changeSelectedNodeType') void scene.changeSelectedNodeType(message.tag)
     else if (message.type === 'toggleBoxColliderEditor') scene.toggleBoxColliderEditor(message.componentIndex)
     else if (message.type === 'addDroppedNode') void scene.addDroppedNode(message.item, message.parentId, message.clientX, message.clientY)
+    else if (message.type === 'extractHierarchyNode') void scene.extractHierarchyNode(message.nodeId, message.componentName, message.imported, message.createdPath, message.rootFolder)
     else if (message.type === 'importPngAsSprite') void scene.importPngAsSprite(message.sourcePaths, message.clientX, message.clientY)
     else if (message.type === 'moveHierarchyNodes') void scene.moveHierarchyNodes(message.dragIds, message.parentId, message.index)
     else if (message.type === 'setSnapEnabled') scene.setSnapEnabled(message.enabled)

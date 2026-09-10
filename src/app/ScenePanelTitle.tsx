@@ -1,15 +1,17 @@
 import { sendRequest } from 'app/app.ipc';
+import Modal from 'base/Modal';
 import { getLastSceneScale } from 'data/AppData';
+import { shell } from 'helper/electronRemote';
 import QRCode from 'qrcode';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { FiLoader, FiPlay, FiRefreshCw, FiSave } from 'react-icons/fi';
+import { FiCopy, FiExternalLink, FiLoader, FiPlay, FiRefreshCw, FiSave } from 'react-icons/fi';
 import { LuQrCode } from 'react-icons/lu';
 import { RUN_DEV_SERVER_REQUEST } from 'shared/constant.message';
 import { useActions, useSelector } from 'states/app.context';
 import { selectRootFolder, selectSelectedFilePath } from 'states/app.selectors';
 
-export default function ScenePanelTitle() {
+export default function ScenePanelTitle({ hasRuler = true }: { hasRuler?: boolean }) {
   const { loadComponent } = useActions();
   const filePath = useSelector(selectSelectedFilePath);
   const rootFolder = useSelector(selectRootFolder);
@@ -17,6 +19,7 @@ export default function ScenePanelTitle() {
   const [isStartingDevServer, setIsStartingDevServer] = useState(false);
   const [devPageUrl, setDevPageUrl] = useState('');
   const [qrCodeUrl, setQrCodeUrl] = useState('');
+  const [isQrCodeDialogOpen, setIsQrCodeDialogOpen] = useState(false);
   const [zoomPercent, setZoomPercent] = useState(() => Math.round(getLastSceneScale() * 100));
 
   useEffect(() => {
@@ -51,7 +54,7 @@ export default function ScenePanelTitle() {
   const stopTabInteraction = (event: React.PointerEvent | React.MouseEvent) => event.stopPropagation();
 
   return (
-    <div className='scene-panel-title' onPointerDown={stopTabInteraction}>
+    <div className={`scene-panel-title${hasRuler ? ' scene-panel-title--with-ruler' : ''}`} onPointerDown={stopTabInteraction}>
       <div className='pointer-events-auto flex items-center gap-0.5'>
         <button
           type='button'
@@ -76,20 +79,15 @@ export default function ScenePanelTitle() {
           <FiRefreshCw size={14} />
         </button>
         {devPageUrl ? (
-          <span className='group relative'>
           <button
             type='button'
             className='flex h-6 w-6 items-center justify-center rounded-sm text-[#aeb8c5] hover:bg-[#303846] hover:text-white'
+            onClick={() => setIsQrCodeDialogOpen(true)}
             aria-label='Show dev page QR code'
             title='Show dev page QR code'
           >
             <LuQrCode size={15} />
           </button>
-          <span className='pointer-events-none absolute right-0 top-7 z-50 hidden w-56 rounded-md border border-[#3d4654] bg-[#202020] p-3 text-center shadow-xl group-hover:block'>
-            {qrCodeUrl && <img className='mx-auto h-48 w-48 rounded bg-white p-1' src={qrCodeUrl} alt={`QR code for ${devPageUrl}`} />}
-            <span className='mt-2 block break-all text-[10px] text-[#aeb8c5]'>{devPageUrl}</span>
-          </span>
-          </span>
         ) : (
           <button
             type='button'
@@ -120,6 +118,62 @@ export default function ScenePanelTitle() {
         />
         <span className='w-9 text-right'>{zoomPercent}%</span>
       </label>
+      <Modal isOpen={isQrCodeDialogOpen} onClose={() => setIsQrCodeDialogOpen(false)} title='Dev Page QR Code'>
+        <div className='flex w-full flex-col items-center gap-3 pt-2 text-center'>
+          {qrCodeUrl && (
+            <div
+              className='flex flex-col items-center justify-center rounded-lg bg-white p-3 shadow-md transition-transform hover:scale-[1.02] cursor-pointer'
+              title='Click to open in browser'
+              onClick={() => {
+                if (devPageUrl) shell.openExternal(devPageUrl);
+              }}
+            >
+              <img
+                className='h-44 w-44 object-contain'
+                src={qrCodeUrl}
+                alt={`QR code for ${devPageUrl}`}
+              />
+            </div>
+          )}
+          <p className='text-[11px] text-[#8f8f8f]'>
+            Scan with your device or click to open
+          </p>
+          <div className='flex w-full items-center justify-between gap-1.5 rounded border border-[#333] bg-[#1a1a1a] px-2.5 py-1.5'>
+            <span
+              className='flex-1 truncate text-left text-[11px] font-mono text-[#aeb8c5] hover:text-white cursor-pointer select-all'
+              title={devPageUrl}
+              onClick={() => {
+                if (devPageUrl) shell.openExternal(devPageUrl);
+              }}
+            >
+              {devPageUrl}
+            </span>
+            <button
+              type='button'
+              className='flex h-6 w-6 shrink-0 items-center justify-center rounded text-[#8f8f8f] hover:bg-[#2c2c2c] hover:text-white transition-colors'
+              title='Copy link'
+              onClick={() => {
+                if (devPageUrl) {
+                  navigator.clipboard.writeText(devPageUrl);
+                  toast.success('Copied link to clipboard');
+                }
+              }}
+            >
+              <FiCopy size={13} />
+            </button>
+            <button
+              type='button'
+              className='flex h-6 w-6 shrink-0 items-center justify-center rounded text-[#8f8f8f] hover:bg-[#2c2c2c] hover:text-[#4a90e2] transition-colors'
+              title='Open in browser'
+              onClick={() => {
+                if (devPageUrl) shell.openExternal(devPageUrl);
+              }}
+            >
+              <FiExternalLink size={13} />
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

@@ -27,8 +27,10 @@ export function parseBoneControls(value: unknown): BoneControl[] {
   }
   if (!Array.isArray(bones)) return []
   return bones
-    .filter((bone) => Array.isArray(bone))
-    .map(([name, x, y]) => [String(name), Number(x) || 0, Number(y) || 0] as BoneControl)
+    .filter((bone): bone is [string, unknown, unknown] => (
+      Array.isArray(bone) && typeof bone[0] === 'string' && bone[0].trim().length > 0
+    ))
+    .map(([name, x, y]) => [name, Number(x) || 0, Number(y) || 0] as BoneControl)
 }
 
 function normalizeInset(value?: number) {

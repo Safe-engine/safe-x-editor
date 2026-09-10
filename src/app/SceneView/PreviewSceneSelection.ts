@@ -8,6 +8,8 @@ export abstract class PreviewSceneSelection extends Scene {
   static readonly ARROW_HIT_RADIUS = 32
   static readonly RESIZE_EDGE_HIT_SIZE = 8
   static readonly ROTATION_HANDLE_OFFSET = 30
+  static readonly MIN_SELECTION_ANCHOR_SIZE = 4
+  static readonly MAX_SELECTION_ANCHOR_SIZE = 16
 
   declare arrowContainerNode: Node
   declare arrowSpriteHorizonNode: Node
@@ -136,6 +138,13 @@ export abstract class PreviewSceneSelection extends Scene {
   }
 
   positionArrowGizmos(bounds: SelectionBounds) {
+    const nodeSize = Math.min(bounds.right - bounds.left, bounds.bottom - bounds.top)
+    const anchorSize = Math.max(
+      PreviewSceneSelection.MIN_SELECTION_ANCHOR_SIZE,
+      Math.min(PreviewSceneSelection.MAX_SELECTION_ANCHOR_SIZE, nodeSize * 0.2),
+    )
+    this.selectionAnchorNode.width = anchorSize
+    this.selectionAnchorNode.height = anchorSize
     const centerY = (bounds.top + bounds.bottom) / 2
     const centerX = (bounds.left + bounds.right) / 2
     this.arrowSpriteHorizonNode.x = bounds.right - this.arrowContainerNode.x

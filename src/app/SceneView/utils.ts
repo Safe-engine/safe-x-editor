@@ -29,6 +29,7 @@ export const KEY = {
   y: 'KeyY',
   h: 'KeyH',
   c: 'KeyC',
+  d: 'KeyD',
   s: 'KeyS',
   r: 'KeyR',
   a: 'KeyA',

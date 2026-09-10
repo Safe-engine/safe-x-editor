@@ -13,29 +13,39 @@ export function getResolutionSettings(folderPath: string) {
   // console.log('Parsed settings:', parsed);
   let width = 1920;
   let height = 1080;
-  // Traverse the AST to find the designed resolution
+  let designedWidth: number | undefined;
+  let designedHeight: number | undefined;
+  // Traverse the AST to find the designed dimensions.
   ESTraverse.traverse(parsed, {
     enter: function (node: any) {
       // console.log(' traverse:', node);
-      if (node.type === 'VariableDeclarator' && node.id.name === 'designedResolution') {
-        // console.log(' traverse:', node.init);
-        if (node.init.type === 'ObjectExpression') {
-          const widthProp = node.init.properties.find(prop => prop.key.name === 'width');
-          const heightProp = node.init.properties.find(prop => prop.key.name === 'height');
-          if (widthProp && heightProp) {
-            width = widthProp.value.value;
-            height = heightProp.value.value;
-            console.log('Found width, height:', width, height);
-          }
+      if (node.type !== 'VariableDeclarator') return;
+
+      if (node.id.name === 'DESIGNED_WIDTH' && node.init?.type === 'Literal' && typeof node.init.value === 'number') {
+        designedWidth = node.init.value;
+      }
+
+      if (node.id.name === 'DESIGNED_HEIGHT' && node.init?.type === 'Literal' && typeof node.init.value === 'number') {
+        designedHeight = node.init.value;
+      }
+
+      if (node.id.name === 'designedResolution' && node.init?.type === 'ObjectExpression') {
+        const widthProp = node.init.properties.find(prop => prop.key.name === 'width');
+        const heightProp = node.init.properties.find(prop => prop.key.name === 'height');
+        if (widthProp?.value?.type === 'Literal' && heightProp?.value?.type === 'Literal') {
+          width = widthProp.value.value;
+          height = heightProp.value.value;
         }
-        this.break(); // Stop traversing further once we find the designedResolution
       }
     },
     fallback: 'iteration',
   });
+  if (designedWidth !== undefined && designedHeight !== undefined) {
+    width = designedWidth;
+    height = designedHeight;
+  }
   return {
     width,
     height,
   };
 }
-

@@ -6,13 +6,15 @@ import {
   GET_OPEN_WITH_APPS_REQUEST,
   NEW_PROJECT,
   REMOVE_OPEN_WITH_APP_REQUEST,
+  RESET_DOCK_LAYOUT,
   TOGGLE_RULER,
   TOGGLE_SNAP,
 } from '@shared/constant.message'
 import { execFile } from 'child_process'
-import { app, dialog, ipcMain, Menu, shell } from 'electron'
+import { app, dialog, ipcMain, Menu, nativeImage, shell } from 'electron'
 import { existsSync, readFileSync, writeFileSync } from 'fs'
 import { basename, join } from 'path'
+import packageJson from '../package.json'
 import { GlobalData } from './parser/global'
 
 const OPEN_WITH_SETTINGS_FILE = 'open-with.json'
@@ -72,7 +74,8 @@ export default class MenuBuilder {
     ipcMain.handle(ADD_OPEN_WITH_APP_REQUEST, () => {
       const [appPath] = dialog.showOpenDialogSync(this.mainWindow, {
         title: 'Select an application to open projects',
-        properties: ['openFile', 'openDirectory'],
+        properties: ['openFile'],
+        ...(process.platform === 'win32' ? { filters: [{ name: 'Applications', extensions: ['exe'] }] } : {}),
       }) || []
       if (!appPath) return { apps: this.getCustomAppPaths() }
 
@@ -100,9 +103,42 @@ export default class MenuBuilder {
       return
     }
 
-    execFile(application, [projectPath], error => {
+    execFile(this.getApplicationCommand(application), [projectPath], error => {
       if (error) dialog.showErrorBox('Unable to open project', `Could not open ${application}.`)
     })
+  }
+
+  getApplicationCommand(application: string) {
+    if (process.platform !== 'win32') {
+      if (application === 'Visual Studio Code') return 'code'
+      if (application === 'Codex') return 'codex'
+      return application
+    }
+
+    const executableNames: Record<string, { executable: string; folders: string[]; fallback: string }> = {
+      'Visual Studio Code': {
+        executable: 'Code.exe',
+        folders: ['Microsoft VS Code'],
+        fallback: 'code',
+      },
+      Codex: {
+        executable: 'Codex.exe',
+        folders: ['Codex'],
+        fallback: 'codex',
+      },
+    }
+    const configuredApp = executableNames[application]
+    if (!configuredApp) return application
+
+    const userInstallRoot = process.env.LOCALAPPDATA
+    const systemInstallRoots = [process.env.PROGRAMFILES, process.env['PROGRAMFILES(X86)']].filter(Boolean) as string[]
+    const executablePath = [
+      ...(userInstallRoot ? configuredApp.folders.map(folder => join(userInstallRoot, 'Programs', folder, configuredApp.executable)) : []),
+      ...systemInstallRoots.flatMap(root => configuredApp.folders.map(folder => join(root, folder, configuredApp.executable))),
+    ]
+      .find(path => existsSync(path))
+
+    return executablePath || configuredApp.fallback
   }
 
   showProjectInFinder() {
@@ -111,6 +147,24 @@ export default class MenuBuilder {
 
   configureSettings() {
     ipcMain.emit(CONFIGURE_SETTINGS)
+  }
+
+  showAboutDialog() {
+    const iconCandidates = [
+      join(__dirname, '../../resources/icons/512x512.png'),
+      join(app.getAppPath(), 'resources/icons/512x512.png'),
+    ]
+    const iconPath = iconCandidates.find(p => existsSync(p))
+    const icon = iconPath ? nativeImage.createFromPath(iconPath) : undefined
+
+    dialog.showMessageBox(this.mainWindow, {
+      type: 'info',
+      title: 'About',
+      message: 'Safex Editor',
+      detail: `Version: ${packageJson.version}`,
+      icon,
+      buttons: ['OK'],
+    })
   }
 
   buildSnapMenuItem() {
@@ -131,10 +185,17 @@ export default class MenuBuilder {
     }
   }
 
+  buildResetLayoutMenuItem() {
+    return {
+      label: 'Reset Layout',
+      click: () => this.mainWindow.webContents.send(RESET_DOCK_LAYOUT),
+    }
+  }
+
   buildOpenWithSubmenu() {
     const submenu: any[] = [
       {
-        label: 'Finder',
+        label: process.platform === 'darwin' ? 'Finder' : 'File Explorer',
         click: () => this.showProjectInFinder(),
       },
       {
@@ -255,6 +316,7 @@ export default class MenuBuilder {
       submenu: [
         this.buildSnapMenuItem(),
         this.buildRulerMenuItem(),
+        this.buildResetLayoutMenuItem(),
         { type: 'separator' },
         {
           label: 'Reload',
@@ -284,6 +346,7 @@ export default class MenuBuilder {
       submenu: [
         this.buildSnapMenuItem(),
         this.buildRulerMenuItem(),
+        this.buildResetLayoutMenuItem(),
         { type: 'separator' },
         {
           label: 'Toggle Full Screen',
@@ -294,22 +357,14 @@ export default class MenuBuilder {
         },
       ],
     }
-    const subMenuWindow = {
-      label: 'Window',
-      submenu: [
-        {
-          label: 'Minimize',
-          accelerator: 'Command+M',
-          selector: 'performMiniaturize:',
-        },
-        { label: 'Close', accelerator: 'Command+W', selector: 'performClose:' },
-        { type: 'separator' },
-        { label: 'Bring All to Front', selector: 'arrangeInFront:' },
-      ],
-    }
     const subMenuHelp = {
       label: 'Help',
       submenu: [
+        {
+          label: 'About',
+          click: () => this.showAboutDialog(),
+        },
+        { type: 'separator' },
         {
           label: 'Learn More',
           click() {
@@ -339,7 +394,7 @@ export default class MenuBuilder {
 
     const subMenuView = process.env.NODE_ENV === 'development' ? subMenuViewDev : subMenuViewProd
 
-    return [subMenuAbout, subMenuEdit, subMenuView, subMenuWindow, subMenuHelp]
+    return [subMenuAbout, subMenuEdit, subMenuView, subMenuHelp]
   }
 
   buildDefaultTemplate() {
@@ -391,6 +446,7 @@ export default class MenuBuilder {
               ? [
                 this.buildSnapMenuItem(),
                 this.buildRulerMenuItem(),
+                this.buildResetLayoutMenuItem(),
                 { type: 'separator' },
                 {
                   label: '&Reload',
@@ -417,6 +473,7 @@ export default class MenuBuilder {
             : [
                 this.buildSnapMenuItem(),
                 this.buildRulerMenuItem(),
+                this.buildResetLayoutMenuItem(),
                 { type: 'separator' },
                 {
                   label: 'Toggle &Full Screen',
@@ -430,6 +487,11 @@ export default class MenuBuilder {
       {
         label: 'Help',
         submenu: [
+          {
+            label: 'About',
+            click: () => this.showAboutDialog(),
+          },
+          { type: 'separator' },
           {
             label: 'Learn More',
             click() {

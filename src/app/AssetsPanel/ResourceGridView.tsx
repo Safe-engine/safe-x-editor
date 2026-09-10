@@ -96,6 +96,7 @@ export default function ResourceGridView({
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
       if (editingKey) return;
+      if (document.activeElement?.closest('[data-keyboard-scope="scene"]')) return;
       const target = event.target as HTMLElement;
       if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable || target.tagName === 'SELECT')) {
         return;

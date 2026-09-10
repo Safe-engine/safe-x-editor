@@ -9,6 +9,7 @@ import { RiBox3Line } from "react-icons/ri";
 
 type TreeItemProps = NodeRendererProps<any> & {
   onAddNode: (name: string, parentId: string) => void;
+  onCreateFile: (kind: 'scene' | 'component', sourceNode: any) => void;
   onFocusNode: (node: any) => void;
   onDropNode: (item: any, parentId: string) => void;
 };
@@ -17,6 +18,7 @@ const addNodeMenu = [
   { label: 'Group', items: ['Container', 'UILayout', 'Panel', 'ScrollView'] },
   { label: 'Animation', items: ['DragonBones', 'SpineSkeleton', 'DicedSprite', 'Particle'] },
   { label: 'UI', items: ['ProgressBar', 'CircleProgress', 'Slider', 'Button', 'RichText', 'Label'] },
+  { label: 'Create', items: ['Scene', 'Component'] },
 ];
 
 function renderIcon(data: any, isOpen = false) {
@@ -51,7 +53,7 @@ function isExternalNodeDrop(event: React.DragEvent) {
   return event.dataTransfer.types.includes('application/x-safex-node');
 }
 
-export function TreeItem({ node, style, dragHandle, onAddNode, onFocusNode, onDropNode }: TreeItemProps) {
+export function TreeItem({ node, style, dragHandle, onAddNode, onCreateFile, onFocusNode, onDropNode }: TreeItemProps) {
   const [isDropTarget, setIsDropTarget] = useState(false);
   const [isAddMenuOpen, setIsAddMenuOpen] = useState(false);
   const [activeMenu, setActiveMenu] = useState(addNodeMenu[0].label);
@@ -173,7 +175,8 @@ export function TreeItem({ node, style, dragHandle, onAddNode, onFocusNode, onDr
                 type="button"
                 className="block w-full px-2 py-1.5 text-left hover:bg-[#304766] hover:text-white"
                 onClick={() => {
-                  onAddNode(name, node.data.id)
+                  if (activeMenu === 'Create') onCreateFile(name.toLowerCase() as 'scene' | 'component', node.data)
+                  else onAddNode(name, node.data.id)
                   setIsAddMenuOpen(false)
                 }}
               >

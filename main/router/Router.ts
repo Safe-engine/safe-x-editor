@@ -1,4 +1,5 @@
 import { createAsset } from '@@/services/AssetCreateService';
+import { generateLayoutWithAi } from '@@/services/AiLayoutService';
 import { createSpriteImageAsset, createSpriteImageAssetFromClipboard, createSpriteImageAssetFromFile, generateSpriteImages, getAiImageSettings, replaceSpriteImage, replaceSpriteImageFromClipboard, replaceSpriteImageFromFile, saveAiImageSettings } from '@@/services/AiImageService';
 import { updateProjectColors } from '@@/services/ColorService';
 import { resizeSpriteImage } from '@@/services/ImageResizeService';
@@ -17,7 +18,7 @@ import { createI18n } from '@@/services/LanguageService';
 import { installDependencies, syncResConst } from '@@/services/TerminalService';
 import { runDevServer } from '@@/services/DevServerService';
 import { initProject } from '@@/services/project';
-import { getSettings, saveSettings } from '@@/services/settings.service';
+import { getProjectSettings, getSettings, saveProjectSettings, saveSettings } from '@@/services/settings.service';
 import {
   CHECK_FILE_EXIST,
   CREATE_ASSET_REQUEST,
@@ -26,7 +27,9 @@ import {
   CREATE_SPRITE_IMAGE_ASSET_FILE_REQUEST,
   CREATE_SPRITE_IMAGE_ASSET_CLIPBOARD_REQUEST,
   GENERATE_SPRITE_IMAGES_REQUEST,
+  GENERATE_LAYOUT_WITH_AI_REQUEST,
   GET_AI_IMAGE_SETTINGS_REQUEST,
+  GET_PROJECT_SETTINGS_REQUEST,
   CREATE_I18N,
   CREATE_PROJECT_REQUEST,
   DELETE_COMPONENT,
@@ -45,6 +48,7 @@ import {
   RESIZE_SPRITE_IMAGE_REQUEST,
   SAVE_COLLIDER_SETTINGS_REQUEST,
   SAVE_AI_IMAGE_SETTINGS_REQUEST,
+  SAVE_PROJECT_SETTINGS_REQUEST,
   SYNC_RES_REQUEST,
   UPDATE_PROJECT_COLORS_REQUEST
 } from '@shared/constant.message';
@@ -94,6 +98,7 @@ export default function Router() {
   addListener(CREATE_ASSET_REQUEST, createAsset);
   addListener(CREATE_COMPONENT_FILE_REQUEST, createComponentFile);
   addListener(GENERATE_SPRITE_IMAGES_REQUEST, generateSpriteImages);
+  addListener(GENERATE_LAYOUT_WITH_AI_REQUEST, generateLayoutWithAi);
   addListener(REPLACE_SPRITE_IMAGE_REQUEST, replaceSpriteImage);
   addListener(REPLACE_SPRITE_IMAGE_FILE_REQUEST, replaceSpriteImageFromFile);
   addListener(REPLACE_SPRITE_IMAGE_CLIPBOARD_REQUEST, replaceSpriteImageFromClipboard);
@@ -103,6 +108,8 @@ export default function Router() {
   addListener(RESIZE_SPRITE_IMAGE_REQUEST, resizeSpriteImage);
   addListener(GET_AI_IMAGE_SETTINGS_REQUEST, getAiImageSettings);
   addListener(SAVE_AI_IMAGE_SETTINGS_REQUEST, saveAiImageSettings);
+  addListener(GET_PROJECT_SETTINGS_REQUEST, getProjectSettings);
+  addListener(SAVE_PROJECT_SETTINGS_REQUEST, saveProjectSettings);
   addListener(UPDATE_PROJECT_COLORS_REQUEST, updateProjectColors);
   addListener(GET_COLLIDER_SETTINGS_REQUEST, getSettings);
   addListener(SAVE_COLLIDER_SETTINGS_REQUEST, ({ groupsList, colliderMatrix }) => saveSettings(groupsList, colliderMatrix));

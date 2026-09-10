@@ -4,17 +4,22 @@ import Modal from 'base/Modal'
 import SelectBox from 'base/SelectBox'
 import { ipcMain } from 'helper/electronRemote'
 import { useEffect, useState } from 'react'
+import toast from 'react-hot-toast'
 import { FiPlus, FiTrash2 } from 'react-icons/fi'
 import {
   ADD_OPEN_WITH_APP_REQUEST,
   CONFIGURE_SETTINGS,
   GET_AI_IMAGE_SETTINGS_REQUEST,
   GET_OPEN_WITH_APPS_REQUEST,
+  GET_PROJECT_SETTINGS_REQUEST,
   REMOVE_OPEN_WITH_APP_REQUEST,
   SAVE_AI_IMAGE_SETTINGS_REQUEST,
+  SAVE_PROJECT_SETTINGS_REQUEST,
 } from 'shared/constant.message'
+import { useSelector } from 'states/app.context'
+import { selectAssets } from 'states/app.selectors'
 
-type Tab = 'editor' | 'image-ai'
+type Tab = 'editor' | 'project' | 'image-ai'
 type ImageAiProvider = 'agy' | 'codex' | 'claude' | 'openai-compatible'
 
 const providerLabels: Record<ImageAiProvider, string> = {
@@ -42,7 +47,25 @@ const cliModels: Record<Exclude<ImageAiProvider, 'openai-compatible'>, string[]>
   claude: ['sonnet', 'opus'],
 }
 
+function parseColliderMatrix(value: string, size: number) {
+  try {
+    const matrix = JSON.parse(value)
+    return Array.from({ length: size }, (_, rowIndex) => (
+      Array.from({ length: size }, (_, columnIndex) => Boolean(matrix?.[rowIndex]?.[columnIndex]))
+    ))
+  } catch {
+    return Array.from({ length: size }, () => Array.from({ length: size }, () => false))
+  }
+}
+
+function resizeColliderMatrix(matrix: boolean[][], size: number) {
+  return Array.from({ length: size }, (_, rowIndex) => (
+    Array.from({ length: size }, (_, columnIndex) => Boolean(matrix[rowIndex]?.[columnIndex]))
+  ))
+}
+
 export default function SettingsDialog() {
+  const assets = useSelector(selectAssets)
   const [isOpen, setOpen] = useState(false)
   const [tab, setTab] = useState<Tab>('editor')
   const [apps, setApps] = useState<string[]>([])
@@ -52,12 +75,22 @@ export default function SettingsDialog() {
   const [model, setModel] = useState(cliModels.agy[0])
   const [baseUrl, setBaseUrl] = useState('')
   const [apiKey, setApiKey] = useState('')
+  const [designedWidth, setDesignedWidth] = useState(1920)
+  const [designedHeight, setDesignedHeight] = useState(1080)
+  const [colliderGroups, setColliderGroups] = useState<string[]>([])
+  const [colliderMatrix, setColliderMatrix] = useState<boolean[][]>([])
+  const [defaultFont, setDefaultFont] = useState('')
+  const [defaultFontSize, setDefaultFontSize] = useState(48)
+  const fontAssets = assets?.fontAssets || []
+  const selectedDefaultFont = fontAssets.find((font) => defaultFont.trim() === font.key)
+  const selectedDefaultFontIndex = fontAssets.indexOf(selectedDefaultFont)
 
   useEffect(() => {
     async function openDialog() {
-      const [appsResponse, imageResponse]: any[] = await Promise.all([
+      const [appsResponse, imageResponse, projectResponse]: any[] = await Promise.all([
         sendRequest({ key: GET_OPEN_WITH_APPS_REQUEST }),
         sendRequest({ key: GET_AI_IMAGE_SETTINGS_REQUEST }),
+        sendRequest({ key: GET_PROJECT_SETTINGS_REQUEST }),
       ])
       setApps(appsResponse?.apps || [])
       setNumberOfImages(imageResponse?.numberOfImages || 4)
@@ -66,7 +99,14 @@ export default function SettingsDialog() {
       setModel(imageResponse?.model || (imageResponse?.provider === 'openai-compatible' ? '' : cliModels.agy[0]))
       setBaseUrl(imageResponse?.baseUrl || '')
       setApiKey(imageResponse?.apiKey || '')
-      setTab('editor')
+      setDesignedWidth(projectResponse?.designedWidth || 1920)
+      setDesignedHeight(projectResponse?.designedHeight || 1080)
+      const groups = projectResponse?.groupsList || []
+      setColliderGroups(groups)
+      setColliderMatrix(parseColliderMatrix(projectResponse?.colliderMatrix || '[]', groups.length))
+      setDefaultFont(projectResponse?.defaultFont || '')
+      setDefaultFontSize(projectResponse?.defaultFontSize || 48)
+      setTab('project')
       setOpen(true)
     }
 
@@ -86,6 +126,36 @@ export default function SettingsDialog() {
 
   async function saveImageSettings() {
     await sendRequest({ key: SAVE_AI_IMAGE_SETTINGS_REQUEST, numberOfImages, systemPrompt, provider, model, baseUrl, apiKey })
+  }
+
+  async function saveProjectSettings() {
+    const response: any = await sendRequest({ key: SAVE_PROJECT_SETTINGS_REQUEST, designedWidth, designedHeight, groupsList: colliderGroups, colliderMatrix, defaultFont, defaultFontSize })
+    if (!response?.success) {
+      toast.error(response?.message || 'Unable to save project settings')
+      return
+    }
+    window.postMessage({ type: 'reloadProjectData' }, '*')
+    toast.success('Project settings saved')
+  }
+
+  function renameColliderGroup(index: number, name: string) {
+    setColliderGroups((groups) => groups.map((group, groupIndex) => groupIndex === index ? name : group))
+  }
+
+  function addColliderGroup() {
+    setColliderGroups((groups) => {
+      let number = groups.length + 1
+      while (groups.includes(`Group${number}`)) number += 1
+      return [...groups, `Group${number}`]
+    })
+    setColliderMatrix((matrix) => resizeColliderMatrix(matrix, matrix.length + 1))
+  }
+
+  function removeColliderGroup(index: number) {
+    setColliderGroups((groups) => groups.filter((_, groupIndex) => groupIndex !== index))
+    setColliderMatrix((matrix) => matrix
+      .filter((_, rowIndex) => rowIndex !== index)
+      .map((row) => row.filter((_, columnIndex) => columnIndex !== index)))
   }
 
   function closeDialog() {
@@ -122,6 +192,115 @@ export default function SettingsDialog() {
               <button className='mt-3 flex h-8 items-center gap-1 rounded-sm bg-[#333] px-3 text-[11px] font-bold uppercase text-[#f3f3f3] hover:bg-[#3d3d3d]' type='button' onClick={addApp}>
                 <FiPlus /> Add other app
               </button>
+            </div>
+          ) : tab === 'project' ? (
+            <div className='flex flex-col gap-4'>
+              <div className='flex gap-3'>
+                <label className='flex flex-1 flex-col gap-1'>
+                  <span className='text-[#bdbdbd]'>DESIGNED_WIDTH</span>
+                  <input
+                    className='h-7 rounded-sm border border-[#111] bg-[#151515] px-2 text-[12px] text-[#e2e2e2] shadow-inner outline-none focus:border-[#4a90e2]'
+                    type='number'
+                    min='1'
+                    step='1'
+                    value={designedWidth}
+                    onChange={(event) => setDesignedWidth(event.target.valueAsNumber)}
+                  />
+                </label>
+                <label className='flex flex-1 flex-col gap-1'>
+                  <span className='text-[#bdbdbd]'>DESIGNED_HEIGHT</span>
+                  <input
+                    className='h-7 rounded-sm border border-[#111] bg-[#151515] px-2 text-[12px] text-[#e2e2e2] shadow-inner outline-none focus:border-[#4a90e2]'
+                    type='number'
+                    min='1'
+                    step='1'
+                    value={designedHeight}
+                    onChange={(event) => setDesignedHeight(event.target.valueAsNumber)}
+                  />
+                </label>
+              </div>
+              <div className='flex flex-col gap-1'>
+                <div className='flex items-center justify-between text-[#bdbdbd]'>
+                  <span>colliderMatrix / enum Group</span>
+                  <button className='flex items-center gap-1 text-[11px] text-[#a8c7ff] hover:text-[#d7e6ff]' type='button' onClick={addColliderGroup}><FiPlus /> Add group</button>
+                </div>
+                <div className='max-h-44 overflow-auto rounded-sm border border-[#111] bg-[#151515] p-2'>
+                  {colliderGroups.length === 0 ? (
+                    <div className='text-[#8f8f8f]'>No collision groups configured.</div>
+                  ) : (
+                    <table className='border-separate border-spacing-1 text-[11px] text-[#c8c8c8]'>
+                      <thead>
+                        <tr>
+                          <th className='min-w-36 px-1 text-left font-normal'>Group</th>
+                          {colliderGroups.map((group) => <th className='min-w-12 truncate font-normal' key={group} title={group}>{group}</th>)}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {colliderGroups.map((group, rowIndex) => (
+                          <tr key={group}>
+                            <th className='px-1 font-normal'>
+                              <div className='flex min-w-36 items-center gap-1'>
+                                <input
+                                  className='h-7 min-w-0 flex-1 rounded-sm border border-[#111] bg-[#1d1d1d] px-2 text-[12px] text-[#e2e2e2] outline-none focus:border-[#4a90e2]'
+                                  value={group}
+                                  onChange={(event) => renameColliderGroup(rowIndex, event.target.value)}
+                                  aria-label={`Collision group ${rowIndex + 1}`}
+                                />
+                                <button className='flex h-7 w-7 items-center justify-center text-[#bdbdbd] hover:text-[#ff6565]' type='button' onClick={() => removeColliderGroup(rowIndex)} title='Remove group' aria-label={`Remove ${group}`}><FiTrash2 /></button>
+                              </div>
+                            </th>
+                            {colliderGroups.map((columnGroup, columnIndex) => (
+                              <td className='text-center' key={columnGroup}>
+                                <input
+                                  className='h-3.5 w-3.5 accent-[#6aa7ff]'
+                                  type='checkbox'
+                                  checked={colliderMatrix[rowIndex]?.[columnIndex] || false}
+                                  onChange={() => setColliderMatrix((current) => current.map((row, currentRowIndex) => row.map((value, currentColumnIndex) => currentRowIndex === rowIndex && currentColumnIndex === columnIndex ? !value : value)))}
+                                  aria-label={`${group} collides with ${columnGroup}`}
+                                />
+                              </td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+              </div>
+              <div className='flex flex-col gap-1'>
+                <span className='text-[#bdbdbd]'>defaultFont</span>
+                <div className='flex gap-3'>
+                  <div className='min-w-0 flex-1'>
+                    <SelectBox
+                      selected={selectedDefaultFont?.key || 'Select a font'}
+                      items={fontAssets.map((font) => font.key)}
+                      setSelected={setDefaultFont}
+                      itemStyle={(fontKey: string) => ({ fontFamily: `safe-x-default-font-preview-${fontAssets.findIndex((font) => font.key === fontKey)}` })}
+                    />
+                  </div>
+                  <div
+                    className='relative flex h-14 min-w-0 flex-1 items-center overflow-hidden rounded-sm border border-[#111] bg-[#151515] px-3 text-[20px] text-[#e2e2e2]'
+                    style={{ fontFamily: selectedDefaultFont ? `safe-x-default-font-preview-${selectedDefaultFontIndex}` : undefined }}
+                  >
+                    <span className='truncate'>{selectedDefaultFont ? 'Aa Bb Cc 123' : 'No font selected'}</span>
+                  </div>
+                </div>
+                <style>{fontAssets.map((font, index) => `@font-face { font-family: 'safe-x-default-font-preview-${index}'; src: url(${JSON.stringify(font.value)}); }`).join('\n')}</style>
+              </div>
+              <label className='flex w-40 flex-col gap-1'>
+                <span className='text-[#bdbdbd]'>defaultFontSize</span>
+                <input
+                  className='h-7 rounded-sm border border-[#111] bg-[#151515] px-2 text-[12px] text-[#e2e2e2] shadow-inner outline-none focus:border-[#4a90e2]'
+                  type='number'
+                  min='1'
+                  step='1'
+                  value={defaultFontSize}
+                  onChange={(event) => setDefaultFontSize(event.target.valueAsNumber)}
+                />
+              </label>
+              <div className='flex justify-end'>
+                <Button type='button' onClick={saveProjectSettings}>Save Project Settings</Button>
+              </div>
             </div>
           ) : (
             <div className='flex flex-col gap-4'>
@@ -199,6 +378,7 @@ export default function SettingsDialog() {
           )}
         </div>
         <div className='w-32 border-l border-[#151515] pl-3'>
+          <button className={`mt-1 w-full rounded-sm px-3 py-2 text-left ${tab === 'project' ? 'bg-[#304766] text-white' : 'text-[#bdbdbd] hover:bg-[#333]'}`} type='button' onClick={() => setTab('project')}>Project</button>
           <button className={`w-full rounded-sm px-3 py-2 text-left ${tab === 'editor' ? 'bg-[#304766] text-white' : 'text-[#bdbdbd] hover:bg-[#333]'}`} type='button' onClick={() => setTab('editor')}>Editor</button>
           <button className={`mt-1 w-full rounded-sm px-3 py-2 text-left ${tab === 'image-ai' ? 'bg-[#304766] text-white' : 'text-[#bdbdbd] hover:bg-[#333]'}`} type='button' onClick={() => setTab('image-ai')}>Image AI</button>
         </div>

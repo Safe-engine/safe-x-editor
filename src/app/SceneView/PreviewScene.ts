@@ -110,9 +110,9 @@ export class PreviewScene extends PreviewSceneSelection {
   }
 
   async loadLastComponent() {
-    const lastLoadedFile = getLastLoadedFile()
-    if (!lastLoadedFile || GlobalState.filePath) return
-    await this.loadComponent(lastLoadedFile)
+    const filePath = GlobalState.filePath || getLastLoadedFile()
+    if (!filePath) return
+    await this.loadComponent(filePath)
   }
 
   updateInputModifiers(modifiers: { shiftKey?: boolean; ctrlKey?: boolean; metaKey?: boolean }) {
@@ -607,9 +607,26 @@ export class PreviewScene extends PreviewSceneSelection {
   async restoreHistoryEntry(historyEntry: HistoryEntry) {
     this.editingComponent = cloneDeep(historyEntry.editingComponent)
     this.editingPaths = [...historyEntry.editingPaths]
-    this.drawNode.destroy()
-    this.createDrawNode()
-    await loadSceneViewSdl({ name: this.editingComponentName, treeData: this.editingComponent }, GlobalState.data, this.drawNode)
+    const previousDrawNode = this.drawNode
+    const nextDrawNode = createNode('PreviewDrawNode')
+    nextDrawNode.anchorX = 0
+    nextDrawNode.anchorY = 0
+    nextDrawNode.addComponent(new GridRender())
+    nextDrawNode.x = previousDrawNode.x
+    nextDrawNode.y = previousDrawNode.y
+    nextDrawNode.scaleX = previousDrawNode.scaleX
+    nextDrawNode.scaleY = previousDrawNode.scaleY
+    nextDrawNode.active = false
+    this.node.addChild(nextDrawNode)
+    try {
+      await loadSceneViewSdl({ name: this.editingComponentName, treeData: this.editingComponent }, GlobalState.data, nextDrawNode)
+    } catch (error) {
+      nextDrawNode.destroy()
+      throw error
+    }
+    this.drawNode = nextDrawNode
+    nextDrawNode.active = true
+    previousDrawNode.destroy()
     this.syncEditingFlag()
     this.updateBoxColliderEditor()
     this.updateArrowPosition()
@@ -630,9 +647,26 @@ export class PreviewScene extends PreviewSceneSelection {
   }
 
   async reloadEditingComponent() {
-    this.drawNode.destroy()
-    this.createDrawNode()
-    await loadSceneViewSdl({ name: this.editingComponentName, treeData: this.editingComponent }, GlobalState.data, this.drawNode)
+    const previousDrawNode = this.drawNode
+    const nextDrawNode = createNode('PreviewDrawNode')
+    nextDrawNode.anchorX = 0
+    nextDrawNode.anchorY = 0
+    nextDrawNode.addComponent(new GridRender())
+    nextDrawNode.x = previousDrawNode.x
+    nextDrawNode.y = previousDrawNode.y
+    nextDrawNode.scaleX = previousDrawNode.scaleX
+    nextDrawNode.scaleY = previousDrawNode.scaleY
+    nextDrawNode.active = false
+    this.node.addChild(nextDrawNode)
+    try {
+      await loadSceneViewSdl({ name: this.editingComponentName, treeData: this.editingComponent }, GlobalState.data, nextDrawNode)
+    } catch (error) {
+      nextDrawNode.destroy()
+      throw error
+    }
+    this.drawNode = nextDrawNode
+    nextDrawNode.active = true
+    previousDrawNode.destroy()
     this.syncEditingFlag()
     this.updateBoxColliderEditor()
     this.updateArrowPosition()
@@ -814,6 +848,9 @@ export class PreviewScene extends PreviewSceneSelection {
       .filter((node) => node && node.tag !== 'SceneComponent'))
     if (!selectedNodes.size) return
 
+    const runtimeNodes = this.editingPaths
+      .map((editingPath) => getCurrentNode(this.drawNode, this.getChildrenIndex(editingPath)))
+      .filter((node) => node !== this.drawNode)
     this.pushUndoHistory()
     const removeSelectedNodes = (nodes: any[]): any[] => nodes
       .filter((node) => !selectedNodes.has(node))
@@ -827,9 +864,45 @@ export class PreviewScene extends PreviewSceneSelection {
       assignIds(node.children || [], node.id)
     })
     assignIds(this.editingComponent)
-    window.postMessage({ type: 'previewRestoreComponentTree', treeData: this.editingComponent, selectPaths: [] }, '*')
     this.changeSelectPath([])
+    const selectedRuntimeNodes = new Set(runtimeNodes)
+    runtimeNodes
+      .filter((node) => {
+        let parent = node.parent
+        while (parent) {
+          if (selectedRuntimeNodes.has(parent)) return false
+          parent = parent.parent
+        }
+        return true
+      })
+      .forEach((node) => node.destroy())
+    this.syncEditingFlag()
+    window.postMessage({ type: 'previewRestoreComponentTree', treeData: this.editingComponent, selectPaths: [] }, '*')
+  }
+
+  async duplicateSelectedNode() {
+    const selectedNode = this.getEditingNodeByPath(this.editingPaths[0])
+    if (!selectedNode || selectedNode.tag === 'SceneComponent') return
+
+    const findSiblings = (nodes: any[]): any[] | undefined => {
+      if (nodes.includes(selectedNode)) return nodes
+      return nodes.map((node) => findSiblings(node.children || [])).find(Boolean)
+    }
+    const siblings = findSiblings(this.editingComponent)
+    if (!siblings) return
+
+    this.pushUndoHistory()
+    const duplicate = cloneDeep(selectedNode)
+    siblings.splice(siblings.indexOf(selectedNode) + 1, 0, duplicate)
+
+    const assignIds = (nodes: any[], prefix = '') => nodes.forEach((node, nodeIndex) => {
+      node.id = prefix ? `${prefix}-${nodeIndex}` : `${nodeIndex}`
+      assignIds(node.children || [], node.id)
+    })
+    assignIds(this.editingComponent)
+    this.editingPaths = [duplicate.id]
     await this.reloadEditingComponent()
+    window.postMessage({ type: 'previewRestoreComponentTree', treeData: this.editingComponent, selectPaths: this.editingPaths }, '*')
   }
 
   getScenePositionFromClient(clientX?: number, clientY?: number) {
@@ -901,6 +974,39 @@ export class PreviewScene extends PreviewSceneSelection {
     this.editingPaths = nodes.map((node) => node.id)
     await this.reloadEditingComponent()
     window.postMessage({ type: 'previewRestoreComponentTree', treeData: this.editingComponent, selectPaths: this.editingPaths }, '*')
+  }
+
+  async extractHierarchyNode(nodeId: string, componentName: string, imported: string, createdPath: string, rootFolder: string) {
+    if (!nodeId || !componentName || !imported || !this.editingComponent?.length) return
+
+    const findSiblings = (nodes: any[]): any[] | undefined => {
+      if (nodes.some((node) => node.id === nodeId)) return nodes
+      return nodes.map((node) => findSiblings(node.children || [])).find(Boolean)
+    }
+    const siblings = findSiblings(this.editingComponent)
+    const selectedNode = siblings?.find((node) => node.id === nodeId)
+    if (!siblings || !selectedNode || selectedNode.tag === 'SceneComponent') return
+
+    this.pushUndoHistory()
+    const replacement = {
+      id: selectedNode.id,
+      expanded: true,
+      tag: componentName,
+      props: {},
+      components: [],
+      children: [],
+      imported,
+    }
+    siblings.splice(siblings.indexOf(selectedNode), 1, replacement)
+    const assignIds = (nodes: any[], prefix = '') => nodes.forEach((node, nodeIndex) => {
+      node.id = prefix ? `${prefix}-${nodeIndex}` : `${nodeIndex}`
+      assignIds(node.children || [], node.id)
+    })
+    assignIds(this.editingComponent)
+    this.editingPaths = [replacement.id]
+    await this.saveComponent()
+    window.postMessage({ type: 'previewRestoreComponentTree', treeData: this.editingComponent, selectPaths: this.editingPaths }, '*')
+    window.postMessage({ type: 'focusComponentRename', path: createdPath, rootFolder }, '*')
   }
 
   async importPngAsSprite(sourcePaths: string[], clientX?: number, clientY?: number) {
@@ -1310,6 +1416,16 @@ export class PreviewScene extends PreviewSceneSelection {
       const currentNode = getCurrentNode(this.drawNode, childrenIndex)
       currentNode.children.forEach((_child, index) => allPaths.push(`${editingPath}-${index}`))
     })
+    this.changeSelectPath(allPaths)
+  }
+
+  selectAllNodes() {
+    const allPaths: string[] = []
+    const collectPaths = (nodes: any[]) => nodes.forEach((node) => {
+      if (node.tag !== 'SceneComponent' && node.id) allPaths.push(node.id)
+      if (node.children?.length) collectPaths(node.children)
+    })
+    collectPaths(this.editingComponent)
     this.changeSelectPath(allPaths)
   }
 

@@ -195,19 +195,31 @@ async function parseChildren(root, parentNode: Node, data: ProjectData, evalInit
     return spriteFrameAsset?.value
   }
 
-  function getLabelText(string = '') {
+  function getTextureSize(spriteFrame: string) {
+    const frameName = parseStringFromValue(spriteFrame)
+    const spriteFrameAsset = spriteFramesAssets.find((item) => item.key === frameName)
+    const texture = assetsTextureList.find((item) => (
+      item.key === frameName
+      || item.key === spriteFrameAsset?.value
+      || item.value === spriteFrameAsset?.value
+    ))
+    return texture?.size
+  }
+
+  function getLabelText(value: unknown = ''): string {
+    const string = typeof value === 'string' ? value : String(value ?? '')
     if (string.includes('[')) {
       const staticKey = parseStringFromValue(string).split('[')[0]
       const staticProps = staticPropsMap[staticKey]
       if (staticProps) {
         const arrayIndexStr = string.replace(staticKey, 'staticData')
-        return eval(`const staticData = ${JSON.stringify(staticProps)};${evalInit}${arrayIndexStr}`)
+        return String(eval(`const staticData = ${JSON.stringify(staticProps)};${evalInit}${arrayIndexStr}`) ?? '')
       }
     } else if (string.includes('`')) {
-      return tryGetValue(string.substring(1, string.length - 1))
+      return String(tryGetValue(string.substring(1, string.length - 1)) ?? '')
     }
-    if (string.includes('.')) return tryGetValue(string)
-    return parseStringFromValue(string) ?? string
+    if (string.includes('.')) return String(tryGetValue(string) ?? '')
+    return String(parseStringFromValue(string) ?? string)
   }
 
   if (tag === 'Sprite' || tag === 'Button' || tag === 'ProgressBar' || tag === 'CircleProgress') {
@@ -387,7 +399,10 @@ async function parseChildren(root, parentNode: Node, data: ProjectData, evalInit
   if (renderNode !== parentNode && !renderNode.parent) parentNode.addChild(renderNode)
 
   const { node = {} } = props
-  const { scaleX = 1, scaleY = 1, scale = 1, rotation = 0, width, height, color, active, anchorX, anchorY, zIndex, zOrder, name, tag: nodeTag } = node
+  const { scaleX = 1, scaleY = 1, scale = 1, rotation = 0, width, height, color, active, anchorX, anchorY, zIndex, name, tag: nodeTag } = node
+  const textureSize = ['Sprite', 'Button', 'ProgressBar', 'CircleProgress'].includes(tag)
+    ? getTextureSize(props.spriteFrame)
+    : undefined
   if (node.position || node.xy || node.x !== undefined || node.y !== undefined) {
     const { x, y } = getNodePosition(node, initWithProps)
     renderNode.x = x
@@ -402,8 +417,10 @@ async function parseChildren(root, parentNode: Node, data: ProjectData, evalInit
   if (zIndex !== undefined) renderNode.zIndex = parseEval(initWithProps)(zIndex)
   if (name !== undefined) renderNode.name = parseEval(initWithProps)(name)
   if (nodeTag !== undefined) renderNode.tag = parseEval(initWithProps)(nodeTag)
-  if (width) renderNode.width = parseEval(initWithProps)(width)
-  if (height) renderNode.height = parseEval(initWithProps)(height)
+  if (width !== undefined) renderNode.width = parseEval(initWithProps)(width)
+  else if (textureSize?.width) renderNode.width = textureSize.width
+  if (height !== undefined) renderNode.height = parseEval(initWithProps)(height)
+  else if (textureSize?.height) renderNode.height = textureSize.height
   if (active !== undefined) {
     try {
       renderNode.active = parseEval(initWithProps)(active)
@@ -424,8 +441,17 @@ async function parseChildren(root, parentNode: Node, data: ProjectData, evalInit
 }
 
 export async function loadSceneViewSdl(componentData, data: ProjectData, drawLayer: Node) {
-  const root = componentData.treeData ?? componentData
+  let root = componentData.treeData ?? componentData
   if (!root) return
+  if (componentData.isComponentPreview && !Array.isArray(root)) {
+    root = {
+      ...root,
+      props: {
+        ...root.props,
+        node: { ...root.props?.node, active: true },
+      },
+    }
+  }
   const { designedResolution, defaultProps = {} } = data
   const { width, height } = designedResolution
   const init = `const width = ${width};const height = ${height};`
